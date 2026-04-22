@@ -1,0 +1,121 @@
+{
+  "info": {
+    "title": "Blueticks API",
+    "version": "1.0.0",
+    "description": "Public API for Blueticks WhatsApp automation."
+  },
+  "servers": [
+    {
+      "url": "https://api.blueticks.co"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "bt_<env>_..."
+      }
+    },
+    "schemas": {}
+  },
+  "paths": {
+    "/v1/account": {
+      "get": {
+        "parameters": [
+          {
+            "description": "Number of results to return",
+            "in": "query",
+            "name": "$limit",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of results to skip",
+            "in": "query",
+            "name": "$skip",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Property to sort results",
+            "in": "query",
+            "name": "$sort",
+            "style": "deepObject",
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "description": "Query parameters to filter",
+            "in": "query",
+            "name": "filter",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/account"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Stable identifier for the account."
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Account display name."
+                    },
+                    "timezone": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "IANA timezone (e.g. \"America/New_York\"), or null if unset."
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "RFC 3339 timestamp of account creation."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "timezone",
+                    "created_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "description": "Retrieve the account the API key belongs to.",
+        "summary": "",
+        "tags": [
+          "v1"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "openapi": "3.0.3",
+  "tags": [
+    {
+      "name": "v1",
+      "description": "Account metadata for the authenticated API key."
+    }
+  ]
+}
