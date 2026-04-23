@@ -197,11 +197,7 @@ export function HeroDemo() {
     <div
       role="img"
       aria-label="Code-to-WhatsApp demo"
-      className="grid items-stretch"
-      style={{
-        gridTemplateColumns: '1.55fr 56px 0.85fr',
-        minHeight: 380,
-      }}
+      className="bt-demo-grid"
     >
       {/* LEFT — Code editor */}
       <div
@@ -281,13 +277,9 @@ export function HeroDemo() {
 
         {/* Body */}
         <div
-          className="font-mono"
+          className="font-mono bt-demo-code-body"
           style={{
-            padding: '16px 18px',
             flex: 1,
-            whiteSpace: 'pre',
-            fontSize: 13,
-            lineHeight: 1.65,
             color: 'var(--d-ink-2)',
           }}
         >
@@ -344,7 +336,7 @@ export function HeroDemo() {
 
       {/* MIDDLE — Flow indicator */}
       <div
-        className="relative flex flex-col items-center justify-center"
+        className="bt-demo-middle relative flex flex-col items-center justify-center"
         aria-hidden
       >
         <div

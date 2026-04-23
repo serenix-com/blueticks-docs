@@ -23,14 +23,7 @@ export default function HomePage() {
           className="relative mx-auto"
           style={{ width: 'min(1280px, 100% - 48px)', maxWidth: 1200 }}
         >
-          <div
-            className="grid items-center"
-            style={{
-              gridTemplateColumns: '0.85fr 1.15fr',
-              gap: 48,
-              marginBottom: 40,
-            }}
-          >
+          <div className="bt-hero-grid">
             {/* Copy */}
             <div>
               <span
@@ -51,7 +44,7 @@ export default function HomePage() {
               </span>
               <h1
                 style={{
-                  fontSize: 'clamp(44px, 5vw, 64px)',
+                  fontSize: 'clamp(36px, 5vw, 64px)',
                   fontWeight: 650,
                   lineHeight: 1.02,
                   letterSpacing: '-0.034em',
@@ -139,13 +132,7 @@ export default function HomePage() {
               </h2>
             </div>
           </div>
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 14,
-            }}
-          >
+          <div className="bt-paths-grid">
             <PathCard
               num="01"
               quote="I just want to send one message"
@@ -185,10 +172,7 @@ export default function HomePage() {
       {/* ─── Endpoint map + Playground teaser ─────────────────────── */}
       <section style={{ padding: '0 0 80px' }}>
         <div className="mx-auto" style={{ width: 'min(1280px, 100% - 48px)' }}>
-          <div
-            className="grid"
-            style={{ gridTemplateColumns: '1fr 1.4fr', gap: 20 }}
-          >
+          <div className="bt-endpoint-grid">
             {/* Endpoint map */}
             <div
               className="rounded-[14px] border"
@@ -267,7 +251,7 @@ export default function HomePage() {
                 borderColor: 'rgba(29,143,247,.22)',
               }}
             >
-              <div className="flex" style={{ gap: 16 }}>
+              <div className="bt-playground-flex">
                 <div style={{ flex: 1 }}>
                   <Eyebrow style={{ color: 'var(--bt-blue-glow)' }}>
                     Try it live
@@ -309,7 +293,7 @@ export default function HomePage() {
                   </Link>
                 </div>
                 <div
-                  className="font-mono"
+                  className="font-mono bt-playground-code"
                   style={{
                     width: 200,
                     flexShrink: 0,
