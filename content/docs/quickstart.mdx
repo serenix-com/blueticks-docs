@@ -1,0 +1,136 @@
+---
+title: Quickstart
+description: Install the Blueticks SDK for your language, authenticate, and make your first call.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+Pick your language below. All three SDKs expose the same resources and
+follow the same naming conventions.
+
+## 1. Install
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+  <Tab value="Python">
+
+```bash
+pip install blueticks
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```bash
+npm install blueticks
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```bash
+composer require blueticks/blueticks guzzlehttp/guzzle
+```
+
+PHP uses PSR-18 HTTP clients. Install any concrete client (Guzzle shown);
+the SDK discovers it at runtime.
+
+  </Tab>
+</Tabs>
+
+## 2. Set your API key
+
+Export your key as an environment variable so the SDK picks it up
+automatically:
+
+```bash
+export BLUETICKS_API_KEY=bt_live_...
+```
+
+See [Authentication](/docs/authentication) for how to obtain a key.
+
+## 3. Ping the API
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+  <Tab value="Python">
+
+```python
+from blueticks import Blueticks
+
+client = Blueticks()
+ping = client.ping()
+print(ping.account_id, ping.scopes)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```typescript
+import { Blueticks } from "blueticks";
+
+const client = new Blueticks();
+const ping = await client.ping();
+console.log(ping.account_id, ping.scopes);
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+<?php
+require 'vendor/autoload.php';
+
+use Blueticks\Blueticks;
+
+$client = new Blueticks();
+$ping = $client->ping();
+echo $ping->account_id, ' ', implode(',', $ping->scopes), "\n";
+```
+
+  </Tab>
+</Tabs>
+
+A successful response looks like:
+
+```json
+{
+  "account_id": "acct_abc123",
+  "key_prefix": "bt_live_xy",
+  "scopes": ["messages:read", "messages:write"]
+}
+```
+
+## 4. Retrieve your account
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+  <Tab value="Python">
+
+```python
+account = client.account.retrieve()
+print(account.name, account.timezone)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```typescript
+const account = await client.account.retrieve();
+console.log(account.name, account.timezone);
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+$account = $client->account->retrieve();
+echo $account->name, ' ', $account->timezone, "\n";
+```
+
+  </Tab>
+</Tabs>
+
+## Next steps
+
+- [Authentication](/docs/authentication) — key rotation, environments.
+- [Errors & retries](/docs/errors) — how to handle transient failures.
+- [API Reference](/docs/api) — every endpoint with an interactive
+  playground.

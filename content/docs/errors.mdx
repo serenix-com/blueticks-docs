@@ -1,0 +1,120 @@
+---
+title: Errors & retries
+description: How the Blueticks API reports failures and how your client should respond.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+All error responses use a single envelope shape, regardless of endpoint
+or status code:
+
+```json
+{
+  "error": {
+    "code": "authentication_required",
+    "message": "API key required or invalid.",
+    "request_id": "req_1a2b3c4d5e"
+  }
+}
+```
+
+## Status codes
+
+| Code | Meaning | Retry? |
+|------|---------|--------|
+| `400` | Bad request — payload shape is invalid | No |
+| `401` | Authentication required — missing / invalid key | No |
+| `403` | Permission denied — key lacks required scope | No |
+| `404` | Not found — resource doesn't exist or isn't visible | No |
+| `422` | Unprocessable entity — semantically invalid | No |
+| `429` | Rate limited — honor `Retry-After` header | Yes |
+| `5xx` | Server error | Yes, with exponential backoff |
+
+## Error codes
+
+Current error codes (locked as of v1.0.0):
+
+- `authentication_required`
+- `permission_denied`
+- `not_found`
+- `invalid_request`
+- `rate_limited`
+- `internal_error`
+
+The SDK maps each code to a typed exception class so you can
+`catch (RateLimitError)` vs `catch (AuthenticationError)` without
+string-matching.
+
+## Retry guidance
+
+The official SDKs retry automatically on `429`, `502`, `503`, `504`, and
+network errors. Defaults:
+
+- **Base delay:** 500 ms, doubling each attempt, capped at 8 s.
+- **Jitter:** random fraction of the current backoff window.
+- **Max retries:** 2 (3 total attempts).
+- **POST idempotency:** POST without an `Idempotency-Key` header is
+  **not retried** on HTTP errors (only on network failures). Supply
+  `Idempotency-Key: <your-uuid>` to opt in.
+
+### Retry-After
+
+On `429`, the server returns a `Retry-After` header (seconds or
+HTTP-date). The SDK waits that long before the next attempt. On other
+retryable statuses, the SDK uses its own exponential backoff.
+
+## Request IDs
+
+Every response (success or error) includes a `X-Request-Id` header.
+Error envelopes echo it in `error.request_id` for convenience. Include
+request IDs in any support inquiry.
+
+## Example: handle 429 manually
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+  <Tab value="Python">
+
+```python
+from blueticks import Blueticks
+from blueticks.errors import RateLimitError
+
+client = Blueticks()
+try:
+    account = client.account.retrieve()
+except RateLimitError as e:
+    print(f"throttled, retry after {e.retry_after}s")
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```typescript
+import { Blueticks, RateLimitError } from "blueticks";
+
+const client = new Blueticks();
+try {
+  const account = await client.account.retrieve();
+} catch (err) {
+  if (err instanceof RateLimitError) {
+    console.log(`throttled, retry after ${err.retryAfter}s`);
+  }
+}
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Blueticks\Blueticks;
+use Blueticks\Errors\RateLimitError;
+
+$client = new Blueticks();
+try {
+    $account = $client->account->retrieve();
+} catch (RateLimitError $e) {
+    echo "throttled, retry after {$e->retryAfter}s\n";
+}
+```
+
+  </Tab>
+</Tabs>
