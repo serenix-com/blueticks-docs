@@ -1,0 +1,7 @@
+{
+  "title": "V1",
+  "description": "Account metadata for the authenticated API key.",
+  "pages": [
+    "v1/account/get"
+  ]
+}
