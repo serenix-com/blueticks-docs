@@ -26,7 +26,7 @@ export default function HomePage() {
           <div
             className="grid items-center"
             style={{
-              gridTemplateColumns: '1fr 1fr',
+              gridTemplateColumns: '0.85fr 1.15fr',
               gap: 48,
               marginBottom: 40,
             }}

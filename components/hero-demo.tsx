@@ -199,7 +199,7 @@ export function HeroDemo() {
       aria-label="Code-to-WhatsApp demo"
       className="grid items-stretch"
       style={{
-        gridTemplateColumns: '1fr 56px 1fr',
+        gridTemplateColumns: '1.55fr 56px 0.85fr',
         minHeight: 380,
       }}
     >
@@ -228,7 +228,11 @@ export function HeroDemo() {
           </div>
           <div
             className="font-mono"
-            style={{ fontSize: 12, color: 'var(--d-ink-4)' }}
+            style={{
+              fontSize: 12,
+              color: 'var(--d-ink-4)',
+              whiteSpace: 'nowrap',
+            }}
           >
             ~/send-reminder.py
           </div>
@@ -242,6 +246,7 @@ export function HeroDemo() {
                   background: 'rgba(245,158,11,.1)',
                   borderColor: 'rgba(245,158,11,.3)',
                   color: '#F59E0B',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 <span
@@ -264,6 +269,7 @@ export function HeroDemo() {
                   background: 'rgba(37,211,102,.1)',
                   borderColor: 'rgba(37,211,102,.3)',
                   color: '#25D366',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 <span className="bt-live-dot" />
