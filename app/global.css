@@ -2,14 +2,52 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
+/* Brand primary: Blueticks blue (was teal). */
 :root {
-  --color-fd-primary: hsl(168, 76%, 42%);
-  --color-fd-primary-foreground: hsl(0, 0%, 100%);
+  --color-fd-primary: #1d8ff7;
+  --color-fd-primary-foreground: #ffffff;
+
+  /* Design handoff tokens — docs home page V2 */
+  --d-bg: #0a0a0b;
+  --d-bg-1: #0f0f10;
+  --d-bg-2: #141416;
+  --d-bg-3: #1a1a1d;
+  --d-border: #1f1f22;
+  --d-border-2: #2a2a2f;
+
+  --d-ink: #f4f4f5;
+  --d-ink-2: #d4d4d8;
+  --d-ink-3: #a1a1aa;
+  --d-ink-4: #71717a;
+  --d-ink-5: #52525b;
+
+  --bt-blue: #1d8ff7;
+  --bt-blue-glow: #38bdf8;
+  --bt-blue-deep: #0f5fd1;
+  --bt-pink: #ff3e8a;
+  --bt-green: #25d366;
+  --bt-amber: #f59e0b;
+  --bt-violet: #a78bfa;
+
+  --wa-bg: #0b141a;
+  --wa-panel: #111b21;
+  --wa-in: #202c33;
+  --wa-out: #005c4b;
+  --wa-ink: #e9edef;
+  --wa-ink-2: #8696a0;
+  --wa-border: #222d34;
+
+  --font-sans:
+    var(--font-geist-sans), 'Inter', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  --font-mono:
+    var(--font-geist-mono), 'JetBrains Mono', ui-monospace, SFMono-Regular,
+    Menlo, monospace;
 }
 
 .dark {
-  --color-fd-primary: hsl(168, 70%, 50%);
-  --color-fd-primary-foreground: hsl(0, 0%, 10%);
+  --color-fd-primary: #38bdf8;
+  --color-fd-primary-foreground: #0a0a0b;
 }
 
 html {
@@ -19,4 +57,148 @@ html {
 html > body[data-scroll-locked] {
   margin-right: 0px !important;
   --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* Design-handoff keyframes */
+@keyframes bt-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes bt-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes bt-livePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.6);
+  }
+  80% {
+    box-shadow: 0 0 0 8px rgba(37, 211, 102, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+  }
+}
+
+.bt-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--bt-green);
+  box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.6);
+  animation: bt-livePulse 1.8s ease-out infinite;
+}
+
+.bt-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  background: var(--bt-blue-glow);
+  vertical-align: text-bottom;
+  animation: bt-blink 1s step-end infinite;
+}
+
+.bt-bg-grid {
+  background-image:
+    linear-gradient(var(--d-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--d-border) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: -1px -1px;
+  mask-image: radial-gradient(
+    ellipse 70% 60% at 50% 30%,
+    black 30%,
+    transparent 70%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 70% 60% at 50% 30%,
+    black 30%,
+    transparent 70%
+  );
+}
+
+/* Buttons */
+.bt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 550;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    transform 0.12s;
+}
+.bt-btn-accent {
+  background: var(--bt-blue);
+  color: #ffffff;
+}
+.bt-btn-accent:hover {
+  background: var(--bt-blue-deep);
+  transform: translateY(-1px);
+}
+.bt-btn-ghost {
+  background: transparent;
+  color: var(--d-ink-2);
+  border: 1px solid var(--d-border-2);
+}
+.bt-btn-ghost:hover {
+  background: var(--d-bg-2);
+  color: var(--d-ink);
+  border-color: var(--d-ink-5);
+}
+
+/* Path chooser cards — subtle lift + border brighten on hover */
+.bt-path-card {
+  transition:
+    border-color 0.12s,
+    transform 0.12s;
+}
+.bt-path-card:hover {
+  border-color: var(--d-border-2) !important;
+  transform: translateY(-1px);
+}
+
+/* Endpoint map rows */
+.bt-endpoint-row {
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.bt-endpoint-row:hover {
+  background: var(--d-bg-2);
+}
+
+/* Focus ring */
+.bt-btn:focus-visible,
+.bt-path-card:focus-visible,
+.bt-endpoint-row:focus-visible {
+  outline: 2px solid var(--bt-blue-glow);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-live-dot,
+  .bt-cursor {
+    animation: none;
+  }
+  .bt-btn,
+  .bt-path-card,
+  .bt-endpoint-row {
+    transition: none;
+  }
+  .bt-btn:hover,
+  .bt-path-card:hover {
+    transform: none;
+  }
 }

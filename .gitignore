@@ -7,3 +7,6 @@ node_modules/
 .turbo/
 .vercel/
 .source/
+
+# Local Netlify folder
+.netlify
