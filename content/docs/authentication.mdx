@@ -1,0 +1,83 @@
+---
+title: Authentication
+description: How to obtain and use a Blueticks API key.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+The Blueticks API uses bearer-token authentication. Every request must
+include a valid API key in the `Authorization` header.
+
+## Obtaining a key
+
+1. Sign in to [app.blueticks.co](https://app.blueticks.co).
+2. Open **Settings → API keys**.
+3. Click **Create key**. Copy the value immediately — you won't see it
+   again.
+
+Keys start with `bt_live_` (production) or `bt_test_` (test mode).
+
+## Using a key
+
+### HTTP
+
+```http
+GET /v1/account HTTP/1.1
+Host: api.blueticks.co
+Authorization: Bearer bt_live_...
+```
+
+### SDKs
+
+All three official SDKs read `BLUETICKS_API_KEY` from the environment as
+a default. You can also pass a key explicitly at construction time:
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+  <Tab value="Python">
+
+```python
+from blueticks import Blueticks
+client = Blueticks(api_key="bt_live_...")
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```typescript
+import { Blueticks } from "blueticks";
+const client = new Blueticks({ apiKey: "bt_live_..." });
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Blueticks\Blueticks;
+$client = new Blueticks(['apiKey' => 'bt_live_...']);
+```
+
+  </Tab>
+</Tabs>
+
+## Rotating keys
+
+1. In the dashboard, create a new key.
+2. Roll the new key out across your fleet.
+3. Revoke the old key from the dashboard once you've confirmed traffic
+   has moved.
+
+Revoked keys return **401 authentication_required** on every request.
+
+## Environment conventions
+
+- `BLUETICKS_API_KEY` — the key itself.
+- `BLUETICKS_BASE_URL` — override the API base URL (default:
+  `https://api.blueticks.co`). Useful for staging or self-hosted
+  environments.
+
+Both are honored by every official SDK.
+
+## Key prefixes
+
+Keys expose only their first ~10 characters in API responses (see the
+`key_prefix` field on `/v1/ping`). Safe to log.

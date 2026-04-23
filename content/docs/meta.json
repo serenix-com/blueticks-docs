@@ -1,0 +1,13 @@
+{
+  "title": "Docs",
+  "pages": [
+    "index",
+    "quickstart",
+    "authentication",
+    "errors",
+    "---API Reference---",
+    "api",
+    "---",
+    "changelog"
+  ]
+}
