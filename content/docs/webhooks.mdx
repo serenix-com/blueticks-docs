@@ -1,0 +1,177 @@
+---
+title: Webhooks
+description: Receive signed HTTPS POSTs on message and session events. Register URLs, verify signatures, act on events.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+Webhooks push Blueticks events to your server in near real time. Each
+POST is HMAC-SHA256 signed with a secret you see once at creation.
+
+## Event types
+
+- `message.queued`, `message.sending`, `message.delivered`, `message.failed`, `message.read`
+- `session.connected`, `session.disconnected`
+- `campaign.started`, `campaign.paused`, `campaign.resumed`, `campaign.completed`, `campaign.aborted`
+
+## Register a webhook
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+created = bt.webhooks.create(
+    url="https://api.your-server.com/bt-webhooks",
+    events=["message.delivered", "message.failed"],
+    description="prod",
+)
+print(created.secret)  # shown exactly once — store it
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+const { secret } = await bt.webhooks.create({
+  url: 'https://api.your-server.com/bt-webhooks',
+  events: ['message.delivered', 'message.failed'],
+});
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+$created = $bt->webhooks->create(
+    url: 'https://api.your-server.com/bt-webhooks',
+    events: ['message.delivered', 'message.failed'],
+);
+echo $created->secret; // shown once
+```
+
+  </Tab>
+  <Tab value="cURL">
+
+```bash
+curl -X POST https://api.blueticks.co/v1/webhooks \
+  -H "Authorization: Bearer bt_live_..." \
+  -d '{
+    "url":"https://api.your-server.com/bt-webhooks",
+    "events":["message.delivered","message.failed"]
+  }'
+```
+
+  </Tab>
+</Tabs>
+
+**The `secret` field returns only on create (and on rotate-secret).**
+After you dismiss the response, you can rotate via
+`POST /v1/webhooks/{id}/rotate-secret` but you cannot retrieve the
+previous secret again.
+
+## Payload shape
+
+Every delivery POSTs:
+
+```json
+{
+  "id": "evt_01h7...",
+  "type": "message.delivered",
+  "created_at": "2026-04-23T16:42:00.000Z",
+  "data": { /* same shape as the resource being reported */ }
+}
+```
+
+Headers:
+
+```
+Blueticks-Webhook-Id: wh_...
+Blueticks-Webhook-Timestamp: 1714234567
+Blueticks-Webhook-Signature: v1=<64-hex-sha256>
+```
+
+## Verify signatures
+
+Three checks, all done by the SDK helper: reject if the timestamp is
+more than 5 minutes old, recompute HMAC, constant-time compare.
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+  <Tab value="Python">
+
+```python
+from blueticks.webhooks import verify, WebhookVerificationError
+
+@app.post("/bt-webhooks")
+def handle_webhook(request):
+    try:
+        event = verify(
+            payload=request.body,          # raw bytes
+            headers=request.headers,
+            secret=os.environ["BT_WEBHOOK_SECRET"],
+        )
+    except WebhookVerificationError:
+        return Response(status=400)
+    if event.type == "message.delivered":
+        ...
+    return Response(status=200)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+import { verifyWebhook, WebhookVerificationError } from 'blueticks/webhooks';
+
+app.post('/bt-webhooks', express.raw({ type: 'application/json' }), (req, res) => {
+  try {
+    const event = verifyWebhook({
+      payload: req.body,
+      headers: req.headers,
+      secret: process.env.BT_WEBHOOK_SECRET!,
+    });
+    // handle event.type
+    res.sendStatus(200);
+  } catch (err) {
+    if (err instanceof WebhookVerificationError) return res.sendStatus(400);
+    throw err;
+  }
+});
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Blueticks\Webhooks;
+use Blueticks\Errors\WebhookVerificationError;
+
+try {
+    $event = Webhooks\verify(
+        file_get_contents('php://input'),
+        getallheaders(),
+        $_ENV['BT_WEBHOOK_SECRET'],
+    );
+} catch (WebhookVerificationError $e) {
+    http_response_code(400); exit;
+}
+```
+
+  </Tab>
+</Tabs>
+
+## Retries
+
+Non-2xx responses or timeouts trigger up to 8 retries over ~24 h with
+exponential backoff: `1m → 5m → 15m → 1h → 2h → 6h → 12h → 24h`.
+After 8 consecutive failures the webhook auto-disables — you'll need
+to PATCH `status: "enabled"` to re-enable after fixing your endpoint.
+
+## Rotate the secret
+
+If your secret leaks, rotate it. The old secret is invalidated
+immediately; all pending retries sign with the new one.
+
+```bash
+curl -X POST https://api.blueticks.co/v1/webhooks/wh_123/rotate-secret \
+  -H "Authorization: Bearer bt_live_..."
+```

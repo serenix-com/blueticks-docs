@@ -1,0 +1,128 @@
+---
+title: Messages
+description: Send WhatsApp messages immediately or schedule them for later. One-shot through the `/v1/messages` endpoint.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+Send a single message via `POST /v1/messages`. Include `send_at` to
+schedule instead of sending now. Include `media_url` to attach an
+image, video, or PDF hosted on a public HTTPS URL you already own.
+
+## Send now
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+import blueticks
+bt = blueticks.Blueticks(api_key="bt_live_...")
+
+msg = bt.messages.send(
+    to="+972501234567",
+    text="Your order is on the way 🎉",
+)
+print(msg.id, msg.status)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+import { Blueticks } from 'blueticks';
+const bt = new Blueticks({ apiKey: 'bt_live_...' });
+
+const msg = await bt.messages.send({
+  to: '+972501234567',
+  text: 'Your order is on the way 🎉',
+});
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Blueticks\Blueticks;
+$bt = new Blueticks('bt_live_...');
+
+$msg = $bt->messages->send(
+    to: '+972501234567',
+    opts: ['text' => 'Your order is on the way 🎉'],
+);
+```
+
+  </Tab>
+  <Tab value="cURL">
+
+```bash
+curl -X POST https://api.blueticks.co/v1/messages \
+  -H "Authorization: Bearer bt_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{"to":"+972501234567","text":"Your order is on the way 🎉"}'
+```
+
+  </Tab>
+</Tabs>
+
+## Schedule for later
+
+Pass `send_at` (ISO 8601 UTC, ≥ 10 s in the future, ≤ 365 d out).
+Status comes back as `scheduled` instead of `queued`.
+
+```bash
+curl -X POST https://api.blueticks.co/v1/messages \
+  -H "Authorization: Bearer bt_live_..." \
+  -d '{"to":"+972501234567","text":"Reminder","send_at":"2026-12-01T09:00:00Z"}'
+```
+
+## Send with media
+
+```bash
+-d '{
+  "to":"+972501234567",
+  "text":"Here is your receipt",
+  "media_url":"https://cdn.example.com/receipt.pdf",
+  "media_caption":"Order #A-42"
+}'
+```
+
+`media_url` must be `https://` and resolve to a non-private host. We
+fetch and forward it on your behalf.
+
+## Idempotency
+
+Safe retries via the `Idempotency-Key` header. Same key + same body
+within 24 h returns the original response. Different body with the
+same key returns `409 idempotency_key_conflict`.
+
+```bash
+curl -X POST https://api.blueticks.co/v1/messages \
+  -H "Authorization: Bearer bt_live_..." \
+  -H "Idempotency-Key: order-42-reminder" \
+  -d '{"to":"+972501234567","text":"hi"}'
+```
+
+## Picking the sending number
+
+If your workspace has **exactly one** connected WhatsApp session,
+messages are sent from it automatically. With two or more active
+sessions, include `from`:
+
+```bash
+-d '{"to":"+1...","text":"hi","from":"+15551234567"}'
+```
+
+Return codes: `409 no_active_session`, `409 ambiguous_session`,
+`422 from_not_linked`.
+
+## Status lifecycle
+
+```
+scheduled → queued → sending → delivered
+                             ↘ failed
+```
+
+Poll the current state with `GET /v1/messages/{id}`.
+
+Read receipts (`read_at` populated, `message.read` webhook fires) are
+delivered via webhooks — see the [Webhooks guide](/docs/webhooks).

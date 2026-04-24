@@ -1,0 +1,135 @@
+---
+title: Campaigns & Audiences
+description: Send templated messages to a named contact list with per-contact variables, and track progress end to end.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+A **campaign** sends one message template to every contact in an
+**audience**, with `{{variable}}` placeholders swapped in per contact.
+
+## 1. Create an audience
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+aud = bt.audiences.create(
+    name="Summer 2026 launch",
+    contacts=[
+        {"to": "+972501234567", "variables": {"first_name": "Rachel"}},
+        {"to": "+15551234567",  "variables": {"first_name": "Alex"}},
+    ],
+)
+print(aud.id, aud.contact_count)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+const aud = await bt.audiences.create({
+  name: 'Summer 2026 launch',
+  contacts: [
+    { to: '+972501234567', variables: { first_name: 'Rachel' } },
+    { to: '+15551234567',  variables: { first_name: 'Alex' } },
+  ],
+});
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+$aud = $bt->audiences->create(
+    name: 'Summer 2026 launch',
+    opts: ['contacts' => [
+        ['to' => '+972501234567', 'variables' => ['first_name' => 'Rachel']],
+        ['to' => '+15551234567',  'variables' => ['first_name' => 'Alex']],
+    ]],
+);
+```
+
+  </Tab>
+  <Tab value="cURL">
+
+```bash
+curl -X POST https://api.blueticks.co/v1/audiences \
+  -H "Authorization: Bearer bt_live_..." \
+  -d '{
+    "name": "Summer 2026 launch",
+    "contacts": [
+      {"to":"+972501234567","variables":{"first_name":"Rachel"}},
+      {"to":"+15551234567","variables":{"first_name":"Alex"}}
+    ]
+  }'
+```
+
+  </Tab>
+</Tabs>
+
+Append more contacts to an existing audience later via
+`POST /v1/audiences/{id}/contacts` — up to 1000 per request, duplicates
+silently skipped.
+
+## 2. Launch a campaign
+
+Use `{{var_name}}` in `text`; each contact's `variables` fill in. If
+any contact is missing a referenced variable, `on_missing_variable`
+decides: `"fail"` (default — 400 before the campaign starts) or
+`"skip"` (those contacts are counted as failed).
+
+```bash
+curl -X POST https://api.blueticks.co/v1/campaigns \
+  -H "Authorization: Bearer bt_live_..." \
+  -d '{
+    "name": "Launch blast",
+    "audience_id": "aud_01h7...",
+    "text": "Hey {{first_name}}! Your order ships today.",
+    "on_missing_variable": "fail"
+  }'
+```
+
+Response includes live counters (`sent_count`, `delivered_count`,
+`read_count`, `failed_count`) plus `status: "running"`.
+
+## 3. Track progress
+
+```bash
+curl https://api.blueticks.co/v1/campaigns/cmp_01h7... \
+  -H "Authorization: Bearer bt_live_..."
+```
+
+Status lifecycle: `pending → running → complete_sent →
+complete_delivered`, with `paused` and `aborted` as side states.
+
+For push updates, register a [webhook](/docs/webhooks) subscribed to
+`campaign.started`, `campaign.paused`, `campaign.resumed`,
+`campaign.completed`, `campaign.aborted`.
+
+## 4. Pause, resume, or cancel
+
+```bash
+# Pause a running campaign
+curl -X POST https://api.blueticks.co/v1/campaigns/cmp_01h7.../pause \
+  -H "Authorization: Bearer bt_live_..."
+
+# Resume a paused campaign
+curl -X POST https://api.blueticks.co/v1/campaigns/cmp_01h7.../resume \
+  -H "Authorization: Bearer bt_live_..."
+
+# Cancel permanently — no un-do
+curl -X POST https://api.blueticks.co/v1/campaigns/cmp_01h7.../cancel \
+  -H "Authorization: Bearer bt_live_..."
+```
+
+All three return `409` when the campaign isn't in a compatible state.
+
+## Limits to know
+
+- Audience: max 1000 contacts per `create` or `append` request. Split
+  larger lists client-side.
+- Variables: max 32 per contact, each ≤ 1024 chars, keys match
+  `^[a-z][a-z0-9_]{0,31}$`.
+- Pacing is server-controlled — the internal send engine rate-limits
+  per linked WhatsApp number. No customer-facing throttle knob.
