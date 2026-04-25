@@ -17,7 +17,182 @@
         "bearerFormat": "bt_<env>_..."
       }
     },
-    "schemas": {}
+    "schemas": {
+      "account": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "messagesList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/messages"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "has_more",
+          "next_cursor"
+        ]
+      },
+      "webhooks": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "audiences": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "audiencesList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/audiences"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "has_more",
+          "next_cursor"
+        ]
+      },
+      "campaigns": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "campaignsList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/campaigns"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "has_more",
+          "next_cursor"
+        ]
+      },
+      "chats": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "chatsList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/chats"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "has_more",
+          "next_cursor"
+        ]
+      },
+      "groups": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "contacts": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "contactsList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/contacts"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "has_more",
+          "next_cursor"
+        ]
+      },
+      "engines": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "enginesList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/engines"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "has_more",
+          "next_cursor"
+        ]
+      },
+      "messages": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
   },
   "paths": {
     "/v1/account": {
@@ -373,8 +548,7 @@
                 "type": "object",
                 "properties": {
                   "to": {
-                    "type": "string",
-                    "pattern": "^\\+[1-9]\\d{6,14}$"
+                    "type": "string"
                   },
                   "text": {
                     "type": "string",
@@ -1562,6 +1736,56 @@
             }
           }
         }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "ID of groups to update",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/groups"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "404": {
+            "description": "not found"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "Updates the resource identified by id using data.",
+        "summary": "",
+        "tags": [
+          "Groups"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/groups"
+              }
+            }
+          }
+        }
       }
     },
     "/v1/groups": {
@@ -1859,14 +2083,15 @@
                       "properties": {
                         "to": {
                           "type": "string",
-                          "pattern": "^\\+[1-9]\\d{6,14}$"
+                          "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
                         },
                         "variables": {
                           "type": "object",
                           "additionalProperties": {
                             "type": "string",
                             "maxLength": 1024
-                          }
+                          },
+                          "description": "Per-contact substitution values used by campaign templates.\nEach key becomes a token usable as `{key}` in a campaign `text`. Lookup is case-insensitive (e.g. `{firstName}` resolves `firstname`).\nBuilt-in tokens always available regardless of variables: `{whatsappname}`, `{displayname}`, `{phone}`, `{mobile}`. Setting a variable with the same name overrides the built-in.\nStorage: keys are persisted as text-cell column titles on the audience board, so values flow back via audiences.get under the same names.\nLimits: at most 32 keys per contact; values up to 1024 chars; keys must match /^[A-Za-z_][A-Za-z0-9_]{0,31}$/."
                         }
                       },
                       "required": [
@@ -1953,15 +2178,15 @@
                 "type": "object",
                 "properties": {
                   "to": {
-                    "type": "string",
-                    "pattern": "^\\+[1-9]\\d{6,14}$"
+                    "type": "string"
                   },
                   "variables": {
                     "type": "object",
                     "additionalProperties": {
                       "type": "string",
                       "maxLength": 1024
-                    }
+                    },
+                    "description": "Per-contact substitution values used by campaign templates.\nEach key becomes a token usable as `{key}` in a campaign `text`. Lookup is case-insensitive (e.g. `{firstName}` resolves `firstname`).\nBuilt-in tokens always available regardless of variables: `{whatsappname}`, `{displayname}`, `{phone}`, `{mobile}`. Setting a variable with the same name overrides the built-in.\nStorage: keys are persisted as text-cell column titles on the audience board, so values flow back via audiences.get under the same names.\nLimits: at most 32 keys per contact; values up to 1024 chars; keys must match /^[A-Za-z_][A-Za-z0-9_]{0,31}$/."
                   }
                 },
                 "additionalProperties": false
