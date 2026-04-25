@@ -1,0 +1,8 @@
+{
+  "title": "Chats",
+  "description": "Read WhatsApp chats and their messages on the connected engine.",
+  "pages": [
+    "list-chats",
+    "get-chat"
+  ]
+}

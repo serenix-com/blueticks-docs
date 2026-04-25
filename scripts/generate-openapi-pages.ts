@@ -24,12 +24,36 @@ async function main(): Promise<void> {
     input: [SPEC_PATH],
   });
 
+  // Flatten file paths under each tag folder.
+  // Default v2 algorithm produces e.g. `audiences/v1/audiences/id/contacts/post.mdx`
+  // — verbose URL-segment nesting that bloats the sidebar. We replace it with
+  // a slug derived from the operation summary ("Append contacts to audience" ->
+  // "append-contacts-to-audience"), falling back to method+path when summary
+  // is absent. One file per operation, all siblings under the tag folder.
+  const slugify = (s: string): string =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+  const usedNames = new Map<string, number>();
+
   await generateFiles({
     input: server,
     output: OUTPUT_DIR,
     per: 'operation',
     groupBy: 'tag',
     meta: true,
+    name: (output) => {
+      const summary = output.info.title;
+      const item = (output as { item?: { method?: string; path?: string } }).item;
+      const fallback = `${item?.method ?? 'op'}-${(item?.path ?? '').replace(/^\/+|\/+$/g, '').replace(/[/{}]+/g, '-')}`;
+      const base = summary ? slugify(summary) : slugify(fallback);
+      // De-dupe within a tag — append -2, -3 if multiple ops share a summary
+      const count = (usedNames.get(base) ?? 0) + 1;
+      usedNames.set(base, count);
+      return count === 1 ? base : `${base}-${count}`;
+    },
     frontmatter: (title, description) => ({
       title,
       description,

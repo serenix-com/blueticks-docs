@@ -1,0 +1,9 @@
+{
+  "title": "Messages",
+  "description": "Send or retrieve WhatsApp messages.",
+  "pages": [
+    "list-messages",
+    "send-message",
+    "get-message"
+  ]
+}

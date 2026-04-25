@@ -1,0 +1,14 @@
+{
+  "title": "Audiences",
+  "description": "Reusable contact lists used as targets for messages and campaigns.",
+  "pages": [
+    "list-audiences",
+    "create-audience",
+    "get-audience",
+    "update-audience",
+    "delete-audience",
+    "append-contacts-to-audience",
+    "update-audience-contact",
+    "remove-audience-contact"
+  ]
+}
