@@ -15,10 +15,50 @@ The API and each official SDK track versions independently.
 
 ## SDKs
 
-Each SDK maintains its own changelog on GitHub:
+Latest published versions:
 
-- [Python — `blueticks`](https://github.com/serenix-com/blueticks-python/blob/main/CHANGELOG.md)
-- [Node.js — `blueticks`](https://github.com/serenix-com/blueticks-node/blob/main/CHANGELOG.md)
-- [PHP — `blueticks/blueticks`](https://github.com/serenix-com/blueticks-php/blob/main/CHANGELOG.md)
+| SDK | Latest | Registry |
+|---|---|---|
+| Python — `blueticks` | **v3.0.0** | [PyPI](https://pypi.org/project/blueticks) |
+| Node.js — `blueticks` | **v3.1.0** | [npm](https://www.npmjs.com/package/blueticks) |
+| PHP — `blueticks/blueticks` | **v3.0.0** | [Packagist](https://packagist.org/packages/blueticks/blueticks) |
+| MCP server — `@blueticks/mcp` | **v0.1.0** | [npm](https://www.npmjs.com/package/@blueticks/mcp) |
 
-All three SDKs shipped v1.0.0 alongside the v1 API spec.
+### v3.0.0 — 2026-04-25 (Python · Node · PHP)
+
+- WhatsApp tools: `chats`, `groups`, `contacts`, `engines`, `utils`
+  resources land alongside the existing `messages` / `audiences` /
+  `campaigns` / `webhooks` set.
+
+### v3.1.0 — 2026-04-25 (Node.js only)
+
+- `BluetickError.details` field surfaces backend Zod validation issues
+  with per-issue `{path, code, message}`. Existing `try/catch` code
+  keeps working; the new field is additive.
+
+### v2.0.0 — 2026-04-24 (Python · Node · PHP)
+
+- Cursor pagination across all list endpoints. Replaces page-number
+  pagination. Calls return `{data[], has_more, next_cursor}`; pass
+  `cursor` back to fetch the next page.
+
+### v1.0.0 — 2026-04-23
+
+- Initial public release of all three SDKs alongside the v1 API spec.
+
+## MCP server
+
+### v0.1.0 — 2026-04-25
+
+- Initial release of `@blueticks/mcp` — local stdio MCP server wrapping
+  the Node SDK. Exposes 9 tools (`whatsapp_messages`, `whatsapp_chats`,
+  `whatsapp_groups`, `whatsapp_audiences`, `whatsapp_campaigns`,
+  `whatsapp_contacts`, `whatsapp_engine`, `whatsapp_webhooks`,
+  `whatsapp_utils`). See [MCP server](/docs/mcp) for setup.
+
+Source on GitHub:
+
+- [`serenix-com/blueticks-python`](https://github.com/serenix-com/blueticks-python)
+- [`serenix-com/blueticks-node`](https://github.com/serenix-com/blueticks-node)
+- [`serenix-com/blueticks-php`](https://github.com/serenix-com/blueticks-php)
+- [`serenix-com/blueticks-mcp`](https://github.com/serenix-com/blueticks-mcp)

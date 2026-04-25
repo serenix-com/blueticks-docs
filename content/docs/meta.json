@@ -9,6 +9,7 @@
     "messages",
     "webhooks",
     "campaigns",
+    "mcp",
     "api",
     "---",
     "changelog"

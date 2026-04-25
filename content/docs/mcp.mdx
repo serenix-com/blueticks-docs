@@ -1,0 +1,116 @@
+---
+title: MCP server
+description: Drop Blueticks into Claude Code, Claude Desktop, Cursor, or any other MCP-compatible host with a single npm install.
+---
+
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+`@blueticks/mcp` is a local stdio Model Context Protocol server that
+wraps the Blueticks Node SDK and exposes every Blueticks resource as
+an MCP tool: `whatsapp_messages`, `whatsapp_chats`, `whatsapp_groups`,
+`whatsapp_audiences`, `whatsapp_campaigns`, `whatsapp_contacts`,
+`whatsapp_engine`, `whatsapp_webhooks`, `whatsapp_utils`.
+
+LLM hosts that speak MCP can call those tools directly — your agent
+sends WhatsApp messages, manages campaigns, or queries chat history
+without you writing any glue code.
+
+## Install
+
+You don't need to install it as a project dependency — MCP hosts
+launch the server via `npx` on demand.
+
+```bash
+# Optional: pre-install for offline use
+npm install -g @blueticks/mcp
+```
+
+## Configure your MCP host
+
+The server reads `BLUETICKS_API_KEY` from its environment. Set it in
+your host's MCP config:
+
+<Tabs groupId="mcp-host" persist items={['Claude Code', 'Claude Desktop', 'Cursor']}>
+  <Tab value="Claude Code">
+
+Add to `~/.claude.json` (or your project's `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "blueticks": {
+      "command": "npx",
+      "args": ["-y", "@blueticks/mcp"],
+      "env": {
+        "BLUETICKS_API_KEY": "bt_live_..."
+      }
+    }
+  }
+}
+```
+
+Restart Claude Code. The 9 `whatsapp_*` tools become available
+automatically.
+
+  </Tab>
+  <Tab value="Claude Desktop">
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
+(macOS) or the equivalent on your platform:
+
+```json
+{
+  "mcpServers": {
+    "blueticks": {
+      "command": "npx",
+      "args": ["-y", "@blueticks/mcp"],
+      "env": {
+        "BLUETICKS_API_KEY": "bt_live_..."
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop.
+
+  </Tab>
+  <Tab value="Cursor">
+
+In Cursor's settings, add an MCP server with command
+`npx -y @blueticks/mcp` and env var `BLUETICKS_API_KEY=bt_live_...`.
+
+  </Tab>
+</Tabs>
+
+See [Authentication](/docs/authentication) for how to get an API key.
+
+## What the agent can do
+
+Once wired, the LLM can act on your WhatsApp account:
+
+- **Send messages**: `whatsapp_messages` action `send` (text or media,
+  schedule for later via `send_at`).
+- **Read chats**: `whatsapp_chats` action `list` / `search` /
+  `list_messages` (with `mode=history` to paginate older messages).
+- **Manage groups**: `whatsapp_groups` action `create` / `update` /
+  `get`.
+- **Run campaigns**: `whatsapp_campaigns` action `create` / `pause` /
+  `resume` / `cancel`. Campaign templates support `{firstName}` /
+  `{displayName}` / `{phone}` substitution plus any custom variables
+  attached to audience contacts.
+- **Maintain audiences**: `whatsapp_audiences` action `append_contacts`
+  with `variables` for per-contact substitution values.
+- **Subscribe to events**: `whatsapp_webhooks` action `create` to
+  register signed HTTPS callbacks for `message.queued` / `delivered` /
+  `read` / `failed`, `session.connected` / `disconnected`,
+  `campaign.started` / `paused` / `resumed` / `completed` / `aborted`.
+
+Every tool returns a structured `content[]` block with JSON the agent
+can reason over — including field-level `details` on validation errors
+so the LLM can self-correct.
+
+## Source
+
+- npm: [`@blueticks/mcp`](https://www.npmjs.com/package/@blueticks/mcp)
+- GitHub: [`serenix-com/blueticks-mcp`](https://github.com/serenix-com/blueticks-mcp)
