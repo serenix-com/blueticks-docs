@@ -1,0 +1,9 @@
+{
+  "title": "Groups",
+  "description": "Create and manage WhatsApp groups via the connected engine.",
+  "pages": [
+    "get-group",
+    "update-group",
+    "create-group"
+  ]
+}

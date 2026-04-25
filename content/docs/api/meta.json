@@ -1,5 +1,13 @@
 {
   "pages": [
-    "v1"
+    "account",
+    "messages",
+    "webhooks",
+    "audiences",
+    "campaigns",
+    "chats",
+    "groups",
+    "contacts",
+    "engines"
   ]
 }

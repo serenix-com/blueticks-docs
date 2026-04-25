@@ -99,125 +99,9 @@
           }
         },
         "description": "Retrieve the account the API key belongs to.",
-        "summary": "",
+        "summary": "Get account",
         "tags": [
-          "v1"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/v1/messages/{id}": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of messages to return",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "to": {
-                      "type": "string"
-                    },
-                    "from": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "text": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "media_url": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "scheduled",
-                        "queued",
-                        "sending",
-                        "delivered",
-                        "failed"
-                      ]
-                    },
-                    "send_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "sent_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "delivered_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "read_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "failed_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "failure_reason": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "to",
-                    "from",
-                    "text",
-                    "media_url",
-                    "status",
-                    "send_at",
-                    "created_at",
-                    "sent_at",
-                    "delivered_at",
-                    "read_at",
-                    "failed_at",
-                    "failure_reason"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        },
-        "description": "Get the current status of a message by ID.",
-        "summary": "",
-        "tags": [
-          "v1"
+          "Account"
         ],
         "security": [
           {
@@ -227,6 +111,56 @@
       }
     },
     "/v1/messages": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/messagesList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "List messages sent through the API, newest first (cursor-paginated).",
+        "summary": "List messages",
+        "tags": [
+          "Messages"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
       "post": {
         "parameters": [
           {
@@ -273,6 +207,7 @@
                         "queued",
                         "sending",
                         "delivered",
+                        "read",
                         "failed"
                       ]
                     },
@@ -362,6 +297,7 @@
                         "queued",
                         "sending",
                         "delivered",
+                        "read",
                         "failed"
                       ]
                     },
@@ -421,9 +357,9 @@
           }
         },
         "description": "Send a message now, or schedule one for later.",
-        "summary": "",
+        "summary": "Send message",
         "tags": [
-          "v1"
+          "Messages"
         ],
         "security": [
           {
@@ -472,6 +408,123 @@
             }
           }
         }
+      }
+    },
+    "/v1/messages/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "ID of messages to return",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string"
+                    },
+                    "from": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "text": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "scheduled",
+                        "queued",
+                        "sending",
+                        "delivered",
+                        "read",
+                        "failed"
+                      ]
+                    },
+                    "send_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "sent_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "read_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "failed_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "failure_reason": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "to",
+                    "from",
+                    "text",
+                    "media_url",
+                    "status",
+                    "send_at",
+                    "created_at",
+                    "sent_at",
+                    "delivered_at",
+                    "read_at",
+                    "failed_at",
+                    "failure_reason"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "description": "Get the current status of a message by ID.",
+        "summary": "Get message",
+        "tags": [
+          "Messages"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/v1/webhooks": {
@@ -564,9 +617,9 @@
           }
         },
         "description": "List webhooks in the workspace.",
-        "summary": "",
+        "summary": "List webhooks",
         "tags": [
-          "v1"
+          "Webhooks"
         ],
         "security": [
           {
@@ -631,9 +684,9 @@
           }
         },
         "description": "Register a new webhook. Returns the signing secret exactly once.",
-        "summary": "",
+        "summary": "Create webhook",
         "tags": [
-          "v1"
+          "Webhooks"
         ],
         "security": [
           {
@@ -723,9 +776,9 @@
           }
         },
         "description": "Get a webhook by id.",
-        "summary": "",
+        "summary": "Get webhook",
         "tags": [
-          "v1"
+          "Webhooks"
         ],
         "security": [
           {
@@ -766,12 +819,16 @@
             "description": "general error"
           }
         },
-        "description": "Updates the resource identified by id using data.",
-        "summary": "",
+        "description": "Replace a webhook (full update).",
+        "summary": "Replace webhook",
         "tags": [
-          "v1"
+          "Webhooks"
         ],
-        "security": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -817,9 +874,9 @@
           }
         },
         "description": "Update a webhook.",
-        "summary": "",
+        "summary": "Update webhook",
         "tags": [
-          "v1"
+          "Webhooks"
         ],
         "security": [
           {
@@ -871,9 +928,9 @@
           }
         },
         "description": "Delete a webhook.",
-        "summary": "",
+        "summary": "Delete webhook",
         "tags": [
-          "v1"
+          "Webhooks"
         ],
         "security": [
           {
@@ -940,11 +997,15 @@
           }
         },
         "description": "Retrieves a list of all resources from the service.",
-        "summary": "",
+        "summary": "List audiences",
         "tags": [
-          "v1"
+          "Audiences"
         ],
-        "security": []
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "post": {
         "parameters": [],
@@ -967,11 +1028,15 @@
           }
         },
         "description": "Creates a new resource with data.",
-        "summary": "",
+        "summary": "Create audience",
         "tags": [
-          "v1"
+          "Audiences"
         ],
-        "security": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1019,11 +1084,15 @@
           }
         },
         "description": "Retrieves a single resource with the given id from the service.",
-        "summary": "",
+        "summary": "Get audience",
         "tags": [
-          "v1"
+          "Audiences"
         ],
-        "security": []
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "patch": {
         "parameters": [
@@ -1059,11 +1128,15 @@
           }
         },
         "description": "Updates the resource identified by id using data.",
-        "summary": "",
+        "summary": "Update audience",
         "tags": [
-          "v1"
+          "Audiences"
         ],
-        "security": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1109,11 +1182,15 @@
           }
         },
         "description": "Removes the resource with id.",
-        "summary": "",
+        "summary": "Delete audience",
         "tags": [
-          "v1"
+          "Audiences"
         ],
-        "security": []
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/v1/campaigns": {
@@ -1174,11 +1251,15 @@
           }
         },
         "description": "Retrieves a list of all resources from the service.",
-        "summary": "",
+        "summary": "List campaigns",
         "tags": [
-          "v1"
+          "Campaigns"
         ],
-        "security": []
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "post": {
         "parameters": [],
@@ -1201,11 +1282,15 @@
           }
         },
         "description": "Creates a new resource with data.",
-        "summary": "",
+        "summary": "Create campaign",
         "tags": [
-          "v1"
+          "Campaigns"
         ],
-        "security": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1253,15 +1338,419 @@
           }
         },
         "description": "Retrieves a single resource with the given id from the service.",
-        "summary": "",
+        "summary": "Get campaign",
         "tags": [
-          "v1"
+          "Campaigns"
         ],
-        "security": []
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/chats": {
+      "get": {
+        "parameters": [
+          {
+            "description": "Number of results to return",
+            "in": "query",
+            "name": "$limit",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of results to skip",
+            "in": "query",
+            "name": "$skip",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Property to sort results",
+            "in": "query",
+            "name": "$sort",
+            "style": "deepObject",
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "description": "Query parameters to filter",
+            "in": "query",
+            "name": "filter",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/chats"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/chatsList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "Retrieves a list of all resources from the service.",
+        "summary": "List chats",
+        "tags": [
+          "Chats"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/chats/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "ID of chats to return",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/chats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "404": {
+            "description": "not found"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "Retrieves a single resource with the given id from the service.",
+        "summary": "Get chat",
+        "tags": [
+          "Chats"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/groups/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "ID of groups to return",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/groups"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "404": {
+            "description": "not found"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "Retrieves a single resource with the given id from the service.",
+        "summary": "Get group",
+        "tags": [
+          "Groups"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "ID of groups to update",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/groups"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "404": {
+            "description": "not found"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "Updates the resource identified by id using data.",
+        "summary": "Update group",
+        "tags": [
+          "Groups"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/groups"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/groups": {
+      "post": {
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/groups"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "Creates a new resource with data.",
+        "summary": "Create group",
+        "tags": [
+          "Groups"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/groups"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/contacts": {
+      "get": {
+        "parameters": [
+          {
+            "description": "Number of results to return",
+            "in": "query",
+            "name": "$limit",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of results to skip",
+            "in": "query",
+            "name": "$skip",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Property to sort results",
+            "in": "query",
+            "name": "$sort",
+            "style": "deepObject",
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "description": "Query parameters to filter",
+            "in": "query",
+            "name": "filter",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/contacts"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/contactsList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "Retrieves a list of all resources from the service.",
+        "summary": "List contacts",
+        "tags": [
+          "Contacts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/engines": {
+      "get": {
+        "parameters": [
+          {
+            "description": "Number of results to return",
+            "in": "query",
+            "name": "$limit",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of results to skip",
+            "in": "query",
+            "name": "$skip",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Property to sort results",
+            "in": "query",
+            "name": "$sort",
+            "style": "deepObject",
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "description": "Query parameters to filter",
+            "in": "query",
+            "name": "filter",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/engines"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/enginesList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated"
+          },
+          "500": {
+            "description": "general error"
+          }
+        },
+        "description": "Retrieves a list of all resources from the service.",
+        "summary": "Get engine status",
+        "tags": [
+          "Engines"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/v1/webhooks/{id}/rotate-secret": {
       "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Rotate webhook secret",
         "description": "Rotate the signing secret. Returns the new secret exactly once. Requires `webhooks:write` scope.",
         "security": [
           {
@@ -1336,6 +1825,10 @@
     },
     "/v1/audiences/{id}/contacts": {
       "post": {
+        "tags": [
+          "Audiences"
+        ],
+        "summary": "Append contacts to audience",
         "description": "Append contacts to an audience. Duplicates (by `to`) are skipped. Requires `audiences:write`.",
         "security": [
           {
@@ -1424,6 +1917,10 @@
     },
     "/v1/audiences/{id}/contacts/{contactId}": {
       "patch": {
+        "tags": [
+          "Audiences"
+        ],
+        "summary": "Update audience contact",
         "description": "Edit a contact`s phone or variables. Requires `audiences:write`.",
         "security": [
           {
@@ -1511,6 +2008,10 @@
         }
       },
       "delete": {
+        "tags": [
+          "Audiences"
+        ],
+        "summary": "Remove audience contact",
         "description": "Remove a contact from an audience. Requires `audiences:write`.",
         "security": [
           {
@@ -1560,6 +2061,10 @@
     },
     "/v1/campaigns/{id}/pause": {
       "post": {
+        "tags": [
+          "Campaigns"
+        ],
+        "summary": "Pause campaign",
         "description": "Pause a running campaign. 409 if not `running`. Requires `campaigns:write`.",
         "security": [
           {
@@ -1674,6 +2179,10 @@
     },
     "/v1/campaigns/{id}/resume": {
       "post": {
+        "tags": [
+          "Campaigns"
+        ],
+        "summary": "Resume campaign",
         "description": "Resume a paused campaign. 409 if not `paused`. Requires `campaigns:write`.",
         "security": [
           {
@@ -1788,6 +2297,10 @@
     },
     "/v1/campaigns/{id}/cancel": {
       "post": {
+        "tags": [
+          "Campaigns"
+        ],
+        "summary": "Cancel campaign",
         "description": "Cancel a campaign. 409 if already terminal. Requires `campaigns:write`.",
         "security": [
           {
@@ -1904,8 +2417,40 @@
   "openapi": "3.0.3",
   "tags": [
     {
-      "name": "v1",
+      "name": "Account",
       "description": "Account metadata for the authenticated API key."
+    },
+    {
+      "name": "Messages",
+      "description": "Send or retrieve WhatsApp messages."
+    },
+    {
+      "name": "Webhooks",
+      "description": "Register URLs to receive signed HTTPS POSTs on Blueticks events."
+    },
+    {
+      "name": "Audiences",
+      "description": "Reusable contact lists used as targets for messages and campaigns."
+    },
+    {
+      "name": "Campaigns",
+      "description": "Schedule audiences for paced bulk delivery with pause/resume/cancel controls."
+    },
+    {
+      "name": "Chats",
+      "description": "Read WhatsApp chats and their messages on the connected engine."
+    },
+    {
+      "name": "Groups",
+      "description": "Create and manage WhatsApp groups via the connected engine."
+    },
+    {
+      "name": "Contacts",
+      "description": "Read WhatsApp contacts known to the connected engine."
+    },
+    {
+      "name": "Engines",
+      "description": "Inspect or control the WhatsApp engine connected to the workspace."
     }
   ]
 }

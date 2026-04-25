@@ -1,0 +1,7 @@
+{
+  "title": "Engines",
+  "description": "Inspect or control the WhatsApp engine connected to the workspace.",
+  "pages": [
+    "get-engine-status"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Campaigns",
+  "description": "Schedule audiences for paced bulk delivery with pause/resume/cancel controls.",
+  "pages": [
+    "list-campaigns",
+    "create-campaign",
+    "get-campaign",
+    "pause-campaign",
+    "resume-campaign",
+    "cancel-campaign"
+  ]
+}
