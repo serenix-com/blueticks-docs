@@ -1,8 +1,8 @@
 # `blueticks-docs` conventions
 
 You are editing the public developer documentation site for the Blueticks
-API. Built with Fumadocs on Next.js App Router. Deployed on Vercel at
-https://docs.blueticks.co.
+API. Built with Fumadocs on Next.js App Router. Deployed on Netlify
+(see `netlify.toml`) at https://dev.blueticks.co.
 
 ## Boundaries
 
