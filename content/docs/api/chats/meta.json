@@ -3,6 +3,8 @@
   "description": "Read WhatsApp chats and their messages on the connected engine.",
   "pages": [
     "list-chats",
-    "get-chat"
+    "get-chat",
+    "list-chat-messages",
+    "get-chat-message"
   ]
 }
