@@ -2637,6 +2637,401 @@
           }
         }
       }
+    },
+    "/v1/chats/{chat_id}/messages": {
+      "get": {
+        "tags": [
+          "Chats"
+        ],
+        "summary": "List chat messages",
+        "description": "Cursor-paginated list of messages in a chat. Supports free-text search (`query`), date range (`since`/`until`), and message-kind filtering (`message_types`). Requires `chats:read`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "history",
+                "latest"
+              ],
+              "default": "latest"
+            },
+            "description": "Result ordering hint. Default `latest` (newest-first)."
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Free-text search across message bodies and captions."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Max messages to return."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "Pagination cursor from a previous response."
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
+          },
+          {
+            "name": "message_types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "chat",
+                  "image",
+                  "video",
+                  "document",
+                  "audio",
+                  "ptt",
+                  "sticker",
+                  "gif",
+                  "ptv",
+                  "poll_creation",
+                  "location",
+                  "vcard",
+                  "revoked"
+                ]
+              }
+            },
+            "style": "form",
+            "explode": false,
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "from": {
+                            "type": "string"
+                          },
+                          "timestamp": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "text": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "from_me": {
+                            "type": "boolean"
+                          },
+                          "ack": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "media_url": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "caption": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "filename": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "chat_id",
+                          "from",
+                          "timestamp",
+                          "text",
+                          "type",
+                          "from_me",
+                          "ack",
+                          "media_url",
+                          "caption",
+                          "filename"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "has_more",
+                    "next_cursor"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/chats/{chat_id}/messages/{key}": {
+      "get": {
+        "tags": [
+          "Chats"
+        ],
+        "summary": "Get chat message",
+        "description": "Fetch a single message by its WhatsApp message key. Requires `chats:read`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "chat_id": {
+                      "type": "string"
+                    },
+                    "from": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "text": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "from_me": {
+                      "type": "boolean"
+                    },
+                    "ack": {
+                      "type": "integer",
+                      "nullable": true
+                    },
+                    "media_url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "caption": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "filename": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "chat_id",
+                    "from",
+                    "timestamp",
+                    "text",
+                    "type",
+                    "from_me",
+                    "ack",
+                    "media_url",
+                    "caption",
+                    "filename"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/chats/{chat_id}/messages/{key}/media": {
+      "get": {
+        "tags": [
+          "Chats"
+        ],
+        "summary": "Get chat-message media",
+        "description": "Download the media attached to a WhatsApp message (image, video, document, audio).\nReturns either a hosted URL (`url`) or inline `data_base64`, plus mimetype + filename.\n\nCAVEAT: for own-sent newsletter media (messages you sent to a `@newsletter` chat), the bytes returned are a WA-generated preview JPEG (~7KB) rather than the original you uploaded — WA releases the original blob from memory immediately after the unencrypted upload. The response will include `original_quality:false` when this fallback is in effect; the caller can warn the user or decide to retry from a different source.\n\nRequires `chats:read`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "mimetype": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "filename": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "data_base64": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "original_quality": {
+                      "type": "boolean",
+                      "nullable": true,
+                      "description": "Set to false when the bytes returned are NOT the original sender uploaded — i.e. WA released the original from memory and we synthesized from a smaller WA-generated preview (#113). Currently only happens for own-sent newsletter media (messages you sent to a @newsletter chat). When absent or true, the bytes are the genuine original. Consumers can use this to warn users / decide whether to retry from a different source."
+                    },
+                    "media_unavailable": {
+                      "type": "string",
+                      "enum": [
+                        "expired",
+                        "fetching",
+                        "error",
+                        "no_media"
+                      ],
+                      "nullable": true,
+                      "description": "Set when the bytes could not be downloaded or never existed. \"expired\" = WA aged the file out of CDN retention (typically older than ~30 days for documents) and there is nothing to retry; \"fetching\" = WA is asking the original sender to reupload, retry later if the sender comes online; \"error\" = unexpected failure; \"no_media\" = the message is text-only / revoked / location / vcard, i.e. it never carried media — caller should not have invoked this tool on this messageKey. Absent when bytes were not needed or when the fetch succeeded."
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "mimetype",
+                    "filename",
+                    "data_base64",
+                    "original_quality",
+                    "media_unavailable"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "openapi": "3.0.3",
