@@ -5,6 +5,7 @@
     "list-chats",
     "get-chat",
     "list-chat-messages",
-    "get-chat-message"
+    "get-chat-message",
+    "get-chat-message-media"
   ]
 }
