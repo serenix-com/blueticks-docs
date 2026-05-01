@@ -1885,7 +1885,7 @@
             "name": "id",
             "description": "ID of messages to return",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true
           }
@@ -2095,9 +2095,65 @@
         ]
       },
       "post": {
-        "parameters": [],
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Create webhook",
+        "description": "Subscribe to one or more event types at the given URL. The signing secret is returned ONCE in the response and never again — store it. Requires `webhooks:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "message.queued",
+                        "message.sending",
+                        "message.delivered",
+                        "message.failed",
+                        "message.read",
+                        "session.connected",
+                        "session.disconnected",
+                        "campaign.started",
+                        "campaign.paused",
+                        "campaign.resumed",
+                        "campaign.completed",
+                        "campaign.aborted"
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "url",
+                  "events"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
         "responses": {
-          "201": {
+          "200": {
             "description": "created",
             "content": {
               "application/json": {
@@ -2149,261 +2205,7 @@
               }
             }
           }
-        },
-        "description": "Register a new webhook. Returns the signing secret exactly once.",
-        "summary": "Create webhook",
-        "tags": [
-          "Webhooks"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "url": {
-                    "type": "string",
-                    "format": "uri",
-                    "maxLength": 2048
-                  },
-                  "events": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": [
-                        "message.queued",
-                        "message.sending",
-                        "message.delivered",
-                        "message.failed",
-                        "message.read",
-                        "session.connected",
-                        "session.disconnected",
-                        "campaign.started",
-                        "campaign.paused",
-                        "campaign.resumed",
-                        "campaign.completed",
-                        "campaign.aborted"
-                      ]
-                    },
-                    "minItems": 1
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 120
-                  }
-                },
-                "required": [
-                  "url",
-                  "events"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
         }
-      }
-    },
-    "/v1/webhooks/{_id}": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "_id",
-            "description": "ID of webhooks to return",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/webhooks"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Get a webhook by id.",
-        "summary": "Get webhook",
-        "tags": [
-          "Webhooks"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      },
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "_id",
-            "description": "ID of webhooks to update",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/webhooks"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Replace a webhook (full update).",
-        "summary": "Replace webhook",
-        "tags": [
-          "Webhooks"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/webhooks"
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "_id",
-            "description": "ID of webhooks to update",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/webhooks"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Update a webhook.",
-        "summary": "Update webhook",
-        "tags": [
-          "Webhooks"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/webhooks"
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "_id",
-            "description": "ID of webhooks to remove",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/webhooks"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Delete a webhook.",
-        "summary": "Delete webhook",
-        "tags": [
-          "Webhooks"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
       }
     },
     "/v1/audiences": {
@@ -2475,30 +2277,11 @@
         ]
       },
       "post": {
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/audiences"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Creates a new resource with data.",
-        "summary": "Create audience",
         "tags": [
           "Audiences"
         ],
+        "summary": "Create audience",
+        "description": "Create a new audience. Returns the audience with `contact_count: 0`. Requires `audiences:write`.",
         "security": [
           {
             "BearerAuth": []
@@ -2509,7 +2292,78 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/audiences"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "contacts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "type": "string",
+                          "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
+                        },
+                        "variables": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string",
+                            "maxLength": 1024
+                          },
+                          "description": "Per-contact substitution values used by campaign templates.\nEach key becomes a token usable as `{key}` in a campaign `text`. Lookup is case-insensitive (e.g. `{firstName}` resolves `firstname`).\nBuilt-in tokens always available regardless of variables: `{whatsappname}`, `{displayname}`, `{phone}`, `{mobile}`. Setting a variable with the same name overrides the built-in.\nStorage: keys are persisted as text-cell column titles on the audience board, so values flow back via audiences.get under the same names.\nLimits: at most 32 keys per contact; values up to 1024 chars; keys must match /^[A-Za-z_][A-Za-z0-9_]{0,31}$/."
+                        }
+                      },
+                      "required": [
+                        "to"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 1000
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "contact_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "contact_count",
+                    "created_at"
+                  ],
+                  "additionalProperties": false
+                }
               }
             }
           }
@@ -2524,7 +2378,7 @@
             "name": "id",
             "description": "ID of audiences to return",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true
           }
@@ -2562,46 +2416,24 @@
         ]
       },
       "patch": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of audiences to update",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/audiences"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Updates the resource identified by id using data.",
-        "summary": "Update audience",
         "tags": [
           "Audiences"
         ],
+        "summary": "Update audience",
+        "description": "Rename an audience or update its variable schema. Requires `audiences:write`.",
         "security": [
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -2609,7 +2441,53 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/audiences"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "contact_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "contact_count",
+                    "created_at"
+                  ],
+                  "additionalProperties": false
+                }
               }
             }
           }
@@ -2622,7 +2500,7 @@
             "name": "id",
             "description": "ID of audiences to remove",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true
           }
@@ -2729,30 +2607,11 @@
         ]
       },
       "post": {
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/campaigns"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Creates a new resource with data.",
-        "summary": "Create campaign",
         "tags": [
           "Campaigns"
         ],
+        "summary": "Create campaign",
+        "description": "Schedule a new bulk-message campaign. Returns the campaign in `pending` state. Requires `campaigns:write`.",
         "security": [
           {
             "BearerAuth": []
@@ -2763,7 +2622,150 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/campaigns"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "Display name for the campaign."
+                  },
+                  "audience_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "ID of the audience to target. Each audience contact contributes one outgoing message."
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096,
+                    "description": "Message body. Supports per-contact substitution using single-brace tokens like `{firstName}` or `{product}`.\nResolution rules (case-insensitive, whitespace stripped):\n  - Built-ins always available: `{whatsappname}` (WA profile name), `{displayname}` (firstname+lastname fallback), `{phone}` / `{mobile}`.\n  - Custom variables: any property attached to a contact via audiences.append_contacts becomes a token of the same name.\n  - Unresolved tokens are left as literal `{token}` in the sent message.\nTemplates use SINGLE braces `{var}` — `{{var}}` is treated as literal text."
+                  },
+                  "media_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "description": "Public https URL of an image/video/document to attach."
+                  },
+                  "media_caption": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1024,
+                    "description": "Caption for the media attachment. Requires media_url."
+                  },
+                  "from": {
+                    "type": "string",
+                    "pattern": "^\\+[1-9]\\d{6,14}$",
+                    "description": "Sender phone in +E164. When omitted, the workspace default sender is used."
+                  },
+                  "on_missing_variable": {
+                    "type": "string",
+                    "enum": [
+                      "fail",
+                      "skip"
+                    ],
+                    "description": "Behavior when a template references a variable that is not present on a contact:\n  - `fail` (default): reject the request at create time; no messages are sent. Returns 400 with `data.examples` listing offending contacts.\n  - `skip`: accept the campaign; contacts missing variables receive the message with literal `{token}` left in place."
+                  }
+                },
+                "required": [
+                  "name",
+                  "audience_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "audience_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "running",
+                        "paused",
+                        "complete_sent",
+                        "complete_delivered",
+                        "aborted"
+                      ]
+                    },
+                    "total_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "sent_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "delivered_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "read_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "failed_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "from": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "started_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "completed_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "aborted_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "audience_id",
+                    "status",
+                    "total_count",
+                    "sent_count",
+                    "delivered_count",
+                    "read_count",
+                    "failed_count",
+                    "from",
+                    "created_at",
+                    "started_at",
+                    "completed_at",
+                    "aborted_at"
+                  ],
+                  "additionalProperties": false
+                }
               }
             }
           }
@@ -2778,7 +2780,7 @@
             "name": "id",
             "description": "ID of campaigns to return",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true
           }
@@ -2893,7 +2895,7 @@
             "name": "id",
             "description": "ID of chats to return",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true
           }
@@ -2939,7 +2941,7 @@
             "name": "id",
             "description": "ID of groups to return",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true
           }
@@ -2976,105 +2978,147 @@
           }
         ]
       },
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of groups to update",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/groups"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Updates the resource identified by id using data.",
-        "summary": "Update group",
+      "patch": {
         "tags": [
           "Groups"
         ],
+        "summary": "Update group",
+        "description": "Update group metadata. Provide at least one of `name` or `settings`. Requires `groups:write`.",
         "security": [
           {
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/groups"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "settings": {
+                    "type": "object",
+                    "properties": {
+                      "announce": {
+                        "type": "boolean"
+                      },
+                      "restrict": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
               }
             }
           }
-        }
-      },
-      "patch": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of groups to update",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "success",
+            "description": "updated",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/groups"
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "last_message_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "participant_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "announce": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "restrict": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "is_admin": {
+                            "type": "boolean"
+                          },
+                          "is_super_admin": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "chat_id",
+                          "is_admin",
+                          "is_super_admin",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "last_message_at",
+                    "participant_count",
+                    "announce",
+                    "restrict",
+                    "participants"
+                  ],
+                  "additionalProperties": false
                 }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Updates the resource identified by id using data.",
-        "summary": "",
-        "tags": [
-          "Groups"
-        ],
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/groups"
               }
             }
           }
@@ -3083,30 +3127,11 @@
     },
     "/v1/groups": {
       "post": {
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/groups"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Creates a new resource with data.",
-        "summary": "Create group",
         "tags": [
           "Groups"
         ],
+        "summary": "Create group",
+        "description": "Create a WhatsApp group with the given name and initial participants. Requires `groups:write`.",
         "security": [
           {
             "BearerAuth": []
@@ -3117,7 +3142,121 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/groups"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "participants": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 256
+                  }
+                },
+                "required": [
+                  "name",
+                  "participants"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "last_message_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "participant_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "announce": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "restrict": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "is_admin": {
+                            "type": "boolean"
+                          },
+                          "is_super_admin": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "chat_id",
+                          "is_admin",
+                          "is_super_admin",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "last_message_at",
+                    "participant_count",
+                    "announce",
+                    "restrict",
+                    "participants"
+                  ],
+                  "additionalProperties": false
+                }
               }
             }
           }
@@ -3339,7 +3478,7 @@
             "name": "id",
             "description": "ID of scheduled-messages to return",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true
           }
@@ -3376,105 +3515,137 @@
           }
         ]
       },
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of scheduled-messages to update",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/scheduled-messages"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Updates the resource identified by id using data.",
-        "summary": "",
-        "tags": [
-          "ScheduledMessages"
-        ],
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/scheduled-messages"
-              }
-            }
-          }
-        }
-      },
       "patch": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of scheduled-messages to update",
-            "schema": {
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/scheduled-messages"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Updates the resource identified by id using data.",
-        "summary": "Update scheduled message",
         "tags": [
           "ScheduledMessages"
         ],
+        "summary": "Update scheduled message",
+        "description": "Edit a queued scheduled message. Only `text`, `media_url`, `media_caption`, and `send_at` are mutable; firing `status` and timestamps are server-managed. Requires `messages:write`.",
         "security": [
           {
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/scheduled-messages"
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 8192
+                  },
+                  "media_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "media_caption": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "send_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "text": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_caption": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_filename": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_mime_type": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "send_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "is_recurring": {
+                      "type": "boolean"
+                    },
+                    "recurrence_rule": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "to",
+                    "text",
+                    "media_url",
+                    "media_caption",
+                    "media_filename",
+                    "media_mime_type",
+                    "send_at",
+                    "status",
+                    "is_recurring",
+                    "recurrence_rule",
+                    "created_at",
+                    "updated_at"
+                  ],
+                  "additionalProperties": false
+                }
               }
             }
           }
@@ -3487,7 +3658,7 @@
             "name": "id",
             "description": "ID of scheduled-messages to remove",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "required": true
           }
@@ -4493,6 +4664,820 @@
                     "media_url",
                     "caption",
                     "filename"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/groups/{id}/members": {
+      "post": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Add member to group",
+        "description": "Add a participant to the group by chat_id (JID) or +E.164 phone. Requires `groups:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "chat_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "chat_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated group",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "last_message_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "participant_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "announce": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "restrict": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "is_admin": {
+                            "type": "boolean"
+                          },
+                          "is_super_admin": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "chat_id",
+                          "is_admin",
+                          "is_super_admin",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "last_message_at",
+                    "participant_count",
+                    "announce",
+                    "restrict",
+                    "participants"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/groups/{id}/members/me": {
+      "delete": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Leave group",
+        "description": "Leave the group as the authenticated identity. Idempotent — succeeds with 204 even if already not a member. Requires `groups:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "left"
+          }
+        }
+      }
+    },
+    "/v1/groups/{id}/members/{chatId}": {
+      "delete": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Remove member from group",
+        "description": "Remove a participant from the group. Requires `groups:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated group",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "last_message_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "participant_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "announce": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "restrict": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "is_admin": {
+                            "type": "boolean"
+                          },
+                          "is_super_admin": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "chat_id",
+                          "is_admin",
+                          "is_super_admin",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "last_message_at",
+                    "participant_count",
+                    "announce",
+                    "restrict",
+                    "participants"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/groups/{id}/members/{chatId}/admin": {
+      "post": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Promote member to admin",
+        "description": "Grant admin privileges to a group member. Requires `groups:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated group",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "last_message_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "participant_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "announce": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "restrict": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "is_admin": {
+                            "type": "boolean"
+                          },
+                          "is_super_admin": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "chat_id",
+                          "is_admin",
+                          "is_super_admin",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "last_message_at",
+                    "participant_count",
+                    "announce",
+                    "restrict",
+                    "participants"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Demote admin to member",
+        "description": "Revoke admin privileges from a group member. Requires `groups:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated group",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "last_message_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "participant_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "announce": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "restrict": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "is_admin": {
+                            "type": "boolean"
+                          },
+                          "is_super_admin": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "chat_id",
+                          "is_admin",
+                          "is_super_admin",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "last_message_at",
+                    "participant_count",
+                    "announce",
+                    "restrict",
+                    "participants"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/groups/{id}/picture": {
+      "put": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Set group picture",
+        "description": "Replace the group picture. Body is a base64 data URL (PNG/JPEG, ≤20 MiB). Requires `groups:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file_data_url": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20971520
+                  },
+                  "file_name": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "file_mime_type": {
+                    "type": "string",
+                    "maxLength": 127
+                  }
+                },
+                "required": [
+                  "file_data_url"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "picture updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "last_message_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "participant_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "announce": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "restrict": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "participants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "is_admin": {
+                            "type": "boolean"
+                          },
+                          "is_super_admin": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "chat_id",
+                          "is_admin",
+                          "is_super_admin",
+                          "name"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "last_message_at",
+                    "participant_count",
+                    "announce",
+                    "restrict",
+                    "participants"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/{id}": {
+      "patch": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Update webhook",
+        "description": "Update url, events, or active flag. The secret is not returned by this endpoint — use rotate-secret. Requires `webhooks:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "message.queued",
+                        "message.sending",
+                        "message.delivered",
+                        "message.failed",
+                        "message.read",
+                        "session.connected",
+                        "session.disconnected",
+                        "campaign.started",
+                        "campaign.paused",
+                        "campaign.resumed",
+                        "campaign.completed",
+                        "campaign.aborted"
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "nullable": true
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "enabled",
+                      "disabled"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "enabled",
+                        "disabled"
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url",
+                    "events",
+                    "description",
+                    "status",
+                    "created_at"
                   ],
                   "additionalProperties": false
                 }

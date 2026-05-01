@@ -4,6 +4,12 @@
   "pages": [
     "get-group",
     "update-group",
-    "create-group"
+    "create-group",
+    "add-member-to-group",
+    "leave-group",
+    "remove-member-from-group",
+    "promote-member-to-admin",
+    "demote-admin-to-member",
+    "set-group-picture"
   ]
 }
