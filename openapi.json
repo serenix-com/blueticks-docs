@@ -2494,48 +2494,54 @@
         }
       },
       "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of audiences to remove",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/audiences"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Removes the resource with id.",
-        "summary": "Delete audience",
         "tags": [
           "Audiences"
         ],
+        "summary": "Delete audience",
+        "description": "Soft-delete an audience. 409 if it`s referenced by an active campaign. Returns the deleted ref. Requires `audiences:write`.",
         "security": [
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "deleted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/campaigns": {
@@ -3652,48 +3658,54 @@
         }
       },
       "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of scheduled-messages to remove",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/scheduled-messages"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Removes the resource with id.",
-        "summary": "Cancel scheduled message",
         "tags": [
           "ScheduledMessages"
         ],
+        "summary": "Cancel scheduled message",
+        "description": "Cancel a queued scheduled message before it fires. Soft-deletes the row (still queryable in audit logs). Returns the deleted ref. Requires `messages:write`.",
         "security": [
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "deleted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/webhooks/{id}/rotate-secret": {
@@ -5486,6 +5498,56 @@
           }
         }
       },
+      "delete": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Delete webhook",
+        "description": "Delete a webhook subscription. Returns the deleted ref. Requires `webhooks:write`.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "deleted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "parameters": [
           {
@@ -5521,104 +5583,6 @@
         },
         "description": "Get a webhook by id.",
         "summary": "Get webhook",
-        "tags": [
-          "Webhooks"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      },
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of webhooks to update",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/webhooks"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Replace a webhook (full update).",
-        "summary": "Replace webhook",
-        "tags": [
-          "Webhooks"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/webhooks"
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "ID of webhooks to remove",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/webhooks"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated"
-          },
-          "404": {
-            "description": "not found"
-          },
-          "500": {
-            "description": "general error"
-          }
-        },
-        "description": "Delete a webhook.",
-        "summary": "Delete webhook",
         "tags": [
           "Webhooks"
         ],
@@ -6107,8 +6071,20 @@
                       "type": "array",
                       "items": {
                         "type": "object",
-                        "properties": {},
-                        "additionalProperties": true
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "ack": {
+                            "type": "integer",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "ack"
+                        ],
+                        "additionalProperties": false
                       }
                     }
                   },
