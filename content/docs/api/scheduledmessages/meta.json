@@ -1,0 +1,10 @@
+{
+  "title": "Scheduled Messages",
+  "description": "List, retrieve, update, and cancel previously-scheduled WhatsApp messages.",
+  "pages": [
+    "list-scheduled-messages",
+    "get-scheduled-message",
+    "update-scheduled-message",
+    "cancel-scheduled-message"
+  ]
+}

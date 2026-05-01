@@ -3,7 +3,6 @@
   "description": "Create and manage WhatsApp groups via the connected engine.",
   "pages": [
     "get-group",
-    "v1-groups-id",
     "update-group",
     "create-group"
   ]
