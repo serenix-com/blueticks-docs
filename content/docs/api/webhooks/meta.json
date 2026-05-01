@@ -5,6 +5,9 @@
     "list-webhooks",
     "create-webhook",
     "rotate-webhook-secret",
-    "update-webhook"
+    "get-webhook",
+    "update-webhook",
+    "delete-webhook",
+    "replace-webhook"
   ]
 }
