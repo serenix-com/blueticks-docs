@@ -6,6 +6,14 @@
     "get-chat",
     "list-chat-messages",
     "get-chat-message",
+    "list-chat-participants",
+    "mark-chat-as-read",
+    "open-chat-in-engine",
+    "get-message-delivery-status",
+    "react-to-message",
+    "load-older-messages-from-phone",
+    "get-message-media-url",
+    "batch-get-message-acks",
     "get-chat-message-media"
   ]
 }
