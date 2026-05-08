@@ -1,6 +1,27 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+/* Registers the Tailwind classes used by fumadocs-openapi components
+   (heading row mt-10, badge layouts, dialog/select internals, etc.).
+   Without this, Tailwind purges them since they only appear inside the
+   vendor package and produces collapsed/overlapping API operation pages. */
+@import 'fumadocs-openapi/css/preset.css';
+
+/* When the playground exposes only one server URL, the Server URL pill
+   has no useful action — clicking it would open a dialog with a single
+   read-only option. Neutralize the trigger and hide the edit icon so it
+   reads as a static label. The first child of the playground form is
+   the Server URL trigger (DialogTrigger button[aria-haspopup="dialog"]). */
+[data-api-server-count='1'] form > button[aria-haspopup='dialog']:first-child {
+  pointer-events: none;
+  cursor: default;
+}
+[data-api-server-count='1']
+  form
+  > button[aria-haspopup='dialog']:first-child
+  svg {
+  display: none;
+}
 
 /* Brand primary: Blueticks blue (was teal). */
 :root {

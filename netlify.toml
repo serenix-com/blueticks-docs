@@ -6,5 +6,19 @@
   NODE_VERSION = "22"
   PNPM_FLAGS = "--frozen-lockfile"
 
+# Production deploy → playground only offers the prod API; the staging
+# option is hidden, and the Server URL pill becomes a static label
+# (see lib/openapi.ts + global.css [data-api-server-count="1"] rules).
+[context.production.environment]
+  NEXT_PUBLIC_API_SERVERS = "https://api.blueticks.co"
+
+# Staging / deploy-preview / branch deploy → expose both prod and
+# staging in the dropdown so reviewers can compare against either.
+[context.deploy-preview.environment]
+  NEXT_PUBLIC_API_SERVERS = "https://api.blueticks.co,https://stg-api.blueticks.co"
+
+[context.branch-deploy.environment]
+  NEXT_PUBLIC_API_SERVERS = "https://api.blueticks.co,https://stg-api.blueticks.co"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"

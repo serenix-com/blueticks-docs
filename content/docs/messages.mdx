@@ -1,15 +1,15 @@
 ---
-title: Messages
-description: Send WhatsApp messages immediately or schedule them for later. One-shot through the `/v1/messages` endpoint.
+title: Sending messages
+description: Send text, media, or poll messages immediately or schedule them for later via /v1/messages.
 ---
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
-Send a single message via `POST /v1/messages`. Include `send_at` to
-schedule instead of sending now. Include `media_url` to attach an
-image, video, or PDF hosted on a public HTTPS URL you already own.
+Every send goes through `POST /v1/messages`. The body is a discriminated
+union — set `type` to one of `text`, `media`, or `poll`. Optional fields
+`send_at`, `from`, and `reply_to` work on every variant.
 
-## Send now
+## Send a text message
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
   <Tab value="Python">
@@ -20,6 +20,7 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 msg = bt.messages.send(
     to="+972501234567",
+    type="text",
     text="Your order is on the way 🎉",
 )
 print(msg.id, msg.status)
@@ -34,6 +35,7 @@ const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
 const msg = await bt.messages.send({
   to: '+972501234567',
+  type: 'text',
   text: 'Your order is on the way 🎉',
 });
 ```
@@ -45,10 +47,11 @@ const msg = await bt.messages.send({
 use Blueticks\Blueticks;
 $bt = new Blueticks('BLUETICKS_API_KEY');
 
-$msg = $bt->messages->send(
-    to: '+972501234567',
-    opts: ['text' => 'Your order is on the way 🎉'],
-);
+$msg = $bt->messages->send([
+    'to'   => '+972501234567',
+    'type' => 'text',
+    'text' => 'Your order is on the way 🎉',
+]);
 ```
 
   </Tab>
@@ -58,36 +61,98 @@ $msg = $bt->messages->send(
 curl -X POST https://api.blueticks.co/v1/messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"to":"+972501234567","text":"Your order is on the way 🎉"}'
+  -d '{
+    "to": "+972501234567",
+    "type": "text",
+    "text": "Your order is on the way 🎉"
+  }'
 ```
 
   </Tab>
 </Tabs>
 
-## Schedule for later
+## Send media
 
-Pass `send_at` (ISO 8601 UTC, ≥ 10 s in the future, ≤ 365 d out).
-Status comes back as `scheduled` instead of `queued`.
+`type: "media"` accepts an HTTPS URL plus an optional `kind`
+(`image` · `video` · `audio` · `document` · `sticker` · `voice`).
+When `kind` is omitted, the engine auto-detects from the URL or the
+`Content-Type` of the fetched asset. `caption` shows under image/video
+in WhatsApp; `filename` is shown for documents.
 
 ```bash
 curl -X POST https://api.blueticks.co/v1/messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
-  -d '{"to":"+972501234567","text":"Reminder","send_at":"2026-12-01T09:00:00Z"}'
+  -d '{
+    "to": "+972501234567",
+    "type": "media",
+    "media": {
+      "url": "https://cdn.example.com/receipt.pdf",
+      "kind": "document",
+      "filename": "receipt-A42.pdf",
+      "caption": "Order #A-42"
+    }
+  }'
 ```
 
-## Send with media
+Voice notes are media with `kind: "voice"`:
+
+```json
+{ "to": "+972...", "type": "media", "media": { "url": "https://.../note.ogg", "kind": "voice" } }
+```
+
+`media.url` must be `https://` and resolve to a non-private host. We
+fetch and forward it on your behalf.
+
+## Send a poll
+
+`options` must contain 2–12 entries. `allow_multiple` lets recipients
+pick more than one (default `false`).
 
 ```bash
--d '{
-  "to":"+972501234567",
-  "text":"Here is your receipt",
-  "media_url":"https://cdn.example.com/receipt.pdf",
-  "media_caption":"Order #A-42"
-}'
+curl -X POST https://api.blueticks.co/v1/messages \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -d '{
+    "to": "+972501234567",
+    "type": "poll",
+    "poll": {
+      "question": "Pizza tonight?",
+      "options": ["Yes", "No", "Maybe"],
+      "allow_multiple": false
+    }
+  }'
 ```
 
-`media_url` must be `https://` and resolve to a non-private host. We
-fetch and forward it on your behalf.
+## Schedule for later
+
+`send_at` (ISO 8601 with offset, ≥ 10 s in the future, ≤ 365 d out)
+works on every type. The response status is `scheduled` instead of
+`queued`.
+
+```json
+{ "to": "+972...", "type": "text", "text": "Reminder", "send_at": "2026-12-01T09:00:00Z" }
+```
+
+## Quote-reply to a prior message
+
+Set `reply_to` to the wire `key` of a message in the same chat
+(returned in `MessageResponse.key` once the original has been sent).
+Works with `text`, `media`, and `poll`.
+
+```json
+{ "to": "+972...", "type": "text", "text": "Got it 👍", "reply_to": "false_972...@c.us_3EB0..." }
+```
+
+## React to a message
+
+Reactions are a separate endpoint — `POST /v1/chats/{chat_id}/messages/{key}/reactions`
+with body `{ "emoji": "❤️" }`. Pass an empty string to remove a reaction.
+Use the `key` from `MessageResponse`, not the `id`.
+
+```bash
+curl -X POST "https://api.blueticks.co/v1/chats/972...@c.us/messages/false_...@c.us_3EB0.../reactions" \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -d '{"emoji":"❤️"}'
+```
 
 ## Idempotency
 
@@ -99,7 +164,7 @@ same key returns `409 idempotency_key_conflict`.
 curl -X POST https://api.blueticks.co/v1/messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Idempotency-Key: order-42-reminder" \
-  -d '{"to":"+972501234567","text":"hi"}'
+  -d '{"to":"+972...","type":"text","text":"hi"}'
 ```
 
 ## Picking the sending number
@@ -108,8 +173,8 @@ If your workspace has **exactly one** connected WhatsApp session,
 messages are sent from it automatically. With two or more active
 sessions, include `from`:
 
-```bash
--d '{"to":"+1...","text":"hi","from":"+15551234567"}'
+```json
+{ "to": "+1...", "type": "text", "text": "hi", "from": "+15551234567" }
 ```
 
 Return codes: `409 no_active_session`, `409 ambiguous_session`,
@@ -122,7 +187,15 @@ scheduled → queued → sending → delivered
                              ↘ failed
 ```
 
-Poll the current state with `GET /v1/messages/{id}`.
+Poll the current state with `GET /v1/messages/{id}`. Read receipts
+(`read_at` populated, `message.read` webhook fires) are delivered via
+webhooks — see the [Webhooks guide](/docs/webhooks).
 
-Read receipts (`read_at` populated, `message.read` webhook fires) are
-delivered via webhooks — see the [Webhooks guide](/docs/webhooks).
+## Not yet supported
+
+These message types are on the roadmap but not yet exposed in v1.0.
+Use [the MCP server](/docs/mcp) or watch the [changelog](/docs/changelog) for ship dates:
+
+- **Location** — share a coordinate with optional name/address.
+- **Contacts (vcard)** — share a contact card.
+- **Buttons / list** — interactive replies and selectable options.

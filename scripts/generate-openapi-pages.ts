@@ -99,24 +99,42 @@ async function main(): Promise<void> {
     },
     frontmatter: (title, description) => ({
       title,
-      description,
+      // Frontmatter description is rendered as a flat paragraph at the
+      // top of the page — no markdown processing. Strip to just the
+      // first sentence/line so multi-line variant breakdowns don't
+      // appear as a wall of text. Long-form description (variant
+      // examples, etc.) lands in the MDX body via the post-process
+      // step below, where markdown renders properly.
+      description: firstSentence(description),
       full: true,
     }),
   });
 
-  // Post-process the generated MDX files: fumadocs bakes the input path
-  // into each <APIPage document="..."> reference, but at runtime we want
-  // the page components to fetch the unfiltered ./openapi.json (the same
-  // file external tools consume from public/openapi.json). Rewrite all
-  // <APIPage> document references back to "./openapi.json".
+  // Post-process the generated MDX files. Two transforms:
+  //   1. Rewrite <APIPage document="..."> back to ./openapi.json — fumadocs
+  //      bakes the FILTERED spec path into the file, but at runtime we
+  //      want the unfiltered original (same as public/openapi.json).
+  //   2. Inject the operation's full markdown description into the MDX
+  //      BODY as a prose block above <APIPage>. The frontmatter
+  //      description was truncated to the first sentence (above), so we
+  //      need the long-form variant breakdown rendered here where
+  //      Fumadocs MDX processes markdown properly.
   const mdxFiles = await collectMdx(OUTPUT_DIR);
   const filteredRef = `document={"${FILTERED_SPEC_PATH}"}`;
   const canonicalRef = `document={"./openapi.json"}`;
+  // Build a path+method → description map from the spec so we can match
+  // each generated MDX file back to its operation.
+  const opDescriptions = collectOperationDescriptions(spec);
   for (const file of mdxFiles) {
-    const content = await fs.readFile(file, 'utf8');
+    let content = await fs.readFile(file, 'utf8');
     if (content.includes(filteredRef)) {
-      await fs.writeFile(file, content.split(filteredRef).join(canonicalRef));
+      content = content.split(filteredRef).join(canonicalRef);
     }
+    const op = matchOperation(content, opDescriptions);
+    if (op && op.body) {
+      content = injectDescriptionBody(content, op.body);
+    }
+    await fs.writeFile(file, content);
   }
 
   // Copy spec to public/ so /openapi.json is served verbatim for Postman etc.
@@ -129,6 +147,65 @@ async function main(): Promise<void> {
   });
 
   console.log(`[openapi] regenerated ${OUTPUT_DIR} from ${SPEC_PATH}`);
+}
+
+/**
+ * Take the first sentence of a description (or first line if no full
+ * stop). Used for the MDX frontmatter `description` field, which is
+ * rendered as plain text by Fumadocs — markdown lists/bold are shown
+ * literally, so longer multi-line content has to live in the MDX body.
+ */
+function firstSentence(text: string | undefined): string {
+  if (!text) return '';
+  const trimmed = text.trim();
+  // First period followed by space/newline/EOS, or first newline.
+  const m = trimmed.match(/^(.+?[.!?])(?=\s|$)/s);
+  if (m) return m[1].trim();
+  return trimmed.split(/\r?\n/)[0]!.trim();
+}
+
+interface OpDesc {
+  path: string;
+  method: string;
+  summary: string;
+  // Long-form portion of the description (everything AFTER the first
+  // sentence). Empty when the description is short enough to live
+  // entirely in the frontmatter.
+  body: string;
+}
+
+function collectOperationDescriptions(spec: any): OpDesc[] {
+  const out: OpDesc[] = [];
+  for (const [p, item] of Object.entries(spec.paths ?? {}) as [string, any][]) {
+    for (const [method, op] of Object.entries(item)) {
+      if (!op || typeof op !== 'object' || Array.isArray(op)) continue;
+      const o = op as { summary?: string; description?: string };
+      if (!o.description) continue;
+      const head = firstSentence(o.description);
+      const body = o.description.trim().slice(head.length).trim();
+      out.push({ path: p, method, summary: o.summary ?? '', body });
+    }
+  }
+  return out;
+}
+
+function matchOperation(mdxContent: string, ops: OpDesc[]): OpDesc | undefined {
+  // Each generated MDX has an APIPage tag like:
+  //   <APIPage document={"./openapi.json"} operations={[{"path":"/v1/messages","method":"post"}]} />
+  const m = mdxContent.match(/operations=\{\[\{"path":"([^"]+)","method":"([^"]+)"\}\]\}/);
+  if (!m) return undefined;
+  const [, path, method] = m;
+  return ops.find((o) => o.path === path && o.method === method);
+}
+
+function injectDescriptionBody(mdxContent: string, body: string): string {
+  // Insert the long-form description as a prose block immediately
+  // before <APIPage. Fumadocs MDX renders this as full markdown.
+  const apiPageMatch = mdxContent.indexOf('<APIPage');
+  if (apiPageMatch === -1) return mdxContent;
+  const before = mdxContent.slice(0, apiPageMatch);
+  const after = mdxContent.slice(apiPageMatch);
+  return `${before}${body}\n\n${after}`;
 }
 
 async function collectMdx(dir: string): Promise<string[]> {

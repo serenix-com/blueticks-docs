@@ -36,7 +36,18 @@ export default function Layout({ children }: LayoutProps<'/'>) {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA4_ID}', { cookie_domain: '.blueticks.co' });
+            // cookie_domain '.blueticks.co' ties this subdomain to apex
+            // traffic, but only when we're actually on a *.blueticks.co
+            // host. On localhost / Netlify preview hosts, GA4 logs
+            // "Error retrieving a token" because it can't set the cookie
+            // on a non-matching domain — so omit the option there.
+            (function () {
+              var host = window.location.hostname;
+              var config = host.endsWith('.blueticks.co')
+                ? { cookie_domain: '.blueticks.co' }
+                : {};
+              gtag('config', '${GA4_ID}', config);
+            })();
           `}
         </Script>
         <RootProvider>{children}</RootProvider>
