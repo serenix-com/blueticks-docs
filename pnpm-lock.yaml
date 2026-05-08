@@ -63,6 +63,10 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+    optionalDependencies:
+      '@tailwindcss/oxide-win32-x64-msvc':
+        specifier: ^4.2.4
+        version: 4.2.4
 
 packages:
 

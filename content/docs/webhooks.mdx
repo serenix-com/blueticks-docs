@@ -54,7 +54,7 @@ echo $created->secret; // shown once
 
 ```bash
 curl -X POST https://api.blueticks.co/v1/webhooks \
-  -H "Authorization: Bearer bt_live_..." \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -d '{
     "url":"https://api.your-server.com/bt-webhooks",
     "events":["message.delivered","message.failed"]
@@ -173,5 +173,5 @@ immediately; all pending retries sign with the new one.
 
 ```bash
 curl -X POST https://api.blueticks.co/v1/webhooks/wh_123/rotate-secret \
-  -H "Authorization: Bearer bt_live_..."
+  -H "Authorization: Bearer BLUETICKS_API_KEY"
 ```

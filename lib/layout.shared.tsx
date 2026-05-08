@@ -7,9 +7,5 @@ export function baseOptions(): BaseLayoutProps {
       title: appName,
     },
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
-    links: [
-      { text: 'Quickstart', url: '/docs/quickstart' },
-      { text: 'API Reference', url: '/docs/api' },
-    ],
   };
 }

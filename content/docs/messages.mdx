@@ -16,7 +16,7 @@ image, video, or PDF hosted on a public HTTPS URL you already own.
 
 ```python
 import blueticks
-bt = blueticks.Blueticks(api_key="bt_live_...")
+bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 msg = bt.messages.send(
     to="+972501234567",
@@ -30,7 +30,7 @@ print(msg.id, msg.status)
 
 ```ts
 import { Blueticks } from 'blueticks';
-const bt = new Blueticks({ apiKey: 'bt_live_...' });
+const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
 const msg = await bt.messages.send({
   to: '+972501234567',
@@ -43,7 +43,7 @@ const msg = await bt.messages.send({
 
 ```php
 use Blueticks\Blueticks;
-$bt = new Blueticks('bt_live_...');
+$bt = new Blueticks('BLUETICKS_API_KEY');
 
 $msg = $bt->messages->send(
     to: '+972501234567',
@@ -56,7 +56,7 @@ $msg = $bt->messages->send(
 
 ```bash
 curl -X POST https://api.blueticks.co/v1/messages \
-  -H "Authorization: Bearer bt_live_..." \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"to":"+972501234567","text":"Your order is on the way 🎉"}'
 ```
@@ -71,7 +71,7 @@ Status comes back as `scheduled` instead of `queued`.
 
 ```bash
 curl -X POST https://api.blueticks.co/v1/messages \
-  -H "Authorization: Bearer bt_live_..." \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -d '{"to":"+972501234567","text":"Reminder","send_at":"2026-12-01T09:00:00Z"}'
 ```
 
@@ -97,7 +97,7 @@ same key returns `409 idempotency_key_conflict`.
 
 ```bash
 curl -X POST https://api.blueticks.co/v1/messages \
-  -H "Authorization: Bearer bt_live_..." \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Idempotency-Key: order-42-reminder" \
   -d '{"to":"+972501234567","text":"hi"}'
 ```

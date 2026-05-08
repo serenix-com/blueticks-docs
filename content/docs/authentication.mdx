@@ -10,12 +10,9 @@ include a valid API key in the `Authorization` header.
 
 ## Obtaining a key
 
-1. Sign in to [app.blueticks.co](https://app.blueticks.co).
-2. Open **Settings → API keys**.
-3. Click **Create key**. Copy the value immediately — you won't see it
+1. Open <AppLink path="/blueticks-api" showHost /> and sign in if prompted.
+2. Click **Create key**. Copy the value immediately — you won't see it
    again.
-
-Keys start with `bt_live_` (production) or `bt_test_` (test mode).
 
 ## Using a key
 
@@ -24,7 +21,7 @@ Keys start with `bt_live_` (production) or `bt_test_` (test mode).
 ```http
 GET /v1/account HTTP/1.1
 Host: api.blueticks.co
-Authorization: Bearer bt_live_...
+Authorization: Bearer BLUETICKS_API_KEY
 ```
 
 ### SDKs
@@ -37,7 +34,7 @@ a default. You can also pass a key explicitly at construction time:
 
 ```python
 from blueticks import Blueticks
-client = Blueticks(api_key="bt_live_...")
+client = Blueticks(api_key="BLUETICKS_API_KEY")
 ```
 
   </Tab>
@@ -45,7 +42,7 @@ client = Blueticks(api_key="bt_live_...")
 
 ```typescript
 import { Blueticks } from "blueticks";
-const client = new Blueticks({ apiKey: "bt_live_..." });
+const client = new Blueticks({ apiKey: "BLUETICKS_API_KEY" });
 ```
 
   </Tab>
@@ -53,7 +50,7 @@ const client = new Blueticks({ apiKey: "bt_live_..." });
 
 ```php
 use Blueticks\Blueticks;
-$client = new Blueticks(['apiKey' => 'bt_live_...']);
+$client = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 ```
 
   </Tab>
