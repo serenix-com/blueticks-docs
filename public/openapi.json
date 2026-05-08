@@ -18,13 +18,6 @@
       }
     },
     "schemas": {
-      "account": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/AccountResponse"
-          }
-        ]
-      },
       "messagesList": {
         "type": "object",
         "properties": {
@@ -46,20 +39,6 @@
           "data",
           "has_more",
           "next_cursor"
-        ]
-      },
-      "webhooks": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/WebhookResponse"
-          }
-        ]
-      },
-      "audiences": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/AudienceResponse"
-          }
         ]
       },
       "audiencesList": {
@@ -85,10 +64,10 @@
           "next_cursor"
         ]
       },
-      "campaigns": {
+      "audiences": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/CampaignResponse"
+            "$ref": "#/components/schemas/AudienceResponse"
           }
         ]
       },
@@ -115,10 +94,10 @@
           "next_cursor"
         ]
       },
-      "chats": {
+      "campaigns": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/Chat"
+            "$ref": "#/components/schemas/CampaignResponse"
           }
         ]
       },
@@ -145,16 +124,19 @@
           "next_cursor"
         ]
       },
+      "chats": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Chat"
+          }
+        ]
+      },
       "groups": {
         "allOf": [
           {
             "$ref": "#/components/schemas/Group"
           }
         ]
-      },
-      "contacts": {
-        "type": "object",
-        "additionalProperties": true
       },
       "contactsList": {
         "type": "object",
@@ -179,10 +161,6 @@
           "next_cursor"
         ]
       },
-      "engines": {
-        "type": "object",
-        "additionalProperties": true
-      },
       "enginesList": {
         "type": "object",
         "properties": {
@@ -204,13 +182,6 @@
           "data",
           "has_more",
           "next_cursor"
-        ]
-      },
-      "scheduled-messages": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ScheduledMessage"
-          }
         ]
       },
       "scheduled-messagesList": {
@@ -236,12 +207,34 @@
           "next_cursor"
         ]
       },
+      "scheduled-messages": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ScheduledMessage"
+          }
+        ]
+      },
+      "webhooks": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WebhookResponse"
+          }
+        ]
+      },
       "messages": {
         "allOf": [
           {
             "$ref": "#/components/schemas/MessageResponse"
           }
         ]
+      },
+      "contacts": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "engines": {
+        "type": "object",
+        "additionalProperties": true
       },
       "ContactInput": {
         "type": "object",
@@ -1053,40 +1046,37 @@
           "failed"
         ]
       },
+      "MediaKind": {
+        "type": "string",
+        "enum": [
+          "image",
+          "video",
+          "audio",
+          "document",
+          "sticker",
+          "voice"
+        ]
+      },
       "SendMessageRequest": {
-        "type": "object",
-        "properties": {
-          "to": {
-            "type": "string"
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SendMessageRequestText"
           },
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4096
+          {
+            "$ref": "#/components/schemas/SendMessageRequestMedia"
           },
-          "media_url": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri"
-          },
-          "media_caption": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1024
-          },
-          "send_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
+          {
+            "$ref": "#/components/schemas/SendMessageRequestPoll"
           }
-        },
-        "required": [
-          "to"
         ],
-        "additionalProperties": false
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "text": "#/components/schemas/SendMessageRequestText",
+            "media": "#/components/schemas/SendMessageRequestMedia",
+            "poll": "#/components/schemas/SendMessageRequestPoll"
+          }
+        }
       },
       "MessageResponse": {
         "type": "object",
@@ -1094,6 +1084,10 @@
           "id": {
             "type": "string"
           },
+          "key": {
+            "type": "string",
+            "nullable": true
+          },
           "to": {
             "type": "string"
           },
@@ -1101,11 +1095,36 @@
             "type": "string",
             "nullable": true
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "media",
+              "poll"
+            ],
+            "description": "Message kind that was sent."
+          },
           "text": {
             "type": "string",
             "nullable": true
           },
           "media_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "media_kind": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "document",
+              "sticker",
+              "voice"
+            ]
+          },
+          "poll_question": {
             "type": "string",
             "nullable": true
           },
@@ -1156,10 +1175,14 @@
         },
         "required": [
           "id",
+          "key",
           "to",
           "from",
+          "type",
           "text",
           "media_url",
+          "media_kind",
+          "poll_question",
           "status",
           "send_at",
           "created_at",
@@ -1484,49 +1507,195 @@
           "secret"
         ],
         "additionalProperties": false
+      },
+      "account": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AccountResponse"
+          }
+        ]
+      },
+      "SendMessageRequestText": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "to": {
+            "type": "string"
+          },
+          "send_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\+[1-9]\\d{6,14}$"
+          },
+          "reply_to": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+          }
+        },
+        "required": [
+          "type",
+          "text",
+          "to"
+        ],
+        "additionalProperties": false,
+        "title": "Text"
+      },
+      "SendMessageRequestMedia": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "media"
+            ]
+          },
+          "media": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "maxLength": 2048,
+                "format": "uri"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "image",
+                  "video",
+                  "audio",
+                  "document",
+                  "sticker",
+                  "voice"
+                ],
+                "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
+              },
+              "caption": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "filename": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "type": "string"
+          },
+          "send_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\+[1-9]\\d{6,14}$"
+          },
+          "reply_to": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+          }
+        },
+        "required": [
+          "type",
+          "media",
+          "to"
+        ],
+        "additionalProperties": false,
+        "title": "Media"
+      },
+      "SendMessageRequestPoll": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "poll"
+            ]
+          },
+          "poll": {
+            "type": "object",
+            "properties": {
+              "question": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "minItems": 2,
+                "maxItems": 12
+              },
+              "allow_multiple": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "question",
+              "options"
+            ],
+            "additionalProperties": false
+          },
+          "to": {
+            "type": "string"
+          },
+          "send_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\+[1-9]\\d{6,14}$"
+          },
+          "reply_to": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+          }
+        },
+        "required": [
+          "type",
+          "poll",
+          "to"
+        ],
+        "additionalProperties": false,
+        "title": "Poll"
       }
     }
   },
   "paths": {
     "/v1/account": {
       "get": {
-        "parameters": [
-          {
-            "description": "Number of results to return",
-            "in": "query",
-            "name": "$limit",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Number of results to skip",
-            "in": "query",
-            "name": "$skip",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Property to sort results",
-            "in": "query",
-            "name": "$sort",
-            "style": "deepObject",
-            "schema": {
-              "type": "object"
-            }
-          },
-          {
-            "description": "Query parameters to filter",
-            "in": "query",
-            "name": "filter",
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/account"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "success",
@@ -1653,6 +1822,10 @@
                     "id": {
                       "type": "string"
                     },
+                    "key": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "to": {
                       "type": "string"
                     },
@@ -1660,11 +1833,36 @@
                       "type": "string",
                       "nullable": true
                     },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "media",
+                        "poll"
+                      ],
+                      "description": "Message kind that was sent."
+                    },
                     "text": {
                       "type": "string",
                       "nullable": true
                     },
                     "media_url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_kind": {
+                      "type": "string",
+                      "enum": [
+                        "image",
+                        "video",
+                        "audio",
+                        "document",
+                        "sticker",
+                        "voice"
+                      ],
+                      "nullable": true
+                    },
+                    "poll_question": {
                       "type": "string",
                       "nullable": true
                     },
@@ -1715,10 +1913,14 @@
                   },
                   "required": [
                     "id",
+                    "key",
                     "to",
                     "from",
+                    "type",
                     "text",
                     "media_url",
+                    "media_kind",
+                    "poll_question",
                     "status",
                     "send_at",
                     "created_at",
@@ -1743,6 +1945,10 @@
                     "id": {
                       "type": "string"
                     },
+                    "key": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "to": {
                       "type": "string"
                     },
@@ -1750,11 +1956,36 @@
                       "type": "string",
                       "nullable": true
                     },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "media",
+                        "poll"
+                      ],
+                      "description": "Message kind that was sent."
+                    },
                     "text": {
                       "type": "string",
                       "nullable": true
                     },
                     "media_url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_kind": {
+                      "type": "string",
+                      "enum": [
+                        "image",
+                        "video",
+                        "audio",
+                        "document",
+                        "sticker",
+                        "voice"
+                      ],
+                      "nullable": true
+                    },
+                    "poll_question": {
                       "type": "string",
                       "nullable": true
                     },
@@ -1805,10 +2036,14 @@
                   },
                   "required": [
                     "id",
+                    "key",
                     "to",
                     "from",
+                    "type",
                     "text",
                     "media_url",
+                    "media_kind",
+                    "poll_question",
                     "status",
                     "send_at",
                     "created_at",
@@ -1824,7 +2059,7 @@
             }
           }
         },
-        "description": "Send a message now, or schedule one for later.",
+        "description": "Send a message via WhatsApp. The body is a discriminated union — set the `type` field to one of `text`, `media`, or `poll`.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). Example body:\n  ```json\n  {\"type\":\"text\",\"to\":\"+15551234567\",\"text\":\"hello\"}\n  ```\n- `type: \"media\"` — required `media.url` (HTTPS). Optional `media.kind` (`image` · `video` · `audio` · `document` · `sticker` · `voice`; auto-detected when omitted), `media.caption`, `media.filename`. Example:\n  ```json\n  {\"type\":\"media\",\"to\":\"+15551234567\",\"media\":{\"url\":\"https://cdn.example.com/x.pdf\",\"kind\":\"document\",\"filename\":\"receipt.pdf\"}}\n  ```\n- `type: \"poll\"` — required `poll.question` and `poll.options` (2–12 items). Optional `poll.allow_multiple` (default false). Example:\n  ```json\n  {\"type\":\"poll\",\"to\":\"+15551234567\",\"poll\":{\"question\":\"Pizza?\",\"options\":[\"Yes\",\"No\"]}}\n  ```\n\nAll variants accept optional `send_at` (ISO 8601 ≥10s future, ≤365d), `from` (E.164 sender for multi-session workspaces), and `reply_to` (wire `key` of a prior message to quote).\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
         "summary": "Send message",
         "tags": [
           "Messages"
@@ -1838,39 +2073,180 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "to": {
-                    "type": "string"
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "text"
+                        ]
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4096
+                      },
+                      "to": {
+                        "type": "string"
+                      },
+                      "send_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "from": {
+                        "type": "string",
+                        "pattern": "^\\+[1-9]\\d{6,14}$"
+                      },
+                      "reply_to": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "text",
+                      "to"
+                    ],
+                    "additionalProperties": false
                   },
-                  "text": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 4096
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "media"
+                        ]
+                      },
+                      "media": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string",
+                            "format": "uri",
+                            "maxLength": 2048
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "image",
+                              "video",
+                              "audio",
+                              "document",
+                              "sticker",
+                              "voice"
+                            ],
+                            "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
+                          },
+                          "caption": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1024
+                          },
+                          "filename": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          }
+                        },
+                        "required": [
+                          "url"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "to": {
+                        "type": "string"
+                      },
+                      "send_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "from": {
+                        "type": "string",
+                        "pattern": "^\\+[1-9]\\d{6,14}$"
+                      },
+                      "reply_to": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "media",
+                      "to"
+                    ],
+                    "additionalProperties": false
                   },
-                  "media_url": {
-                    "type": "string",
-                    "format": "uri",
-                    "maxLength": 2048
-                  },
-                  "media_caption": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 1024
-                  },
-                  "send_at": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "from": {
-                    "type": "string",
-                    "pattern": "^\\+[1-9]\\d{6,14}$"
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "poll"
+                        ]
+                      },
+                      "poll": {
+                        "type": "object",
+                        "properties": {
+                          "question": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "options": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "minItems": 2,
+                            "maxItems": 12
+                          },
+                          "allow_multiple": {
+                            "type": "boolean",
+                            "default": false
+                          }
+                        },
+                        "required": [
+                          "question",
+                          "options"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "to": {
+                        "type": "string"
+                      },
+                      "send_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "from": {
+                        "type": "string",
+                        "pattern": "^\\+[1-9]\\d{6,14}$"
+                      },
+                      "reply_to": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "poll",
+                      "to"
+                    ],
+                    "additionalProperties": false
                   }
-                },
-                "required": [
-                  "to"
-                ],
-                "additionalProperties": false
+                ]
               }
             }
           }
@@ -1901,6 +2277,10 @@
                     "id": {
                       "type": "string"
                     },
+                    "key": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "to": {
                       "type": "string"
                     },
@@ -1908,11 +2288,36 @@
                       "type": "string",
                       "nullable": true
                     },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "media",
+                        "poll"
+                      ],
+                      "description": "Message kind that was sent."
+                    },
                     "text": {
                       "type": "string",
                       "nullable": true
                     },
                     "media_url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_kind": {
+                      "type": "string",
+                      "enum": [
+                        "image",
+                        "video",
+                        "audio",
+                        "document",
+                        "sticker",
+                        "voice"
+                      ],
+                      "nullable": true
+                    },
+                    "poll_question": {
                       "type": "string",
                       "nullable": true
                     },
@@ -1963,10 +2368,14 @@
                   },
                   "required": [
                     "id",
+                    "key",
                     "to",
                     "from",
+                    "type",
                     "text",
                     "media_url",
+                    "media_kind",
+                    "poll_question",
                     "status",
                     "send_at",
                     "created_at",
@@ -1998,39 +2407,24 @@
       "get": {
         "parameters": [
           {
-            "description": "Number of results to return",
             "in": "query",
-            "name": "$limit",
+            "name": "limit",
+            "description": "Page size (default 50, max 200).",
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false
           },
           {
-            "description": "Number of results to skip",
             "in": "query",
-            "name": "$skip",
+            "name": "cursor",
+            "description": "Opaque cursor from a previous response's `next_cursor`.",
             "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Property to sort results",
-            "in": "query",
-            "name": "$sort",
-            "style": "deepObject",
-            "schema": {
-              "type": "object"
-            }
-          },
-          {
-            "description": "Query parameters to filter",
-            "in": "query",
-            "name": "filter",
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/webhooks"
-            }
+              "type": "string"
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -2212,39 +2606,24 @@
       "get": {
         "parameters": [
           {
-            "description": "Number of results to return",
             "in": "query",
-            "name": "$limit",
+            "name": "limit",
+            "description": "Page size (default 50, max 200).",
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false
           },
           {
-            "description": "Number of results to skip",
             "in": "query",
-            "name": "$skip",
+            "name": "cursor",
+            "description": "Opaque cursor from a previous response's `next_cursor`.",
             "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Property to sort results",
-            "in": "query",
-            "name": "$sort",
-            "style": "deepObject",
-            "schema": {
-              "type": "object"
-            }
-          },
-          {
-            "description": "Query parameters to filter",
-            "in": "query",
-            "name": "filter",
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/audiences"
-            }
+              "type": "string"
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -2548,39 +2927,24 @@
       "get": {
         "parameters": [
           {
-            "description": "Number of results to return",
             "in": "query",
-            "name": "$limit",
+            "name": "limit",
+            "description": "Page size (default 50, max 200).",
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false
           },
           {
-            "description": "Number of results to skip",
             "in": "query",
-            "name": "$skip",
+            "name": "cursor",
+            "description": "Opaque cursor from a previous response's `next_cursor`.",
             "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Property to sort results",
-            "in": "query",
-            "name": "$sort",
-            "style": "deepObject",
-            "schema": {
-              "type": "object"
-            }
-          },
-          {
-            "description": "Query parameters to filter",
-            "in": "query",
-            "name": "filter",
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/campaigns"
-            }
+              "type": "string"
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -2828,39 +3192,24 @@
       "get": {
         "parameters": [
           {
-            "description": "Number of results to return",
             "in": "query",
-            "name": "$limit",
+            "name": "limit",
+            "description": "Page size (default 50, max 200).",
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false
           },
           {
-            "description": "Number of results to skip",
             "in": "query",
-            "name": "$skip",
+            "name": "cursor",
+            "description": "Opaque cursor from a previous response's `next_cursor`.",
             "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Property to sort results",
-            "in": "query",
-            "name": "$sort",
-            "style": "deepObject",
-            "schema": {
-              "type": "object"
-            }
-          },
-          {
-            "description": "Query parameters to filter",
-            "in": "query",
-            "name": "filter",
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/chats"
-            }
+              "type": "string"
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -3273,39 +3622,24 @@
       "get": {
         "parameters": [
           {
-            "description": "Number of results to return",
             "in": "query",
-            "name": "$limit",
+            "name": "limit",
+            "description": "Page size (default 50, max 200).",
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false
           },
           {
-            "description": "Number of results to skip",
             "in": "query",
-            "name": "$skip",
+            "name": "cursor",
+            "description": "Opaque cursor from a previous response's `next_cursor`.",
             "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Property to sort results",
-            "in": "query",
-            "name": "$sort",
-            "style": "deepObject",
-            "schema": {
-              "type": "object"
-            }
-          },
-          {
-            "description": "Query parameters to filter",
-            "in": "query",
-            "name": "filter",
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/contacts"
-            }
+              "type": "string"
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -3340,43 +3674,7 @@
     },
     "/v1/engines": {
       "get": {
-        "parameters": [
-          {
-            "description": "Number of results to return",
-            "in": "query",
-            "name": "$limit",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Number of results to skip",
-            "in": "query",
-            "name": "$skip",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Property to sort results",
-            "in": "query",
-            "name": "$sort",
-            "style": "deepObject",
-            "schema": {
-              "type": "object"
-            }
-          },
-          {
-            "description": "Query parameters to filter",
-            "in": "query",
-            "name": "filter",
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/engines"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "success",
@@ -3411,39 +3709,24 @@
       "get": {
         "parameters": [
           {
-            "description": "Number of results to return",
             "in": "query",
-            "name": "$limit",
+            "name": "limit",
+            "description": "Page size (default 50, max 200).",
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false
           },
           {
-            "description": "Number of results to skip",
             "in": "query",
-            "name": "$skip",
+            "name": "cursor",
+            "description": "Opaque cursor from a previous response's `next_cursor`.",
             "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Property to sort results",
-            "in": "query",
-            "name": "$sort",
-            "style": "deepObject",
-            "schema": {
-              "type": "object"
-            }
-          },
-          {
-            "description": "Query parameters to filter",
-            "in": "query",
-            "name": "filter",
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/scheduled-messages"
-            }
+              "type": "string"
+            },
+            "required": false
           }
         ],
         "responses": {
