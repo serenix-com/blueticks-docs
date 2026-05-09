@@ -2111,7 +2111,8 @@
                       "text",
                       "to"
                     ],
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "title": "Text"
                   },
                   {
                     "type": "object",
@@ -2181,7 +2182,8 @@
                       "media",
                       "to"
                     ],
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "title": "Media"
                   },
                   {
                     "type": "object",
@@ -2244,7 +2246,8 @@
                       "poll",
                       "to"
                     ],
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "title": "Poll"
                   }
                 ]
               }
