@@ -21,28 +21,39 @@ https://api.blueticks.co
 
 ## Use in Postman
 
-A Postman collection covering every endpoint is regenerated on every spec
-sync, so it tracks the live API without manual updates. Two ways to import:
+A Postman collection + two environment files are regenerated on every spec
+sync — they track the live API without manual updates.
+
+**Flow:** import the collection → import one environment (Production or
+Staging) → paste your API key into the env's `apiKey` field → start hitting
+endpoints. Run "🔑 Authentication / Validate API key" first to confirm.
 
 <Cards>
   <Card
     icon={<Download />}
-    title="Download the collection"
-    description="Save blueticks.postman_collection.json and drag it into Postman (or use File → Import → Upload Files)."
+    title="Postman collection"
+    description="Every endpoint, organized by tag. Includes a Validate-API-key request to confirm auth works."
     href="/blueticks.postman_collection.json"
     external
   />
   <Card
     icon={<LinkIcon />}
-    title="Import from URL"
-    description="In Postman: File → Import → Link, then paste https://dev.blueticks.co/blueticks.postman_collection.json. Postman re-fetches automatically when you re-import."
-    href="https://dev.blueticks.co/blueticks.postman_collection.json"
+    title="Production environment"
+    description="baseUrl pre-set to api.blueticks.co. Paste your API key into apiKey once."
+    href="/blueticks.production.postman_environment.json"
+    external
+  />
+  <Card
+    icon={<LinkIcon />}
+    title="Staging environment"
+    description="baseUrl pre-set to stg-api.blueticks.co for safe experimentation."
+    href="/blueticks.staging.postman_environment.json"
     external
   />
   <Card
     icon={<FileJson />}
     title="Raw OpenAPI spec"
-    description="Prefer to import the spec yourself? The raw openapi.json is served alongside — works with any OpenAPI-aware tool."
+    description="Prefer to import the spec yourself? Works with any OpenAPI-aware tool."
     href="/openapi.json"
     external
   />
