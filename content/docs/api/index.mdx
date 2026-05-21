@@ -3,6 +3,9 @@ title: API Reference
 description: Complete reference for the Blueticks public API v1.
 ---
 
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Download, Link as LinkIcon, FileJson } from 'lucide-react';
+
 This section documents every endpoint in the Blueticks public API v1.
 Endpoints are grouped by resource.
 
@@ -16,6 +19,35 @@ configure a key.
 https://api.blueticks.co
 ```
 
+## Use in Postman
+
+A Postman collection covering every endpoint is regenerated on every spec
+sync, so it tracks the live API without manual updates. Two ways to import:
+
+<Cards>
+  <Card
+    icon={<Download />}
+    title="Download the collection"
+    description="Save blueticks.postman_collection.json and drag it into Postman (or use File → Import → Upload Files)."
+    href="/blueticks.postman_collection.json"
+    external
+  />
+  <Card
+    icon={<LinkIcon />}
+    title="Import from URL"
+    description="In Postman: File → Import → Link, then paste https://dev.blueticks.co/blueticks.postman_collection.json. Postman re-fetches automatically when you re-import."
+    href="https://dev.blueticks.co/blueticks.postman_collection.json"
+    external
+  />
+  <Card
+    icon={<FileJson />}
+    title="Raw OpenAPI spec"
+    description="Prefer to import the spec yourself? The raw openapi.json is served alongside — works with any OpenAPI-aware tool."
+    href="/openapi.json"
+    external
+  />
+</Cards>
+
 ## Response format
 
 Successful responses are JSON objects with resource-specific shapes. Errors
@@ -26,12 +58,3 @@ use the envelope described in [Errors & retries](/docs/errors).
 Each operation page below embeds an interactive playground. Paste an API
 key into the auth field and send real requests against
 `https://api.blueticks.co`.
-
-## Use in Postman
-
-Import the OpenAPI-generated Postman collection:
-[blueticks.postman_collection.json](/blueticks.postman_collection.json)
-— drag into Postman or use `File → Import` and select "From URL".
-
-The collection is regenerated on every spec sync, so it tracks the live API
-without manual updates.
