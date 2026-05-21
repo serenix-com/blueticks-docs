@@ -171,7 +171,37 @@ to PATCH `status: "enabled"` to re-enable after fixing your endpoint.
 If your secret leaks, rotate it. The old secret is invalidated
 immediately; all pending retries sign with the new one.
 
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+result = bt.webhooks.rotate_secret("wh_123")
+print(result.secret)  # store immediately — shown only once
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+const result = await bt.webhooks.rotateSecret('wh_123');
+console.log(result.secret); // store immediately — shown only once
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+$result = $bt->webhooks->rotateSecret('wh_123');
+echo $result->secret; // store immediately — shown only once
+```
+
+  </Tab>
+  <Tab value="cURL">
+
 ```bash
 curl -X POST https://api.blueticks.co/v1/webhooks/wh_123/rotate-secret \
   -H "Authorization: Bearer BLUETICKS_API_KEY"
 ```
+
+  </Tab>
+</Tabs>
