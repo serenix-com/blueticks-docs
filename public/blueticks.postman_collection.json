@@ -1,7 +1,57 @@
 {
   "item": [
     {
-      "id": "e9538467-1401-41d7-95f7-6d1fdff61e73",
+      "name": "🔑 Authentication",
+      "item": [
+        {
+          "name": "Validate API key",
+          "request": {
+            "name": "Validate API key",
+            "description": "Calls GET /v1/account to confirm your API key is valid. On success, the test script confirms the key and prints the account name. Use this as the first request after pasting your apiKey into the environment.",
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "account"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('returns an account id', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('id');",
+                  "  console.log('Authenticated as account:', json.name || json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "28fd218c-2e9e-41f2-adb5-8e20a2760e06",
       "name": "Account",
       "description": {
         "content": "Account metadata for the authenticated API key.",
@@ -9,7 +59,7 @@
       },
       "item": [
         {
-          "id": "84f94cb8-2a74-4d88-9118-6ef403fc7ed9",
+          "id": "24f76745-5643-40c3-87cd-9fe7bce564f2",
           "name": "Get account",
           "request": {
             "name": "Get account",
@@ -47,7 +97,7 @@
           },
           "response": [
             {
-              "id": "1c2db176-81d5-4c52-862e-424a580042cb",
+              "id": "c8d1d384-345b-40bf-ae8a-b7b7c4ae0a5b",
               "name": "success",
               "originalRequest": {
                 "url": {
@@ -86,7 +136,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"timezone\": \"string\",\n  \"created_at\": \"1996-03-07T05:22:28.706Z\"\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"timezone\": \"string\",\n  \"created_at\": \"1965-11-29T08:16:57.055Z\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -100,7 +150,7 @@
       "event": []
     },
     {
-      "id": "f0a9ceb2-1f1b-402f-9191-ef5baec89fa5",
+      "id": "31661d5e-24e8-45ad-8dcf-7530534bd147",
       "name": "Audiences",
       "description": {
         "content": "Reusable contact lists used as targets for messages and campaigns.",
@@ -108,7 +158,7 @@
       },
       "item": [
         {
-          "id": "9ac23326-f086-4a01-b97e-3a45a1498456",
+          "id": "65c9727e-5a01-4a13-937c-bb36b8a9d374",
           "name": "List audiences",
           "request": {
             "name": "List audiences",
@@ -155,7 +205,7 @@
           }
         },
         {
-          "id": "348c0129-6540-4b23-aa69-8599db761d72",
+          "id": "89e8d0f0-59f1-4b3e-8a36-a0e029f87aec",
           "name": "Create audience",
           "request": {
             "name": "Create audience",
@@ -189,7 +239,7 @@
           }
         },
         {
-          "id": "d565ac63-7800-48c1-9b2b-71394d7f57eb",
+          "id": "6b0abe42-7743-49f9-a471-f792bf82eb64",
           "name": "Get audience",
           "request": {
             "name": "Get audience",
@@ -224,7 +274,7 @@
           }
         },
         {
-          "id": "68700452-b3a4-42de-8e94-8288fe97a153",
+          "id": "61370e62-c418-4d57-a3e7-0bc63a2fd595",
           "name": "Update audience",
           "request": {
             "name": "Update audience",
@@ -259,7 +309,7 @@
           }
         },
         {
-          "id": "f5f558d1-81e9-47f4-9909-64b81c4cd3dd",
+          "id": "16889c03-9593-42a3-b584-7291f56bc91e",
           "name": "Delete audience",
           "request": {
             "name": "Delete audience",
@@ -294,7 +344,7 @@
           }
         },
         {
-          "id": "df16fb20-ea9e-4bb7-8d63-cbd2d6354995",
+          "id": "0451cc54-fca0-4edc-bc1d-23dfd8a7ffd1",
           "name": "Append contacts to audience",
           "request": {
             "name": "Append contacts to audience",
@@ -355,7 +405,7 @@
           },
           "response": [
             {
-              "id": "a4043365-8cc1-4d07-b3a8-a3b8d3553638",
+              "id": "68570ed6-d4e5-475f-9d0e-4287d5e528ef",
               "name": "appended",
               "originalRequest": {
                 "url": {
@@ -396,7 +446,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"contacts\": [\n    {\n      \"to\": \"<string>\",\n      \"variables\": {\n        \"key_0\": \"<string>\",\n        \"key_1\": \"<string>\"\n      }\n    }\n  ]\n}",
+                  "raw": "{\n  \"contacts\": [\n    {\n      \"to\": \"<string>\",\n      \"variables\": {\n        \"key_0\": \"<string>\",\n        \"key_1\": \"<string>\",\n        \"key_2\": \"<string>\"\n      }\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -412,7 +462,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"added\": 1329,\n  \"contact_count\": 4859\n}",
+              "body": "{\n  \"added\": 3156,\n  \"contact_count\": 9499\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -423,7 +473,7 @@
           }
         },
         {
-          "id": "26a56d0f-991b-41e6-b976-7ec8a6032151",
+          "id": "f134cdb6-cc60-4a49-9ae9-770be8256327",
           "name": "Update audience contact",
           "request": {
             "name": "Update audience contact",
@@ -482,7 +532,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"to\": \"<string>\",\n  \"variables\": {\n    \"key_0\": \"<string>\",\n    \"key_1\": \"<string>\",\n    \"key_2\": \"<string>\"\n  }\n}",
+              "raw": "{\n  \"to\": \"<string>\",\n  \"variables\": {\n    \"key_0\": \"<string>\",\n    \"key_1\": \"<string>\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -492,7 +542,7 @@
           },
           "response": [
             {
-              "id": "c825e513-1c22-4d69-ae87-4a4567c8d932",
+              "id": "d0f09a4e-6c94-457d-8f08-23927d0cff18",
               "name": "updated",
               "originalRequest": {
                 "url": {
@@ -557,7 +607,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"to\": \"string\",\n  \"variables\": {\n    \"key_0\": \"string\",\n    \"key_1\": \"string\"\n  },\n  \"added_at\": \"1985-06-04T09:57:43.928Z\"\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"to\": \"string\",\n  \"variables\": {\n    \"key_0\": \"string\",\n    \"key_1\": \"string\"\n  },\n  \"added_at\": \"1991-07-27T02:45:44.025Z\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -568,7 +618,7 @@
           }
         },
         {
-          "id": "1b25187e-8d42-4cfc-9b99-6fdb89bd3662",
+          "id": "e7d24e3a-f733-46c0-94d9-dbcc72ab8662",
           "name": "Remove audience contact",
           "request": {
             "name": "Remove audience contact",
@@ -624,7 +674,7 @@
           },
           "response": [
             {
-              "id": "74d7854f-dd20-476b-8bba-c7cadb90528a",
+              "id": "a1b575b7-904b-43d4-ab1c-ce513954188a",
               "name": "deleted",
               "originalRequest": {
                 "url": {
@@ -695,7 +745,7 @@
       "event": []
     },
     {
-      "id": "3fe96728-45e8-43a8-9aef-9c5ed006a477",
+      "id": "c9547669-0159-45c9-9467-e44933131ab5",
       "name": "Campaigns",
       "description": {
         "content": "Schedule audiences for paced bulk delivery with pause/resume/cancel controls.",
@@ -703,7 +753,7 @@
       },
       "item": [
         {
-          "id": "f3a2250f-d194-412f-a420-bcf007763276",
+          "id": "f5701d1e-98fb-49c3-b394-df600e5a64a8",
           "name": "List campaigns",
           "request": {
             "name": "List campaigns",
@@ -750,7 +800,7 @@
           }
         },
         {
-          "id": "2fd872f3-1e8e-4b4a-adc2-e6169875df90",
+          "id": "c00fcaa9-692f-4d8c-9888-ba11bda4f048",
           "name": "Create campaign",
           "request": {
             "name": "Create campaign",
@@ -784,7 +834,7 @@
           }
         },
         {
-          "id": "027d804b-20ea-4f4c-b2a1-51158bef726f",
+          "id": "8a4fbf55-06da-4f97-93ff-b8f432bab0ee",
           "name": "Get campaign",
           "request": {
             "name": "Get campaign",
@@ -819,7 +869,7 @@
           }
         },
         {
-          "id": "dc744738-700c-4774-92d9-bb8f2525d490",
+          "id": "7c62a38e-2cac-4fb3-8dda-4ceb438d2777",
           "name": "Pause campaign",
           "request": {
             "name": "Pause campaign",
@@ -867,7 +917,7 @@
           },
           "response": [
             {
-              "id": "08ad7133-fb79-4b31-bee1-d828bbf250b6",
+              "id": "d1a511c4-ca99-4848-99cb-10930f2aa774",
               "name": "paused",
               "originalRequest": {
                 "url": {
@@ -916,7 +966,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"audience_id\": \"string\",\n  \"status\": \"running\",\n  \"total_count\": 7089,\n  \"sent_count\": 308,\n  \"delivered_count\": 95,\n  \"read_count\": 9092,\n  \"failed_count\": 5748,\n  \"from\": \"string\",\n  \"created_at\": \"2000-11-08T13:03:55.061Z\",\n  \"started_at\": \"1966-10-05T00:29:08.419Z\",\n  \"completed_at\": \"2013-07-27T15:12:24.886Z\",\n  \"aborted_at\": \"2020-10-03T08:23:42.370Z\"\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"audience_id\": \"string\",\n  \"status\": \"running\",\n  \"total_count\": 5529,\n  \"sent_count\": 5172,\n  \"delivered_count\": 8207,\n  \"read_count\": 3412,\n  \"failed_count\": 160,\n  \"from\": \"string\",\n  \"created_at\": \"1994-03-09T04:02:45.437Z\",\n  \"started_at\": \"1976-08-23T14:48:13.675Z\",\n  \"completed_at\": \"2005-10-03T17:40:51.982Z\",\n  \"aborted_at\": \"1994-01-06T06:47:59.620Z\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -927,7 +977,7 @@
           }
         },
         {
-          "id": "a241e897-d8f2-4317-9172-0b4e3eb3c7af",
+          "id": "8efb97fe-34c7-45bb-83ff-1172ae7d27b3",
           "name": "Resume campaign",
           "request": {
             "name": "Resume campaign",
@@ -975,7 +1025,7 @@
           },
           "response": [
             {
-              "id": "b2d1166c-4fb4-4184-a769-191ea137c115",
+              "id": "c5107b53-8929-4248-9af3-7dd7bacaae06",
               "name": "resumed",
               "originalRequest": {
                 "url": {
@@ -1024,7 +1074,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"audience_id\": \"string\",\n  \"status\": \"running\",\n  \"total_count\": 7089,\n  \"sent_count\": 308,\n  \"delivered_count\": 95,\n  \"read_count\": 9092,\n  \"failed_count\": 5748,\n  \"from\": \"string\",\n  \"created_at\": \"2000-11-08T13:03:55.061Z\",\n  \"started_at\": \"1966-10-05T00:29:08.419Z\",\n  \"completed_at\": \"2013-07-27T15:12:24.886Z\",\n  \"aborted_at\": \"2020-10-03T08:23:42.370Z\"\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"audience_id\": \"string\",\n  \"status\": \"running\",\n  \"total_count\": 5529,\n  \"sent_count\": 5172,\n  \"delivered_count\": 8207,\n  \"read_count\": 3412,\n  \"failed_count\": 160,\n  \"from\": \"string\",\n  \"created_at\": \"1994-03-09T04:02:45.437Z\",\n  \"started_at\": \"1976-08-23T14:48:13.675Z\",\n  \"completed_at\": \"2005-10-03T17:40:51.982Z\",\n  \"aborted_at\": \"1994-01-06T06:47:59.620Z\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -1035,7 +1085,7 @@
           }
         },
         {
-          "id": "813f0d39-0fc7-452f-95e6-d3c8d2c8ecef",
+          "id": "53da9642-3abf-4630-92fa-3724bcc8c832",
           "name": "Cancel campaign",
           "request": {
             "name": "Cancel campaign",
@@ -1083,7 +1133,7 @@
           },
           "response": [
             {
-              "id": "2cb07456-f7b0-4173-abf5-71896c826f40",
+              "id": "8845a146-16e5-4eba-b1f7-e1d7b2318999",
               "name": "aborted",
               "originalRequest": {
                 "url": {
@@ -1132,7 +1182,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"audience_id\": \"string\",\n  \"status\": \"running\",\n  \"total_count\": 7089,\n  \"sent_count\": 308,\n  \"delivered_count\": 95,\n  \"read_count\": 9092,\n  \"failed_count\": 5748,\n  \"from\": \"string\",\n  \"created_at\": \"2000-11-08T13:03:55.061Z\",\n  \"started_at\": \"1966-10-05T00:29:08.419Z\",\n  \"completed_at\": \"2013-07-27T15:12:24.886Z\",\n  \"aborted_at\": \"2020-10-03T08:23:42.370Z\"\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"audience_id\": \"string\",\n  \"status\": \"running\",\n  \"total_count\": 5529,\n  \"sent_count\": 5172,\n  \"delivered_count\": 8207,\n  \"read_count\": 3412,\n  \"failed_count\": 160,\n  \"from\": \"string\",\n  \"created_at\": \"1994-03-09T04:02:45.437Z\",\n  \"started_at\": \"1976-08-23T14:48:13.675Z\",\n  \"completed_at\": \"2005-10-03T17:40:51.982Z\",\n  \"aborted_at\": \"1994-01-06T06:47:59.620Z\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -1146,7 +1196,7 @@
       "event": []
     },
     {
-      "id": "2e85c07c-ccf6-48b2-8c6f-3c07dd3d0244",
+      "id": "fb31bf8f-e8ce-4d1f-a98c-2a991fd44c29",
       "name": "Chats",
       "description": {
         "content": "Read WhatsApp chats and their messages on the connected engine.",
@@ -1154,7 +1204,7 @@
       },
       "item": [
         {
-          "id": "d4cc093d-12e4-47fd-b471-db47bd0e01a8",
+          "id": "9187f5e4-2d8e-44d7-933f-1bde1648acc9",
           "name": "List chats",
           "request": {
             "name": "List chats",
@@ -1201,7 +1251,7 @@
           }
         },
         {
-          "id": "d74ef636-5b78-4fc1-a640-4d01cbb3069d",
+          "id": "5cb8dafa-d672-4d6f-832a-1093ecf62792",
           "name": "Get chat",
           "request": {
             "name": "Get chat",
@@ -1236,7 +1286,7 @@
           }
         },
         {
-          "id": "2a5384cc-9022-483d-bdc3-8db0c1f07659",
+          "id": "af550dc7-b4db-4a78-8ea0-1923f81d42ac",
           "name": "List chat messages",
           "request": {
             "name": "List chat messages",
@@ -1327,7 +1377,7 @@
           },
           "response": [
             {
-              "id": "ae4a0e41-c115-4fe5-84fd-8f44b8eedc95",
+              "id": "dbfea555-b18b-4486-b6df-14b27c779e05",
               "name": "messages",
               "originalRequest": {
                 "url": {
@@ -1405,7 +1455,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"data\": [\n    {\n      \"key\": \"string\",\n      \"chat_id\": \"string\",\n      \"from\": \"string\",\n      \"timestamp\": \"2005-05-21T03:30:35.702Z\",\n      \"text\": \"string\",\n      \"type\": \"string\",\n      \"from_me\": true,\n      \"ack\": 481,\n      \"media_url\": \"string\",\n      \"caption\": \"string\",\n      \"filename\": \"string\",\n      \"link_preview\": {\n        \"title\": \"string\",\n        \"description\": \"string\",\n        \"canonical_url\": \"string\",\n        \"thumbnail\": \"string\"\n      }\n    },\n    {\n      \"key\": \"string\",\n      \"chat_id\": \"string\",\n      \"from\": \"string\",\n      \"timestamp\": \"1998-02-18T09:41:30.004Z\",\n      \"text\": \"string\",\n      \"type\": \"string\",\n      \"from_me\": false,\n      \"ack\": 2852,\n      \"media_url\": \"string\",\n      \"caption\": \"string\",\n      \"filename\": \"string\",\n      \"link_preview\": {\n        \"title\": \"string\",\n        \"description\": \"string\",\n        \"canonical_url\": \"string\",\n        \"thumbnail\": \"string\"\n      }\n    }\n  ],\n  \"has_more\": true,\n  \"next_cursor\": \"string\"\n}",
+              "body": "{\n  \"data\": [\n    {\n      \"key\": \"string\",\n      \"chat_id\": \"string\",\n      \"from\": \"string\",\n      \"timestamp\": \"1981-08-03T16:19:47.431Z\",\n      \"text\": \"string\",\n      \"type\": \"string\",\n      \"from_me\": true,\n      \"ack\": 4955,\n      \"media_url\": \"string\",\n      \"caption\": \"string\",\n      \"filename\": \"string\",\n      \"link_preview\": {\n        \"title\": \"string\",\n        \"description\": \"string\",\n        \"canonical_url\": \"string\",\n        \"thumbnail\": \"string\"\n      }\n    },\n    {\n      \"key\": \"string\",\n      \"chat_id\": \"string\",\n      \"from\": \"string\",\n      \"timestamp\": \"1962-10-11T01:58:27.965Z\",\n      \"text\": \"string\",\n      \"type\": \"string\",\n      \"from_me\": false,\n      \"ack\": 9197,\n      \"media_url\": \"string\",\n      \"caption\": \"string\",\n      \"filename\": \"string\",\n      \"link_preview\": {\n        \"title\": \"string\",\n        \"description\": \"string\",\n        \"canonical_url\": \"string\",\n        \"thumbnail\": \"string\"\n      }\n    }\n  ],\n  \"has_more\": false,\n  \"next_cursor\": \"string\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -1416,7 +1466,7 @@
           }
         },
         {
-          "id": "1011f18e-2ba7-4df2-a4ef-c78516329d10",
+          "id": "a2959dab-9055-4305-8098-16b7de933df2",
           "name": "Get chat message",
           "request": {
             "name": "Get chat message",
@@ -1472,7 +1522,7 @@
           },
           "response": [
             {
-              "id": "53f27c47-bb4d-4476-9e1f-8471f4dacd4b",
+              "id": "2f211dd4-92b6-492e-81f0-a0c59e8aa45e",
               "name": "message",
               "originalRequest": {
                 "url": {
@@ -1529,7 +1579,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"key\": \"string\",\n  \"chat_id\": \"string\",\n  \"from\": \"string\",\n  \"timestamp\": \"1947-09-14T06:46:32.408Z\",\n  \"text\": \"string\",\n  \"type\": \"string\",\n  \"from_me\": false,\n  \"ack\": 2228,\n  \"media_url\": \"string\",\n  \"caption\": \"string\",\n  \"filename\": \"string\",\n  \"link_preview\": {\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"canonical_url\": \"string\",\n    \"thumbnail\": \"string\"\n  }\n}",
+              "body": "{\n  \"key\": \"string\",\n  \"chat_id\": \"string\",\n  \"from\": \"string\",\n  \"timestamp\": \"1991-07-07T13:44:02.517Z\",\n  \"text\": \"string\",\n  \"type\": \"string\",\n  \"from_me\": false,\n  \"ack\": 1838,\n  \"media_url\": \"string\",\n  \"caption\": \"string\",\n  \"filename\": \"string\",\n  \"link_preview\": {\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"canonical_url\": \"string\",\n    \"thumbnail\": \"string\"\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -1540,7 +1590,7 @@
           }
         },
         {
-          "id": "bc9f514e-311e-4cb0-ab94-911ea5de8904",
+          "id": "efa58e78-1530-4088-80df-9ea969edcb1b",
           "name": "List chat participants",
           "request": {
             "name": "List chat participants",
@@ -1601,7 +1651,7 @@
           },
           "response": [
             {
-              "id": "e2bbe194-c617-4f63-a0be-f2ce9bfb17cd",
+              "id": "9308b423-b49c-47c2-8d30-4cbdc5ec9df2",
               "name": "participants",
               "originalRequest": {
                 "url": {
@@ -1659,7 +1709,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"data\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": true,\n      \"is_super_admin\": true\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true\n    }\n  ],\n  \"has_more\": true,\n  \"next_cursor\": \"string\"\n}",
+              "body": "{\n  \"data\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": true,\n      \"is_super_admin\": true\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true\n    }\n  ],\n  \"has_more\": false,\n  \"next_cursor\": \"string\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -1670,7 +1720,7 @@
           }
         },
         {
-          "id": "935bacfd-b558-433e-b752-fb6e370222b2",
+          "id": "7179d08b-6040-42f9-bb96-f9300b2a5acf",
           "name": "Mark chat as read",
           "request": {
             "name": "Mark chat as read",
@@ -1718,7 +1768,7 @@
           },
           "response": [
             {
-              "id": "08421e89-7dcc-4597-b30f-aeadea3f5a3d",
+              "id": "d3058c48-e3ec-4f03-b2f2-72814aed8608",
               "name": "marked read",
               "originalRequest": {
                 "url": {
@@ -1778,7 +1828,7 @@
           }
         },
         {
-          "id": "c8f6ea34-93d2-47c2-a8a0-96fc9dd17e72",
+          "id": "28eaa032-f6af-4587-8094-0ecc447b384a",
           "name": "Open chat in engine",
           "request": {
             "name": "Open chat in engine",
@@ -1826,7 +1876,7 @@
           },
           "response": [
             {
-              "id": "4f04458e-2738-4c56-a127-aa590d16f2f6",
+              "id": "d4eb28b6-be65-4cf1-b35c-b7bcc3ec8504",
               "name": "opened",
               "originalRequest": {
                 "url": {
@@ -1886,7 +1936,7 @@
           }
         },
         {
-          "id": "04f8bc29-344c-4312-8097-ffd40eb09a2a",
+          "id": "f4af0286-f606-4344-841a-8e752cbc2104",
           "name": "Get message delivery status",
           "request": {
             "name": "Get message delivery status",
@@ -1943,7 +1993,7 @@
           },
           "response": [
             {
-              "id": "b228c8d8-0d95-4281-a43d-3031104d837e",
+              "id": "afeb980f-e5b1-41e2-8cb2-674b6a063db8",
               "name": "ack",
               "originalRequest": {
                 "url": {
@@ -2001,7 +2051,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"ack\": 7000\n}",
+              "body": "{\n  \"ack\": 2608\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -2012,7 +2062,7 @@
           }
         },
         {
-          "id": "17e00f09-4841-4b0a-ad57-17fed1d84a1c",
+          "id": "e204cfa5-55a8-4fab-a997-591f04c8c4fa",
           "name": "React to message",
           "request": {
             "name": "React to message",
@@ -2082,7 +2132,7 @@
           },
           "response": [
             {
-              "id": "2dec0b43-f2ec-4c21-884c-4deda0b862c8",
+              "id": "2189c73b-e91b-467d-9a66-f1cd11aa3f62",
               "name": "reaction set",
               "originalRequest": {
                 "url": {
@@ -2159,7 +2209,7 @@
           }
         },
         {
-          "id": "73726ea5-7af4-4668-ac9d-491abad22c47",
+          "id": "0ace55df-bf61-4930-ade9-df33bef73086",
           "name": "Load older messages from phone",
           "request": {
             "name": "Load older messages from phone",
@@ -2208,7 +2258,7 @@
           },
           "response": [
             {
-              "id": "78004bf1-f36c-406a-b3af-861efcdeece2",
+              "id": "dad82174-bd36-4fae-b2d1-dbe00f89cd90",
               "name": "load result",
               "originalRequest": {
                 "url": {
@@ -2258,7 +2308,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"total_messages\": 3748,\n  \"added\": 8887,\n  \"can_load_more\": false\n}",
+              "body": "{\n  \"total_messages\": 1225,\n  \"added\": 8900,\n  \"can_load_more\": true\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -2269,7 +2319,7 @@
           }
         },
         {
-          "id": "846243f6-43ff-4117-bd61-9daa0741141c",
+          "id": "11105c9d-ad78-47e4-98c7-b205c140d9ff",
           "name": "Get message media URL",
           "request": {
             "name": "Get message media URL",
@@ -2326,7 +2376,7 @@
           },
           "response": [
             {
-              "id": "343f801b-be2c-48ed-b751-e530bdca72c0",
+              "id": "9e3b4aed-ef46-4b61-bfa1-27bdc34f315d",
               "name": "media url",
               "originalRequest": {
                 "url": {
@@ -2395,7 +2445,7 @@
           }
         },
         {
-          "id": "a7fc6bcd-6d04-4980-8e6e-74ebdaf373a2",
+          "id": "99aca35b-0aae-4559-8a94-03f598a23041",
           "name": "Batch get message acks",
           "request": {
             "name": "Batch get message acks",
@@ -2447,7 +2497,7 @@
           },
           "response": [
             {
-              "id": "b9305b9d-1045-47d0-b68f-43e1f668292e",
+              "id": "48174f65-472c-43b9-bf27-2824b2e3fce5",
               "name": "ack data",
               "originalRequest": {
                 "url": {
@@ -2495,7 +2545,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"data\": [\n    {\n      \"key\": \"string\",\n      \"ack\": 3396\n    },\n    {\n      \"key\": \"string\",\n      \"ack\": 8169\n    }\n  ]\n}",
+              "body": "{\n  \"data\": [\n    {\n      \"key\": \"string\",\n      \"ack\": 335\n    },\n    {\n      \"key\": \"string\",\n      \"ack\": 3856\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -2506,7 +2556,7 @@
           }
         },
         {
-          "id": "b198775a-c81b-44b3-be8e-73730858aa31",
+          "id": "15a18a8b-e536-4788-b80d-e07355b3b535",
           "name": "Get chat-message media",
           "request": {
             "name": "Get chat-message media",
@@ -2563,7 +2613,7 @@
           },
           "response": [
             {
-              "id": "c144aae5-3ca4-4218-8c59-aa942f4783d8",
+              "id": "2c06b28c-8ac6-4d6b-9ba1-689e203acf2c",
               "name": "media",
               "originalRequest": {
                 "url": {
@@ -2621,7 +2671,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"url\": \"string\",\n  \"mimetype\": \"string\",\n  \"filename\": \"string\",\n  \"data_base64\": \"string\",\n  \"original_quality\": false,\n  \"media_unavailable\": \"no_media\"\n}",
+              "body": "{\n  \"url\": \"string\",\n  \"mimetype\": \"string\",\n  \"filename\": \"string\",\n  \"data_base64\": \"string\",\n  \"original_quality\": true,\n  \"media_unavailable\": \"no_media\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -2635,7 +2685,7 @@
       "event": []
     },
     {
-      "id": "d04100f2-4603-4ee9-b5d5-7ee14b54b10c",
+      "id": "3cd7837f-4af1-4f37-a797-b98d2863e821",
       "name": "Contacts",
       "description": {
         "content": "Read WhatsApp contacts known to the connected engine.",
@@ -2643,7 +2693,7 @@
       },
       "item": [
         {
-          "id": "db6911c5-1f26-4590-b71e-709b6b4104ca",
+          "id": "ad1c794d-eadf-4fee-b703-6a66bd558b47",
           "name": "List contacts",
           "request": {
             "name": "List contacts",
@@ -2693,7 +2743,7 @@
       "event": []
     },
     {
-      "id": "25673e05-71ed-4db6-9f57-17c7bcdc7b71",
+      "id": "b0d8d335-2605-4dc3-bf09-fe3287576163",
       "name": "Engines",
       "description": {
         "content": "Inspect or control the WhatsApp engine connected to the workspace.",
@@ -2701,7 +2751,7 @@
       },
       "item": [
         {
-          "id": "fa4ce332-3b4f-4da0-9c75-1a7786426705",
+          "id": "95436671-055c-4ea5-9d7f-e428ab5461bb",
           "name": "Get engine status",
           "request": {
             "name": "Get engine status",
@@ -2738,7 +2788,7 @@
       "event": []
     },
     {
-      "id": "1e01f4cd-2ea1-46a3-9f2a-d89de4aee0d7",
+      "id": "ea4c96d8-c28a-44fc-ac12-4c078bde7a03",
       "name": "Groups",
       "description": {
         "content": "Create and manage WhatsApp groups via the connected engine.",
@@ -2746,7 +2796,7 @@
       },
       "item": [
         {
-          "id": "48edf39d-9889-4124-9ebe-c334c39c5102",
+          "id": "6f94d34b-c863-4ca0-ae7e-12e03ceb78cb",
           "name": "List groups",
           "request": {
             "name": "List groups",
@@ -2780,7 +2830,7 @@
           }
         },
         {
-          "id": "e4016d88-e42f-4dcd-b07f-de910775f06d",
+          "id": "5bffef5f-aeb5-452b-9b38-af4741228422",
           "name": "Create group",
           "request": {
             "name": "Create group",
@@ -2814,7 +2864,7 @@
           }
         },
         {
-          "id": "f3556ba2-23c2-4c9a-b280-34a9cee6af94",
+          "id": "a031cf6a-fe1d-4033-96e6-1c3ca6035fd9",
           "name": "Get group",
           "request": {
             "name": "Get group",
@@ -2849,7 +2899,7 @@
           }
         },
         {
-          "id": "0619a41c-7142-48ad-adbd-30bf58e4117e",
+          "id": "c8be6bfa-390f-48ea-a845-133d197f108e",
           "name": "Update group",
           "request": {
             "name": "Update group",
@@ -2909,7 +2959,7 @@
           },
           "response": [
             {
-              "id": "70d67c1d-274e-4f13-9f71-df5c2871351a",
+              "id": "d5f39639-4a00-474a-a9d7-e02833394173",
               "name": "updated",
               "originalRequest": {
                 "url": {
@@ -2965,7 +3015,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1977-05-11T20:41:07.900Z\",\n  \"last_message_at\": \"2019-03-15T21:09:29.007Z\",\n  \"participant_count\": 2645,\n  \"announce\": true,\n  \"restrict\": false,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1962-05-22T00:50:49.322Z\",\n  \"last_message_at\": \"1982-03-04T05:46:35.675Z\",\n  \"participant_count\": 8762,\n  \"announce\": true,\n  \"restrict\": true,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": true,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -2976,7 +3026,7 @@
           }
         },
         {
-          "id": "f2a83e82-0d9a-4be8-b4cf-d2d6c978adc8",
+          "id": "8080c562-c743-4dfe-8998-14079a834ee6",
           "name": "Add member to group",
           "request": {
             "name": "Add member to group",
@@ -3037,7 +3087,7 @@
           },
           "response": [
             {
-              "id": "cc191b8e-144b-4df7-aa73-39e4c71d8eb5",
+              "id": "360b6523-d405-4369-8a92-ae18f7bf75fe",
               "name": "updated group",
               "originalRequest": {
                 "url": {
@@ -3094,7 +3144,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1977-05-11T20:41:07.900Z\",\n  \"last_message_at\": \"2019-03-15T21:09:29.007Z\",\n  \"participant_count\": 2645,\n  \"announce\": true,\n  \"restrict\": false,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1962-05-22T00:50:49.322Z\",\n  \"last_message_at\": \"1982-03-04T05:46:35.675Z\",\n  \"participant_count\": 8762,\n  \"announce\": true,\n  \"restrict\": true,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": true,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -3105,7 +3155,7 @@
           }
         },
         {
-          "id": "51524b83-99ce-4793-a8c3-ec60b0bb0875",
+          "id": "781ae0ae-d1ff-4e39-bc15-485766063bd2",
           "name": "Leave group",
           "request": {
             "name": "Leave group",
@@ -3148,7 +3198,7 @@
           },
           "response": [
             {
-              "id": "b0fb405d-d963-4e61-a05f-349c5c730d11",
+              "id": "3e2bd2a9-7fe3-4201-8f81-09eaacf716f4",
               "name": "left",
               "originalRequest": {
                 "url": {
@@ -3205,7 +3255,7 @@
           }
         },
         {
-          "id": "dc8c8e3a-4d3b-42a3-9d41-9dbd0f434822",
+          "id": "b0b52d71-5889-4d1c-b7cb-2838fb996f84",
           "name": "Remove member from group",
           "request": {
             "name": "Remove member from group",
@@ -3261,7 +3311,7 @@
           },
           "response": [
             {
-              "id": "1d909531-a97f-4993-95ff-954599b4498b",
+              "id": "ba791258-8acd-4334-a0aa-b39bd5ba8d3f",
               "name": "updated group",
               "originalRequest": {
                 "url": {
@@ -3318,7 +3368,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1977-05-11T20:41:07.900Z\",\n  \"last_message_at\": \"2019-03-15T21:09:29.007Z\",\n  \"participant_count\": 2645,\n  \"announce\": true,\n  \"restrict\": false,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1962-05-22T00:50:49.322Z\",\n  \"last_message_at\": \"1982-03-04T05:46:35.675Z\",\n  \"participant_count\": 8762,\n  \"announce\": true,\n  \"restrict\": true,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": true,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -3329,7 +3379,7 @@
           }
         },
         {
-          "id": "3af3ed1b-9bef-47b0-8cf9-c6b6c7fc9c56",
+          "id": "ff53a110-a8cc-4b05-8199-4ce634662b82",
           "name": "Promote member to admin",
           "request": {
             "name": "Promote member to admin",
@@ -3386,7 +3436,7 @@
           },
           "response": [
             {
-              "id": "fbb75b94-516e-48ec-89b5-3ca2c1b108b3",
+              "id": "2ab7c028-da8b-4eec-b9f5-739e898e70e7",
               "name": "updated group",
               "originalRequest": {
                 "url": {
@@ -3444,7 +3494,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1977-05-11T20:41:07.900Z\",\n  \"last_message_at\": \"2019-03-15T21:09:29.007Z\",\n  \"participant_count\": 2645,\n  \"announce\": true,\n  \"restrict\": false,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1962-05-22T00:50:49.322Z\",\n  \"last_message_at\": \"1982-03-04T05:46:35.675Z\",\n  \"participant_count\": 8762,\n  \"announce\": true,\n  \"restrict\": true,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": true,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -3455,7 +3505,7 @@
           }
         },
         {
-          "id": "074706ba-2c6b-4b61-821d-30e18828be07",
+          "id": "c76b8dbd-9b0b-4a17-be50-0f72b8c4a925",
           "name": "Demote admin to member",
           "request": {
             "name": "Demote admin to member",
@@ -3512,7 +3562,7 @@
           },
           "response": [
             {
-              "id": "e971f594-18a0-4cae-a28e-9379faedc1c5",
+              "id": "9772439b-2fc6-4b0c-aff1-ebeb7bc3197e",
               "name": "updated group",
               "originalRequest": {
                 "url": {
@@ -3570,7 +3620,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1977-05-11T20:41:07.900Z\",\n  \"last_message_at\": \"2019-03-15T21:09:29.007Z\",\n  \"participant_count\": 2645,\n  \"announce\": true,\n  \"restrict\": false,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1962-05-22T00:50:49.322Z\",\n  \"last_message_at\": \"1982-03-04T05:46:35.675Z\",\n  \"participant_count\": 8762,\n  \"announce\": true,\n  \"restrict\": true,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": true,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -3581,7 +3631,7 @@
           }
         },
         {
-          "id": "8de82984-3a7f-4909-9dd6-58c42d7f6a06",
+          "id": "fd4631f4-4893-4080-98a0-3088dbac6a24",
           "name": "Set group picture",
           "request": {
             "name": "Set group picture",
@@ -3642,7 +3692,7 @@
           },
           "response": [
             {
-              "id": "4acfe05c-6ab1-491a-be12-179a31d051c9",
+              "id": "c5e5f164-02c5-45e4-bdfa-0aa1e6cb83b6",
               "name": "picture updated",
               "originalRequest": {
                 "url": {
@@ -3699,7 +3749,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1977-05-11T20:41:07.900Z\",\n  \"last_message_at\": \"2019-03-15T21:09:29.007Z\",\n  \"participant_count\": 2645,\n  \"announce\": true,\n  \"restrict\": false,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"description\": \"string\",\n  \"owner\": \"string\",\n  \"created_at\": \"1962-05-22T00:50:49.322Z\",\n  \"last_message_at\": \"1982-03-04T05:46:35.675Z\",\n  \"participant_count\": 8762,\n  \"announce\": true,\n  \"restrict\": true,\n  \"participants\": [\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": true,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    },\n    {\n      \"chat_id\": \"string\",\n      \"is_admin\": false,\n      \"is_super_admin\": true,\n      \"name\": \"string\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -3713,7 +3763,7 @@
       "event": []
     },
     {
-      "id": "388b22e2-7a04-4d01-a25f-d0c8dd8a1511",
+      "id": "8de34a2e-cfca-4279-bb6d-2c25b4632876",
       "name": "Messages",
       "description": {
         "content": "Send or retrieve WhatsApp messages.",
@@ -3721,7 +3771,7 @@
       },
       "item": [
         {
-          "id": "a5f04230-7bd9-4194-b0ed-9a9470353917",
+          "id": "3ec149d3-24c8-4f4a-876d-66e94c051497",
           "name": "List messages",
           "request": {
             "name": "List messages",
@@ -3769,7 +3819,7 @@
           }
         },
         {
-          "id": "a4254d0e-8f33-49e9-b1ea-6241b3bc2175",
+          "id": "39a60696-0652-4449-950c-5fca5935c2d0",
           "name": "Send message",
           "request": {
             "name": "Send message",
@@ -3826,7 +3876,7 @@
           },
           "response": [
             {
-              "id": "c8ddbfd3-11c4-4809-949b-75001432e05f",
+              "id": "3f28a0d0-ef5f-4e9c-839d-63966371e0e7",
               "name": "Idempotency replay",
               "originalRequest": {
                 "url": {
@@ -3879,12 +3929,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"key\": \"string\",\n  \"to\": \"string\",\n  \"from\": \"string\",\n  \"type\": \"poll\",\n  \"text\": \"string\",\n  \"media_url\": \"string\",\n  \"media_kind\": \"voice\",\n  \"poll_question\": \"string\",\n  \"status\": \"scheduled\",\n  \"send_at\": \"1999-12-03T19:22:14.123Z\",\n  \"created_at\": \"2023-11-25T17:55:09.128Z\",\n  \"sent_at\": \"1983-04-19T13:19:13.844Z\",\n  \"delivered_at\": \"1954-03-29T04:33:54.232Z\",\n  \"read_at\": \"1948-08-10T20:10:28.736Z\",\n  \"failed_at\": \"2009-04-11T12:09:23.531Z\",\n  \"failure_reason\": \"string\",\n  \"link_preview\": {\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"canonical_url\": \"string\",\n    \"thumbnail\": \"string\"\n  }\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"key\": \"string\",\n  \"to\": \"string\",\n  \"from\": \"string\",\n  \"type\": \"media\",\n  \"text\": \"string\",\n  \"media_url\": \"string\",\n  \"media_kind\": \"document\",\n  \"poll_question\": \"string\",\n  \"status\": \"delivered\",\n  \"send_at\": \"2019-06-22T07:45:31.978Z\",\n  \"created_at\": \"1975-08-12T20:16:15.670Z\",\n  \"sent_at\": \"1982-06-26T13:00:51.724Z\",\n  \"delivered_at\": \"1991-06-09T15:10:34.843Z\",\n  \"read_at\": \"2012-04-16T20:29:02.124Z\",\n  \"failed_at\": \"1984-06-02T05:46:05.025Z\",\n  \"failure_reason\": \"string\",\n  \"link_preview\": {\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"canonical_url\": \"string\",\n    \"thumbnail\": \"string\"\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "72593f84-44ff-4e3f-a0fd-4c40fe9723c5",
+              "id": "bc1756aa-76c6-42a9-8d2f-e308f2288bd5",
               "name": "Created",
               "originalRequest": {
                 "url": {
@@ -3937,7 +3987,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"key\": \"string\",\n  \"to\": \"string\",\n  \"from\": \"string\",\n  \"type\": \"poll\",\n  \"text\": \"string\",\n  \"media_url\": \"string\",\n  \"media_kind\": \"voice\",\n  \"poll_question\": \"string\",\n  \"status\": \"scheduled\",\n  \"send_at\": \"1999-12-03T19:22:14.123Z\",\n  \"created_at\": \"2023-11-25T17:55:09.128Z\",\n  \"sent_at\": \"1983-04-19T13:19:13.844Z\",\n  \"delivered_at\": \"1954-03-29T04:33:54.232Z\",\n  \"read_at\": \"1948-08-10T20:10:28.736Z\",\n  \"failed_at\": \"2009-04-11T12:09:23.531Z\",\n  \"failure_reason\": \"string\",\n  \"link_preview\": {\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"canonical_url\": \"string\",\n    \"thumbnail\": \"string\"\n  }\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"key\": \"string\",\n  \"to\": \"string\",\n  \"from\": \"string\",\n  \"type\": \"media\",\n  \"text\": \"string\",\n  \"media_url\": \"string\",\n  \"media_kind\": \"document\",\n  \"poll_question\": \"string\",\n  \"status\": \"delivered\",\n  \"send_at\": \"2019-06-22T07:45:31.978Z\",\n  \"created_at\": \"1975-08-12T20:16:15.670Z\",\n  \"sent_at\": \"1982-06-26T13:00:51.724Z\",\n  \"delivered_at\": \"1991-06-09T15:10:34.843Z\",\n  \"read_at\": \"2012-04-16T20:29:02.124Z\",\n  \"failed_at\": \"1984-06-02T05:46:05.025Z\",\n  \"failure_reason\": \"string\",\n  \"link_preview\": {\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"canonical_url\": \"string\",\n    \"thumbnail\": \"string\"\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -3948,7 +3998,7 @@
           }
         },
         {
-          "id": "6556da39-c479-4d2b-8636-2e26f819138f",
+          "id": "a8e3736d-555e-44aa-bc77-cee7cf95fbb5",
           "name": "Get message",
           "request": {
             "name": "Get message",
@@ -3987,7 +4037,7 @@
           },
           "response": [
             {
-              "id": "8e86aa80-a84e-4f47-8bbe-24fa1497591f",
+              "id": "6997d33f-dbea-4fe3-b2a0-c02a84ffbfa6",
               "name": "success",
               "originalRequest": {
                 "url": {
@@ -4027,7 +4077,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"key\": \"string\",\n  \"to\": \"string\",\n  \"from\": \"string\",\n  \"type\": \"poll\",\n  \"text\": \"string\",\n  \"media_url\": \"string\",\n  \"media_kind\": \"voice\",\n  \"poll_question\": \"string\",\n  \"status\": \"scheduled\",\n  \"send_at\": \"1999-12-03T19:22:14.123Z\",\n  \"created_at\": \"2023-11-25T17:55:09.128Z\",\n  \"sent_at\": \"1983-04-19T13:19:13.844Z\",\n  \"delivered_at\": \"1954-03-29T04:33:54.232Z\",\n  \"read_at\": \"1948-08-10T20:10:28.736Z\",\n  \"failed_at\": \"2009-04-11T12:09:23.531Z\",\n  \"failure_reason\": \"string\",\n  \"link_preview\": {\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"canonical_url\": \"string\",\n    \"thumbnail\": \"string\"\n  }\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"key\": \"string\",\n  \"to\": \"string\",\n  \"from\": \"string\",\n  \"type\": \"media\",\n  \"text\": \"string\",\n  \"media_url\": \"string\",\n  \"media_kind\": \"document\",\n  \"poll_question\": \"string\",\n  \"status\": \"delivered\",\n  \"send_at\": \"2019-06-22T07:45:31.978Z\",\n  \"created_at\": \"1975-08-12T20:16:15.670Z\",\n  \"sent_at\": \"1982-06-26T13:00:51.724Z\",\n  \"delivered_at\": \"1991-06-09T15:10:34.843Z\",\n  \"read_at\": \"2012-04-16T20:29:02.124Z\",\n  \"failed_at\": \"1984-06-02T05:46:05.025Z\",\n  \"failure_reason\": \"string\",\n  \"link_preview\": {\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"canonical_url\": \"string\",\n    \"thumbnail\": \"string\"\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -4041,7 +4091,7 @@
       "event": []
     },
     {
-      "id": "beab8219-4a3d-46f0-87d8-f2d26ea9114a",
+      "id": "5dfe2cb2-f4de-42b9-b806-dcde57d02109",
       "name": "Newsletters",
       "description": {
         "content": "Create WhatsApp newsletters (channels) via the connected engine.",
@@ -4049,7 +4099,7 @@
       },
       "item": [
         {
-          "id": "a58465a7-c3eb-40ab-ab1a-83b78a03e41b",
+          "id": "b9f9b781-75e7-419d-8ae1-0080b83b5f2f",
           "name": "Create newsletter",
           "request": {
             "name": "Create newsletter",
@@ -4086,7 +4136,7 @@
       "event": []
     },
     {
-      "id": "6f9e8b25-eb80-46c7-873a-d3a9b73531d0",
+      "id": "f8ab8b7e-ab6e-475a-bf9b-e8e83eebb0f1",
       "name": "ScheduledMessages",
       "description": {
         "content": "List, retrieve, update, and cancel previously-scheduled WhatsApp messages.",
@@ -4094,7 +4144,7 @@
       },
       "item": [
         {
-          "id": "23f58f96-8720-4703-ad7a-18dbd0aa6e40",
+          "id": "6b0ae344-54d7-456d-bc45-cdd3c1404ecd",
           "name": "List scheduled messages",
           "request": {
             "name": "List scheduled messages",
@@ -4141,7 +4191,7 @@
           }
         },
         {
-          "id": "7f87edd0-8d93-4376-9ffd-a68a32aa7679",
+          "id": "2a14addb-2ab1-4797-acc8-810115d6e2d2",
           "name": "Get scheduled message",
           "request": {
             "name": "Get scheduled message",
@@ -4176,7 +4226,7 @@
           }
         },
         {
-          "id": "622de881-46f5-426a-9059-e63c10c9fb1c",
+          "id": "b0260624-0279-4917-a95a-64e8db6878eb",
           "name": "Update scheduled message",
           "request": {
             "name": "Update scheduled message",
@@ -4211,7 +4261,7 @@
           }
         },
         {
-          "id": "4edfa3c2-9616-4799-8f12-241092ffef0e",
+          "id": "dc2bb342-1162-4740-8546-d7fb0c4ff328",
           "name": "Cancel scheduled message",
           "request": {
             "name": "Cancel scheduled message",
@@ -4249,7 +4299,7 @@
       "event": []
     },
     {
-      "id": "aefc1730-2de0-4750-abf5-3e508c2d7bb6",
+      "id": "9d3d9a51-732b-4513-8650-2219dbd701fc",
       "name": "Webhooks",
       "description": {
         "content": "Register URLs to receive signed HTTPS POSTs on Blueticks events.",
@@ -4257,7 +4307,7 @@
       },
       "item": [
         {
-          "id": "10fc311b-7edf-4ef9-a237-3eec1fa348b3",
+          "id": "ede041b0-ea42-4b92-8cfa-5031f9f5b142",
           "name": "List webhooks",
           "request": {
             "name": "List webhooks",
@@ -4308,7 +4358,7 @@
           },
           "response": [
             {
-              "id": "6bf8a78b-839e-455a-a90d-350dc7a23e8e",
+              "id": "e544fa82-b227-4bcb-96e3-656fef649c78",
               "name": "list",
               "originalRequest": {
                 "url": {
@@ -4356,7 +4406,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"url\": \"string\",\n  \"events\": [\n    \"string\",\n    \"string\"\n  ],\n  \"description\": \"string\",\n  \"status\": \"enabled\",\n  \"created_at\": \"1953-05-20T18:05:22.564Z\"\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"url\": \"string\",\n  \"events\": [\n    \"string\",\n    \"string\"\n  ],\n  \"description\": \"string\",\n  \"status\": \"enabled\",\n  \"created_at\": \"1962-01-03T07:48:22.427Z\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -4367,7 +4417,7 @@
           }
         },
         {
-          "id": "3dd4aef5-140e-4971-987e-952a20db9788",
+          "id": "c9fe6a30-6f71-4636-8016-8f734ff087fb",
           "name": "Create webhook",
           "request": {
             "name": "Create webhook",
@@ -4418,7 +4468,7 @@
           },
           "response": [
             {
-              "id": "173bbac4-0dfd-4c34-989e-2e4bed5e258f",
+              "id": "d8dbaca8-b1c6-4af5-8b9b-cc0bfb254cab",
               "name": "created",
               "originalRequest": {
                 "url": {
@@ -4465,7 +4515,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"url\": \"string\",\n  \"events\": [\n    \"string\",\n    \"string\"\n  ],\n  \"description\": \"string\",\n  \"status\": \"enabled\",\n  \"created_at\": \"1975-02-15T16:59:04.405Z\",\n  \"secret\": \"string\"\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"url\": \"string\",\n  \"events\": [\n    \"string\",\n    \"string\"\n  ],\n  \"description\": \"string\",\n  \"status\": \"enabled\",\n  \"created_at\": \"2017-11-18T20:56:08.263Z\",\n  \"secret\": \"string\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -4476,7 +4526,7 @@
           }
         },
         {
-          "id": "94bf65f0-4962-4f70-a988-8b583f0a88c3",
+          "id": "a6ca29d2-576e-435c-9c16-0c5ec341502d",
           "name": "Get webhook",
           "request": {
             "name": "Get webhook",
@@ -4514,7 +4564,7 @@
           }
         },
         {
-          "id": "35316553-c1cc-40dd-80a6-ff1d021794c0",
+          "id": "184b9266-5650-49a7-8607-936c63ef24b2",
           "name": "Update webhook",
           "request": {
             "name": "Update webhook",
@@ -4552,7 +4602,7 @@
           }
         },
         {
-          "id": "f5455e7c-3c90-4508-9595-063509260f7b",
+          "id": "654a3fe0-1608-4927-8d4b-6100e636607e",
           "name": "Delete webhook",
           "request": {
             "name": "Delete webhook",
@@ -4590,7 +4640,7 @@
           }
         },
         {
-          "id": "c5c75bb8-3b57-4963-85ea-65d1d9110afa",
+          "id": "b2b368c4-fb13-444e-a71f-f25a4abb40e0",
           "name": "Rotate webhook secret",
           "request": {
             "name": "Rotate webhook secret",
@@ -4638,7 +4688,7 @@
           },
           "response": [
             {
-              "id": "e08f8191-f738-427b-86b7-c93dfe8b4576",
+              "id": "0ba2ff08-c843-4a8f-b7c1-57c65666c43a",
               "name": "new secret",
               "originalRequest": {
                 "url": {
@@ -4687,7 +4737,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"string\",\n  \"url\": \"string\",\n  \"events\": [\n    \"string\",\n    \"string\"\n  ],\n  \"description\": \"string\",\n  \"status\": \"enabled\",\n  \"created_at\": \"1975-02-15T16:59:04.405Z\",\n  \"secret\": \"string\"\n}",
+              "body": "{\n  \"id\": \"string\",\n  \"url\": \"string\",\n  \"events\": [\n    \"string\",\n    \"string\"\n  ],\n  \"description\": \"string\",\n  \"status\": \"enabled\",\n  \"created_at\": \"2017-11-18T20:56:08.263Z\",\n  \"secret\": \"string\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -4701,7 +4751,18 @@
       "event": []
     }
   ],
-  "event": [],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const apiKey = pm.environment.get('apiKey') || pm.collectionVariables.get('apiKey');",
+          "if (apiKey) pm.collectionVariables.set('bearerToken', apiKey);"
+        ]
+      }
+    }
+  ],
   "variable": [
     {
       "type": "string",
@@ -4710,12 +4771,9 @@
     }
   ],
   "info": {
-    "_postman_id": "c44cf730-dc53-47b7-8894-9d8787ba9088",
+    "_postman_id": "36ce3b66-a322-4ee8-b13b-63fa28d8d875",
     "name": "Blueticks API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": {
-      "content": "Public API for Blueticks WhatsApp automation.",
-      "type": "text/plain"
-    }
+    "description": "Auto-generated from openapi.json. Import a Blueticks Postman environment (Production or Staging) alongside this collection, paste your API key into the env's `apiKey` field, and every request authenticates automatically.\n\nNeed a key? Generate one at https://www.blueticks.co/dashboard."
   }
 }
