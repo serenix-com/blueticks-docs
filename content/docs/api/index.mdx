@@ -6,6 +6,8 @@ description: Complete reference for the Blueticks public API v1.
 import { Cards, Card } from 'fumadocs-ui/components/card';
 import { Download, Link as LinkIcon, FileJson } from 'lucide-react';
 
+export const showStaging = !process.env.NEXT_PUBLIC_API_SERVERS || process.env.NEXT_PUBLIC_API_SERVERS.includes('stg-');
+
 This section documents every endpoint in the Blueticks public API v1.
 Endpoints are grouped by resource.
 
@@ -43,13 +45,15 @@ endpoints. Run "🔑 Authentication / Validate API key" first to confirm.
     href="/blueticks.production.postman_environment.json"
     external
   />
-  <Card
-    icon={<LinkIcon />}
-    title="Staging environment"
-    description="baseUrl pre-set to stg-api.blueticks.co for safe experimentation."
-    href="/blueticks.staging.postman_environment.json"
-    external
-  />
+  {showStaging && (
+    <Card
+      icon={<LinkIcon />}
+      title="Staging environment"
+      description="baseUrl pre-set to stg-api.blueticks.co for safe experimentation."
+      href="/blueticks.staging.postman_environment.json"
+      external
+    />
+  )}
   <Card
     icon={<FileJson />}
     title="Raw OpenAPI spec"

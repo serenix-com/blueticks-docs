@@ -24,6 +24,16 @@ const STAGING_ENV_OUT = './public/blueticks.staging.postman_environment.json';
 const PROD_URL = 'https://api.blueticks.co';
 const STAGING_URL = 'https://stg-api.blueticks.co';
 
+// Staging is internal-only — generated for deploy-preview, branch-deploy,
+// and local builds, but suppressed on the production Netlify context where
+// `NEXT_PUBLIC_API_SERVERS` is set to exactly the prod URL.
+// See netlify.toml for the full matrix.
+function shouldExposeStaging(): boolean {
+  const csv = process.env.NEXT_PUBLIC_API_SERVERS;
+  if (!csv) return true; // local / unset → expose
+  return csv.includes('stg-');
+}
+
 // ---------------------------------------------------------------------------
 // Postman collection types (subset we actually touch)
 // ---------------------------------------------------------------------------
@@ -269,9 +279,16 @@ async function main(): Promise<void> {
   await fs.writeFile(PROD_ENV_OUT, JSON.stringify(prodEnv, null, 2));
   console.log(`[postman] wrote ${PROD_ENV_OUT}`);
 
-  const stagingEnv = buildEnvironment('Blueticks (Staging)', STAGING_URL);
-  await fs.writeFile(STAGING_ENV_OUT, JSON.stringify(stagingEnv, null, 2));
-  console.log(`[postman] wrote ${STAGING_ENV_OUT}`);
+  if (shouldExposeStaging()) {
+    const stagingEnv = buildEnvironment('Blueticks (Staging)', STAGING_URL);
+    await fs.writeFile(STAGING_ENV_OUT, JSON.stringify(stagingEnv, null, 2));
+    console.log(`[postman] wrote ${STAGING_ENV_OUT}`);
+  } else {
+    // Production build — make sure no stale staging file leaks into the
+    // deployed `public/` if one was committed from a previous local run.
+    await fs.rm(STAGING_ENV_OUT, { force: true });
+    console.log(`[postman] suppressed staging env (production build)`);
+  }
 }
 
 main().catch((err) => {
