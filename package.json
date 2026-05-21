@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "generate:openapi": "tsx scripts/generate-openapi-pages.ts",
-    "prebuild": "pnpm run generate:openapi",
+    "generate:postman": "tsx scripts/generate-postman.ts",
+    "prebuild": "pnpm run generate:openapi && pnpm run generate:postman",
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
@@ -32,6 +33,7 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "openapi-to-postmanv2": "^6.0.1",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
