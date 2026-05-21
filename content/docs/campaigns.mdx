@@ -68,6 +68,9 @@ curl -X POST https://api.blueticks.co/v1/audiences \
   </Tab>
 </Tabs>
 
+Each contact's `to` accepts an E.164 phone OR a WhatsApp JID (`@g.us` for groups,
+`@newsletter` for channels) — same rules as direct `POST /v1/messages`.
+
 Append more contacts to an existing audience later via
 `POST /v1/audiences/{id}/contacts` — up to 1000 per request, duplicates
 silently skipped.
@@ -79,9 +82,49 @@ any contact is missing a referenced variable, `on_missing_variable`
 decides: `"fail"` (default — 400 before the campaign starts) or
 `"skip"` (those contacts are counted as failed).
 
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+cmp = bt.campaigns.create(
+    name="Launch blast",
+    audience_id="aud_01h7...",
+    text="Hey {{first_name}}! Your order ships today.",
+    on_missing_variable="fail",
+)
+print(cmp.id, cmp.status)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+const cmp = await bt.campaigns.create({
+  name: 'Launch blast',
+  audience_id: 'aud_01h7...',
+  text: 'Hey {{first_name}}! Your order ships today.',
+  on_missing_variable: 'fail',
+});
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+$cmp = $bt->campaigns->create(
+    'Launch blast',
+    'aud_01h7...',
+    ['text' => 'Hey {{first_name}}! Your order ships today.', 'on_missing_variable' => 'fail'],
+);
+```
+
+  </Tab>
+  <Tab value="cURL">
+
 ```bash
 curl -X POST https://api.blueticks.co/v1/campaigns \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "name": "Launch blast",
     "audience_id": "aud_01h7...",
@@ -90,15 +133,48 @@ curl -X POST https://api.blueticks.co/v1/campaigns \
   }'
 ```
 
+  </Tab>
+</Tabs>
+
 Response includes live counters (`sent_count`, `delivered_count`,
 `read_count`, `failed_count`) plus `status: "running"`.
 
 ## 3. Track progress
 
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+cmp = bt.campaigns.get("cmp_01h7...")
+print(cmp.status, cmp.sent_count, cmp.delivered_count)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+const cmp = await bt.campaigns.get('cmp_01h7...');
+console.log(cmp.status, cmp.sent_count, cmp.delivered_count);
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+$cmp = $bt->campaigns->get('cmp_01h7...');
+echo $cmp->status, ' ', $cmp->sent_count, '/', $cmp->delivered_count, "\n";
+```
+
+  </Tab>
+  <Tab value="cURL">
+
 ```bash
 curl https://api.blueticks.co/v1/campaigns/cmp_01h7... \
   -H "Authorization: Bearer BLUETICKS_API_KEY"
 ```
+
+  </Tab>
+</Tabs>
 
 Status lifecycle: `pending → running → complete_sent →
 complete_delivered`, with `paused` and `aborted` as side states.
@@ -108,6 +184,51 @@ For push updates, register a [webhook](/docs/webhooks) subscribed to
 `campaign.completed`, `campaign.aborted`.
 
 ## 4. Pause, resume, or cancel
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+# Pause a running campaign
+bt.campaigns.pause("cmp_01h7...")
+
+# Resume a paused campaign
+bt.campaigns.resume("cmp_01h7...")
+
+# Cancel permanently — no un-do
+bt.campaigns.cancel("cmp_01h7...")
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+// Pause a running campaign
+await bt.campaigns.pause('cmp_01h7...');
+
+// Resume a paused campaign
+await bt.campaigns.resume('cmp_01h7...');
+
+// Cancel permanently — no un-do
+await bt.campaigns.cancel('cmp_01h7...');
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+// Pause a running campaign
+$bt->campaigns->pause('cmp_01h7...');
+
+// Resume a paused campaign
+$bt->campaigns->resume('cmp_01h7...');
+
+// Cancel permanently — no un-do
+$bt->campaigns->cancel('cmp_01h7...');
+```
+
+  </Tab>
+  <Tab value="cURL">
 
 ```bash
 # Pause a running campaign
@@ -122,6 +243,9 @@ curl -X POST https://api.blueticks.co/v1/campaigns/cmp_01h7.../resume \
 curl -X POST https://api.blueticks.co/v1/campaigns/cmp_01h7.../cancel \
   -H "Authorization: Bearer BLUETICKS_API_KEY"
 ```
+
+  </Tab>
+</Tabs>
 
 All three return `409` when the campaign isn't in a compatible state.
 
