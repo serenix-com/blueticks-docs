@@ -23,11 +23,10 @@ https://api.blueticks.co
 
 ## Use in Postman
 
-A Postman collection + two environment files are regenerated on every spec
+A Postman collection {showStaging ? '+ two environment files are' : '+ a production environment file are'} regenerated on every spec
 sync — they track the live API without manual updates.
 
-**Flow:** import the collection → import one environment (Production or
-Staging) → paste your API key into the env's `apiKey` field → start hitting
+**Flow:** import the collection → import {showStaging ? 'one environment (Production or Staging)' : 'the Production environment'} → paste your API key into the env's `apiKey` field → start hitting
 endpoints. Run "🔑 Authentication / Validate API key" first to confirm.
 
 <Cards>
