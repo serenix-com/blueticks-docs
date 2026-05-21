@@ -16,12 +16,6 @@ import { join } from 'node:path';
 
 const OUTPUT_DIR = 'content/docs/api';
 const SPEC_PATH = './openapi.json';
-// We read SPEC_PATH, drop noisy operations, and write this filtered copy
-// for fumadocs to consume. The runtime APIPage components still resolve
-// against ./openapi.json (the unfiltered original served from public/),
-// so the filter only affects what pages get generated, not what data
-// the page components fetch.
-const FILTERED_SPEC_PATH = './.openapi.docs.json';
 
 async function main(): Promise<void> {
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
@@ -38,33 +32,11 @@ async function main(): Promise<void> {
   }
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
-  // feathers-swagger auto-emits both PUT and PATCH on every Feathers
-  // service (the underlying ORM doesn't distinguish), but the public
-  // backend only exposes one of them. The vestigial companion has an
-  // empty `summary` AND `security: []` (no auth required) — that pair
-  // is the signature of the auto-emit, not an intentional surface.
-  // Without dropping it, fumadocs generates a duplicate doc page named
-  // verbatim from the path (e.g. "/v1/scheduled-messages/{id}").
   const raw = await fs.readFile(SPEC_PATH, 'utf8');
   const spec = JSON.parse(raw) as { paths?: Record<string, Record<string, unknown>> };
-  const isAutoEmittedNoise = (op: unknown): boolean => {
-    if (!op || typeof op !== 'object') return false;
-    const o = op as { summary?: string; security?: unknown[] };
-    return !o.summary && Array.isArray(o.security) && o.security.length === 0;
-  };
-  if (spec.paths) {
-    for (const [, pathItem] of Object.entries(spec.paths)) {
-      for (const method of ['put', 'patch'] as const) {
-        if (isAutoEmittedNoise(pathItem[method])) {
-          delete pathItem[method];
-        }
-      }
-    }
-  }
-  await fs.writeFile(FILTERED_SPEC_PATH, JSON.stringify(spec, null, 2));
 
   const server = createOpenAPI({
-    input: [FILTERED_SPEC_PATH],
+    input: [SPEC_PATH],
   });
 
   // Flatten file paths under each tag folder.
@@ -110,26 +82,15 @@ async function main(): Promise<void> {
     }),
   });
 
-  // Post-process the generated MDX files. Two transforms:
-  //   1. Rewrite <APIPage document="..."> back to ./openapi.json — fumadocs
-  //      bakes the FILTERED spec path into the file, but at runtime we
-  //      want the unfiltered original (same as public/openapi.json).
-  //   2. Inject the operation's full markdown description into the MDX
-  //      BODY as a prose block above <APIPage>. The frontmatter
-  //      description was truncated to the first sentence (above), so we
-  //      need the long-form variant breakdown rendered here where
-  //      Fumadocs MDX processes markdown properly.
+  // Post-process the generated MDX files: inject the operation's full
+  // markdown description into the MDX BODY as a prose block above
+  // <APIPage>. The frontmatter description was truncated to the first
+  // sentence (above), so we need the long-form variant breakdown
+  // rendered here where Fumadocs MDX processes markdown properly.
   const mdxFiles = await collectMdx(OUTPUT_DIR);
-  const filteredRef = `document={"${FILTERED_SPEC_PATH}"}`;
-  const canonicalRef = `document={"./openapi.json"}`;
-  // Build a path+method → description map from the spec so we can match
-  // each generated MDX file back to its operation.
   const opDescriptions = collectOperationDescriptions(spec);
   for (const file of mdxFiles) {
     let content = await fs.readFile(file, 'utf8');
-    if (content.includes(filteredRef)) {
-      content = content.split(filteredRef).join(canonicalRef);
-    }
     const op = matchOperation(content, opDescriptions);
     if (op && op.body) {
       content = injectDescriptionBody(content, op.body);
@@ -138,13 +99,8 @@ async function main(): Promise<void> {
   }
 
   // Copy spec to public/ so /openapi.json is served verbatim for Postman etc.
-  // We serve the unfiltered original (PUT operations included) — Postman
-  // imports and external tools should see the full API surface.
   await fs.mkdir('public', { recursive: true });
   await fs.copyFile(SPEC_PATH, join('public', 'openapi.json'));
-  await fs.unlink(FILTERED_SPEC_PATH).catch(() => {
-    /* ignore — leftover filtered file is harmless */
-  });
 
   console.log(`[openapi] regenerated ${OUTPUT_DIR} from ${SPEC_PATH}`);
 }

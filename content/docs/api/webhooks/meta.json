@@ -4,9 +4,9 @@
   "pages": [
     "list-webhooks",
     "create-webhook",
-    "rotate-webhook-secret",
     "get-webhook",
     "update-webhook",
-    "delete-webhook"
+    "delete-webhook",
+    "rotate-webhook-secret"
   ]
 }

@@ -12,37 +12,48 @@
   ],
   "tags": [
     {
-      "name": "Account"
+      "name": "Account",
+      "description": "Account metadata for the authenticated API key."
     },
     {
-      "name": "Audiences"
+      "name": "Audiences",
+      "description": "Reusable contact lists used as targets for messages and campaigns."
     },
     {
-      "name": "Campaigns"
+      "name": "Campaigns",
+      "description": "Schedule audiences for paced bulk delivery with pause/resume/cancel controls."
     },
     {
-      "name": "Chats"
+      "name": "Chats",
+      "description": "Read WhatsApp chats and their messages on the connected engine."
     },
     {
-      "name": "Contacts"
+      "name": "Contacts",
+      "description": "Read WhatsApp contacts known to the connected engine."
     },
     {
-      "name": "Engines"
+      "name": "Engines",
+      "description": "Inspect or control the WhatsApp engine connected to the workspace."
     },
     {
-      "name": "Groups"
+      "name": "Groups",
+      "description": "Create and manage WhatsApp groups via the connected engine."
     },
     {
-      "name": "Messages"
+      "name": "Messages",
+      "description": "Send or retrieve WhatsApp messages."
     },
     {
-      "name": "Newsletters"
+      "name": "Newsletters",
+      "description": "Create WhatsApp newsletters (channels) via the connected engine."
     },
     {
-      "name": "ScheduledMessages"
+      "name": "ScheduledMessages",
+      "description": "List, retrieve, update, and cancel previously-scheduled WhatsApp messages."
     },
     {
-      "name": "Webhooks"
+      "name": "Webhooks",
+      "description": "Register URLs to receive signed HTTPS POSTs on Blueticks events."
     }
   ],
   "paths": {

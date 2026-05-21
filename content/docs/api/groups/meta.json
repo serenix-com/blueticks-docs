@@ -2,9 +2,10 @@
   "title": "Groups",
   "description": "Create and manage WhatsApp groups via the connected engine.",
   "pages": [
+    "list-groups",
+    "create-group",
     "get-group",
     "update-group",
-    "create-group",
     "add-member-to-group",
     "leave-group",
     "remove-member-from-group",

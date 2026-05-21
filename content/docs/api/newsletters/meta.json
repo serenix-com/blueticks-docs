@@ -1,0 +1,7 @@
+{
+  "title": "Newsletters",
+  "description": "Create WhatsApp newsletters (channels) via the connected engine.",
+  "pages": [
+    "create-newsletter"
+  ]
+}
