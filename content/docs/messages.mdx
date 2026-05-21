@@ -71,6 +71,104 @@ curl -X POST https://api.blueticks.co/v1/messages \
   </Tab>
 </Tabs>
 
+## Send to a group or channel
+
+The `to` field accepts an E.164 phone number OR a WhatsApp JID. JIDs come in three flavors:
+
+- `<digits>@c.us` — individual chat (digits-only equivalent of an E.164 phone with `+` stripped).
+- `<id>@g.us` — group chat (e.g. `120363427920657250@g.us`). Find a group's id with `GET /v1/groups` or by inspecting the URL in WhatsApp Web.
+- `<id>@newsletter` — channel (e.g. `12345@newsletter`).
+
+The send call is identical — just swap the `to`:
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+import blueticks
+bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
+
+# Send to a group
+msg = bt.messages.send(
+    to="120363427920657250@g.us",
+    text="Team standup in 10 minutes!",
+)
+
+# Send to a channel
+msg = bt.messages.send(
+    to="12345@newsletter",
+    text="New announcement for all subscribers.",
+)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+import { Blueticks } from 'blueticks';
+const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
+
+// Send to a group
+const groupMsg = await bt.messages.send({
+  to: '120363427920657250@g.us',
+  text: 'Team standup in 10 minutes!',
+});
+
+// Send to a channel
+const channelMsg = await bt.messages.send({
+  to: '12345@newsletter',
+  text: 'New announcement for all subscribers.',
+});
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Blueticks\Blueticks;
+$bt = new Blueticks('BLUETICKS_API_KEY');
+
+// Send to a group
+$groupMsg = $bt->messages->send('120363427920657250@g.us', [
+    'text' => 'Team standup in 10 minutes!',
+]);
+
+// Send to a channel
+$channelMsg = $bt->messages->send('12345@newsletter', [
+    'text' => 'New announcement for all subscribers.',
+]);
+```
+
+  </Tab>
+  <Tab value="cURL">
+
+```bash
+# Send to a group
+curl -X POST https://api.blueticks.co/v1/messages \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "120363427920657250@g.us",
+    "type": "text",
+    "text": "Team standup in 10 minutes!"
+  }'
+
+# Send to a channel
+curl -X POST https://api.blueticks.co/v1/messages \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "12345@newsletter",
+    "type": "text",
+    "text": "New announcement for all subscribers."
+  }'
+```
+
+  </Tab>
+</Tabs>
+
+The validator accepts an E.164 phone (`+<digits>`) or any of the three JID suffixes (`@c.us`, `@g.us`, `@newsletter`).
+
 ## Send media
 
 `type: "media"` accepts an HTTPS URL plus an optional `kind`
@@ -79,9 +177,55 @@ When `kind` is omitted, the engine auto-detects from the URL or the
 `Content-Type` of the fetched asset. `caption` shows under image/video
 in WhatsApp; `filename` is shown for documents.
 
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+import blueticks
+bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
+
+msg = bt.messages.send(
+    to="+972501234567",
+    media_url="https://cdn.example.com/receipt.pdf",
+    media_caption="Order #A-42",
+)
+print(msg.id, msg.status)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+import { Blueticks } from 'blueticks';
+const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
+
+const msg = await bt.messages.send({
+  to: '+972501234567',
+  media_url: 'https://cdn.example.com/receipt.pdf',
+  media_caption: 'Order #A-42',
+});
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Blueticks\Blueticks;
+$bt = new Blueticks('BLUETICKS_API_KEY');
+
+$msg = $bt->messages->send('+972501234567', [
+    'media_url'     => 'https://cdn.example.com/receipt.pdf',
+    'media_caption' => 'Order #A-42',
+]);
+```
+
+  </Tab>
+  <Tab value="cURL">
+
 ```bash
 curl -X POST https://api.blueticks.co/v1/messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "to": "+972501234567",
     "type": "media",
@@ -93,6 +237,9 @@ curl -X POST https://api.blueticks.co/v1/messages \
     }
   }'
 ```
+
+  </Tab>
+</Tabs>
 
 Voice notes are media with `kind: "voice"`:
 
@@ -111,6 +258,7 @@ pick more than one (default `false`).
 ```bash
 curl -X POST https://api.blueticks.co/v1/messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "to": "+972501234567",
     "type": "poll",
@@ -121,6 +269,8 @@ curl -X POST https://api.blueticks.co/v1/messages \
     }
   }'
 ```
+
+SDK support for `poll` is not yet available — use cURL or the raw HTTP client for now.
 
 ## Schedule for later
 
@@ -148,11 +298,60 @@ Reactions are a separate endpoint — `POST /v1/chats/{chat_id}/messages/{key}/r
 with body `{ "emoji": "❤️" }`. Pass an empty string to remove a reaction.
 Use the `key` from `MessageResponse`, not the `id`.
 
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+import blueticks
+bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
+
+bt.chats.react(
+    chat_id="972501234567@c.us",
+    key="false_972501234567@c.us_3EB0ABCDEF",
+    emoji="❤️",
+)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+import { Blueticks } from 'blueticks';
+const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
+
+await bt.chats.react(
+  '972501234567@c.us',
+  'false_972501234567@c.us_3EB0ABCDEF',
+  { emoji: '❤️' },
+);
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Blueticks\Blueticks;
+$bt = new Blueticks('BLUETICKS_API_KEY');
+
+$bt->chats->react(
+    '972501234567@c.us',
+    'false_972501234567@c.us_3EB0ABCDEF',
+    '❤️',
+);
+```
+
+  </Tab>
+  <Tab value="cURL">
+
 ```bash
-curl -X POST "https://api.blueticks.co/v1/chats/972...@c.us/messages/false_...@c.us_3EB0.../reactions" \
+curl -X POST "https://api.blueticks.co/v1/chats/972501234567@c.us/messages/false_972501234567@c.us_3EB0ABCDEF/reactions" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{"emoji":"❤️"}'
 ```
+
+  </Tab>
+</Tabs>
 
 ## Idempotency
 
@@ -160,12 +359,64 @@ Safe retries via the `Idempotency-Key` header. Same key + same body
 within 24 h returns the original response. Different body with the
 same key returns `409 idempotency_key_conflict`.
 
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+import blueticks
+bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
+
+msg = bt.messages.send(
+    to="+972501234567",
+    text="Your order is confirmed.",
+    idempotency_key="order-42-reminder",
+)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+import { Blueticks } from 'blueticks';
+const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
+
+const msg = await bt.messages.send({
+  to: '+972501234567',
+  text: 'Your order is confirmed.',
+  idempotencyKey: 'order-42-reminder',
+});
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Blueticks\Blueticks;
+$bt = new Blueticks('BLUETICKS_API_KEY');
+
+$msg = $bt->messages->send('+972501234567', [
+    'text'            => 'Your order is confirmed.',
+    'idempotency_key' => 'order-42-reminder',
+]);
+```
+
+  </Tab>
+  <Tab value="cURL">
+
 ```bash
 curl -X POST https://api.blueticks.co/v1/messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
   -H "Idempotency-Key: order-42-reminder" \
-  -d '{"to":"+972...","type":"text","text":"hi"}'
+  -d '{
+    "to": "+972501234567",
+    "type": "text",
+    "text": "Your order is confirmed."
+  }'
 ```
+
+  </Tab>
+</Tabs>
 
 ## Picking the sending number
 
