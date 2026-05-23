@@ -33,7 +33,7 @@
     },
     {
       "name": "Engines",
-      "description": "Inspect or control the WhatsApp engine connected to the workspace."
+      "description": "Inspect or control the WhatsApp engine(s) connected to the workspace."
     },
     {
       "name": "Groups",
@@ -45,11 +45,11 @@
     },
     {
       "name": "Newsletters",
-      "description": "Create WhatsApp newsletters (channels) via the connected engine."
+      "description": "Create and inspect WhatsApp newsletters (channels) via the connected engine."
     },
     {
-      "name": "ScheduledMessages",
-      "description": "List, retrieve, update, and cancel previously-scheduled WhatsApp messages."
+      "name": "Ping",
+      "description": "Health/identity probe — verifies the API key and echoes its scopes."
     },
     {
       "name": "Webhooks",
@@ -57,6 +57,55 @@
     }
   ],
   "paths": {
+    "/v1/ping": {
+      "get": {
+        "tags": [
+          "Ping"
+        ],
+        "summary": "Ping",
+        "description": "Probe the API: returns the account ID, key prefix, and granted scopes for the authenticated API key. Useful as a connection test and to inspect what an integration is allowed to do. No scope required.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string",
+                      "description": "The account ID the API key belongs to."
+                    },
+                    "key_prefix": {
+                      "type": "string",
+                      "description": "Public prefix of the API key (first 8 chars, never the full secret)."
+                    },
+                    "scopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Scopes granted to this API key."
+                    }
+                  },
+                  "required": [
+                    "account_id",
+                    "key_prefix",
+                    "scopes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/account": {
       "get": {
         "tags": [
@@ -116,7 +165,7 @@
           "Messages"
         ],
         "summary": "List messages",
-        "description": "List messages sent through the API, newest first (cursor-paginated).",
+        "description": "List messages in the user-messages queue (all sources: API, dashboard, extension), newest first (cursor-paginated). Optionally filter by `chat_id` and/or lifecycle `status`.",
         "security": [
           {
             "BearerAuth": []
@@ -124,22 +173,53 @@
         ],
         "parameters": [
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 200
+              "maximum": 200,
+              "default": 50
             },
-            "required": false
+            "description": "Page size (1-200, default 50)."
           },
           {
-            "in": "query",
             "name": "cursor",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 512
             },
-            "required": false
+            "description": "Opaque cursor from a previous response's `next_cursor`."
+          },
+          {
+            "name": "chat_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+(?:-[0-9]+)?@(?:c\\.us|g\\.us|newsletter)$"
+            },
+            "description": "Filter to messages addressed to this WhatsApp JID. Matches the recipient stored on the queued/scheduled doc — for sends to a phone number, the JID is `<phone>@c.us`."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "queued",
+                "sending",
+                "delivered",
+                "read",
+                "failed"
+              ]
+            },
+            "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `send_at` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
           }
         ]
       },
@@ -376,13 +456,13 @@
         },
         "parameters": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string",
               "maxLength": 64
             },
-            "required": false,
             "description": "Optional key for safe retries. Identical bodies with the same key return the original response; differing bodies return 409."
           }
         ],
@@ -395,7 +475,8 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "nullable": true
                     },
                     "key": {
                       "type": "string",
@@ -547,7 +628,8 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "nullable": true
                     },
                     "key": {
                       "type": "string",
@@ -715,7 +797,210 @@
                   "type": "object",
                   "properties": {
                     "id": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "key": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "to": {
                       "type": "string"
+                    },
+                    "from": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "media",
+                        "poll"
+                      ],
+                      "description": "Message kind that was sent."
+                    },
+                    "text": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "media_kind": {
+                      "type": "string",
+                      "enum": [
+                        "image",
+                        "video",
+                        "audio",
+                        "document",
+                        "sticker",
+                        "voice"
+                      ],
+                      "nullable": true
+                    },
+                    "poll_question": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "scheduled",
+                        "queued",
+                        "sending",
+                        "delivered",
+                        "read",
+                        "failed"
+                      ]
+                    },
+                    "send_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "sent_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "read_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "failed_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "failure_reason": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "link_preview": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "canonical_url": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "thumbnail": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "description",
+                        "canonical_url",
+                        "thumbnail"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "key",
+                    "to",
+                    "from",
+                    "type",
+                    "text",
+                    "media_url",
+                    "media_kind",
+                    "poll_question",
+                    "status",
+                    "send_at",
+                    "created_at",
+                    "sent_at",
+                    "delivered_at",
+                    "read_at",
+                    "failed_at",
+                    "failure_reason"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Messages"
+        ],
+        "summary": "Update message",
+        "description": "Edit a previously-queued message that has not dispatched yet. Accepts a subset of `text`, `media_url`, `media_caption`, `send_at` — at least one is required. Returns 400 once the message has advanced past the editable window (status not in `pending`/`sending`).",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096,
+                    "description": "New text body. Replaces the previous text/caption."
+                  },
+                  "media_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "description": "Replace the attached media URL (https only)."
+                  },
+                  "media_caption": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1024,
+                    "description": "Replace the media's caption. When set alongside `text`, `text` wins."
+                  },
+                  "send_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Reschedule. ISO 8601 datetime (UTC) in the future."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "nullable": true
                     },
                     "key": {
                       "type": "string",
@@ -876,24 +1161,26 @@
         ],
         "parameters": [
           {
-            "in": "query",
             "name": "limit",
-            "description": "Page size (default 50, max 200).",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 200
+              "maximum": 200,
+              "default": 50
             },
-            "required": false
+            "description": "Page size (default 50, max 200)."
           },
           {
-            "in": "query",
             "name": "cursor",
-            "description": "Opaque cursor from a previous response's `next_cursor`.",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 512
             },
-            "required": false
+            "description": "Opaque cursor from a previous response's `next_cursor`."
           }
         ],
         "responses": {
@@ -1126,24 +1413,26 @@
         ],
         "parameters": [
           {
-            "in": "query",
             "name": "limit",
-            "description": "Page size (default 50, max 200).",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 200
+              "maximum": 200,
+              "default": 50
             },
-            "required": false
+            "description": "Page size (default 50, max 200)."
           },
           {
-            "in": "query",
             "name": "cursor",
-            "description": "Opaque cursor from a previous response's `next_cursor`.",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 512
             },
-            "required": false
+            "description": "Opaque cursor from a previous response's `next_cursor`."
           }
         ]
       },
@@ -1207,24 +1496,26 @@
         ],
         "parameters": [
           {
-            "in": "query",
             "name": "limit",
-            "description": "Page size (default 50, max 200).",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 200
+              "maximum": 200,
+              "default": 50
             },
-            "required": false
+            "description": "Page size (default 50, max 200)."
           },
           {
-            "in": "query",
             "name": "cursor",
-            "description": "Opaque cursor from a previous response's `next_cursor`.",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 512
             },
-            "required": false
+            "description": "Opaque cursor from a previous response's `next_cursor`."
           }
         ]
       },
@@ -1266,24 +1557,26 @@
         ],
         "parameters": [
           {
-            "in": "query",
             "name": "limit",
-            "description": "Page size (default 50, max 200).",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 200
+              "maximum": 200,
+              "default": 50
             },
-            "required": false
+            "description": "Page size (default 50, max 200)."
           },
           {
-            "in": "query",
             "name": "cursor",
-            "description": "Opaque cursor from a previous response's `next_cursor`.",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 512
             },
-            "required": false
+            "description": "Opaque cursor from a previous response's `next_cursor`."
           }
         ]
       }
@@ -1307,9 +1600,45 @@
           "Groups"
         ],
         "summary": "List groups",
+        "description": "List the groups the connected WhatsApp engine sees. Supports cursor pagination (`limit`+`cursor`) and an optional case-insensitive substring search on the group name via `q`.",
         "security": [
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Page size (1-200, default 50)."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "description": "Opaque cursor returned by a prior call. Omit for the first page."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Case-insensitive substring match against the group name."
           }
         ]
       },
@@ -1485,16 +1814,323 @@
       }
     },
     "/v1/newsletters": {
+      "get": {
+        "tags": [
+          "Newsletters"
+        ],
+        "summary": "List newsletters",
+        "description": "List newsletters visible to the connected WhatsApp engine. Cursor-paginated via `limit` + `cursor`. Requires `newsletters:read` scope.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Page size (1-200, default 50)."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "Opaque cursor returned by a prior call. Omit for the first page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Newsletter JID, e.g. 120363201733549020@newsletter."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Display name of the newsletter / WhatsApp channel."
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Optional description."
+                          },
+                          "owner": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Owner JID, if returned by the engine."
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "subscribers": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "invite": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Invite code (suffix of https://whatsapp.com/channel/<invite>)."
+                          },
+                          "verification": {
+                            "type": "string",
+                            "enum": [
+                              "VERIFIED",
+                              "UNVERIFIED"
+                            ],
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "description",
+                          "owner",
+                          "created_at",
+                          "subscribers",
+                          "invite",
+                          "verification"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "has_more",
+                    "next_cursor"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Newsletters"
         ],
         "summary": "Create newsletter",
+        "description": "Create a new WhatsApp newsletter (channel). Requires `messages:write` scope (newsletter creation shares the messages write budget).",
         "security": [
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 2048
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Newsletter JID, e.g. 120363201733549020@newsletter."
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Display name of the newsletter / WhatsApp channel."
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Optional description."
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Owner JID, if returned by the engine."
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "subscribers": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "invite": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Invite code (suffix of https://whatsapp.com/channel/<invite>)."
+                    },
+                    "verification": {
+                      "type": "string",
+                      "enum": [
+                        "VERIFIED",
+                        "UNVERIFIED"
+                      ],
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "subscribers",
+                    "invite",
+                    "verification"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/newsletters/{id}": {
+      "get": {
+        "tags": [
+          "Newsletters"
+        ],
+        "summary": "Get newsletter",
+        "description": "Retrieve a newsletter by its JID. Requires `newsletters:read` scope.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+@newsletter$"
+            },
+            "description": "Newsletter JID, e.g. 12345@newsletter."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Newsletter JID, e.g. 120363201733549020@newsletter."
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Display name of the newsletter / WhatsApp channel."
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Optional description."
+                    },
+                    "owner": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Owner JID, if returned by the engine."
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "subscribers": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "invite": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Invite code (suffix of https://whatsapp.com/channel/<invite>)."
+                    },
+                    "verification": {
+                      "type": "string",
+                      "enum": [
+                        "VERIFIED",
+                        "UNVERIFIED"
+                      ],
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "owner",
+                    "created_at",
+                    "subscribers",
+                    "invite",
+                    "verification"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/contacts": {
@@ -1510,24 +2146,26 @@
         ],
         "parameters": [
           {
-            "in": "query",
             "name": "limit",
-            "description": "Page size (default 50, max 200).",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 200
+              "maximum": 200,
+              "default": 50
             },
-            "required": false
+            "description": "Page size (default 50, max 200)."
           },
           {
-            "in": "query",
             "name": "cursor",
-            "description": "Opaque cursor from a previous response's `next_cursor`.",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 512
             },
-            "required": false
+            "description": "Opaque cursor from a previous response's `next_cursor`."
           }
         ]
       }
@@ -1537,82 +2175,70 @@
         "tags": [
           "Engines"
         ],
-        "summary": "Get engine status",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/v1/scheduled-messages": {
-      "get": {
-        "tags": [
-          "ScheduledMessages"
-        ],
-        "summary": "List scheduled messages",
+        "summary": "List engines",
+        "description": "List engines connected to this workspace. Returns an array (currently up to one entry, but the response shape leaves room for multi-engine workspaces). When no engine is connected, `data` is empty and `message` explains why — this is not an error.",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "parameters": [
-          {
-            "in": "query",
-            "name": "limit",
-            "description": "Page size (default 50, max 200).",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200
-            },
-            "required": false
-          },
-          {
-            "in": "query",
-            "name": "cursor",
-            "description": "Opaque cursor from a previous response's `next_cursor`.",
-            "schema": {
-              "type": "string"
-            },
-            "required": false
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "connected": {
+                            "type": "boolean",
+                            "description": "Whether this engine is currently online and serving requests."
+                          },
+                          "state": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
+                          },
+                          "stream": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Underlying WA stream state. Null when unknown."
+                          },
+                          "has_synced": {
+                            "type": "boolean",
+                            "nullable": true,
+                            "description": "Whether the engine has completed its initial history sync."
+                          }
+                        },
+                        "required": [
+                          "connected",
+                          "state",
+                          "stream",
+                          "has_synced"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Engines connected to this workspace. Empty when no engine is paired."
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Human-readable note (e.g. why the array is empty). Present only when useful."
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
-        ]
-      }
-    },
-    "/v1/scheduled-messages/{id}": {
-      "get": {
-        "tags": [
-          "ScheduledMessages"
-        ],
-        "summary": "Get scheduled message",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      },
-      "patch": {
-        "tags": [
-          "ScheduledMessages"
-        ],
-        "summary": "Update scheduled message",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "ScheduledMessages"
-        ],
-        "summary": "Cancel scheduled message",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/v1/webhooks/{id}/rotate-secret": {
@@ -2396,9 +3022,9 @@
                 ]
               }
             },
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here.",
             "style": "form",
-            "explode": false,
-            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
+            "explode": false
           }
         ],
         "responses": {
@@ -2422,6 +3048,10 @@
                           },
                           "from": {
                             "type": "string"
+                          },
+                          "author": {
+                            "type": "string",
+                            "nullable": true
                           },
                           "timestamp": {
                             "type": "string",
@@ -2568,6 +3198,10 @@
                     "from": {
                       "type": "string"
                     },
+                    "author": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "timestamp": {
                       "type": "string",
                       "format": "date-time",
@@ -2681,11 +3315,16 @@
                 "properties": {
                   "chat_id": {
                     "type": "string"
+                  },
+                  "participants": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 256
                   }
                 },
-                "required": [
-                  "chat_id"
-                ],
                 "additionalProperties": false
               }
             }
@@ -3226,6 +3865,11 @@
                     "minLength": 1,
                     "maxLength": 20971520
                   },
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
                   "file_name": {
                     "type": "string",
                     "maxLength": 255
@@ -3235,9 +3879,6 @@
                     "maxLength": 127
                   }
                 },
-                "required": [
-                  "file_data_url"
-                ],
                 "additionalProperties": false
               }
             }
@@ -3943,6 +4584,35 @@
       }
     },
     "schemas": {
+      "AccountResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier for the account."
+          },
+          "name": {
+            "type": "string",
+            "description": "Account display name."
+          },
+          "timezone": {
+            "type": "string",
+            "nullable": true,
+            "description": "IANA timezone (e.g. \"America/New_York\"), or null if unset."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "RFC 3339 timestamp of account creation."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "timezone",
+          "created_at"
+        ]
+      },
       "ContactInput": {
         "type": "object",
         "properties": {
@@ -4152,7 +4822,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 4096,
-            "description": "Message body. Supports per-contact substitution using single-brace tokens like `{firstName}` or `{product}`.\nResolution rules (case-insensitive, whitespace stripped):\n  - Built-ins always available: `{whatsappname}` (WA profile name), `{displayname}` (firstname+lastname fallback), `{phone}` / `{mobile}`.\n  - Custom variables: any property attached to a contact via audiences.append_contacts becomes a token of the same name.\n  - Unresolved tokens are left as literal `{token}` in the sent message.\nTemplates use SINGLE braces `{var}` — `{{var}}` is treated as literal text."
+            "description": "Message body. Supports per-contact substitution using single-brace tokens like `{firstName}` or `{product}`.\nResolution rules (case-insensitive, whitespace stripped):\n  - Built-ins always available: `{whatsappname}` (WA profile name), `{displayname}` (firstname+lastname fallback), `{phone}` / `{mobile}`.\n  - Custom variables: every property attached to a contact via audiences.append_contacts becomes a token of the same name.\n  - Unresolved tokens are left as literal `{token}` in the sent message.\nTemplates use SINGLE braces `{var}` — `{{var}}` is treated as literal text."
           },
           "media_url": {
             "type": "string",
@@ -4285,17 +4955,20 @@
         "properties": {
           "query": {
             "type": "string",
-            "maxLength": 200
+            "maxLength": 200,
+            "description": "Case-insensitive substring match against chat name / phone."
           },
           "limit": {
             "type": "integer",
             "minimum": 1,
             "maximum": 200,
-            "default": 50
+            "default": 50,
+            "description": "Page size (1-200, default 50)."
           },
           "cursor": {
             "type": "string",
-            "maxLength": 512
+            "maxLength": 512,
+            "description": "Pagination cursor from a previous response."
           }
         },
         "additionalProperties": false
@@ -4307,11 +4980,13 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 500,
-            "default": 100
+            "default": 100,
+            "description": "Max participants to return."
           },
           "cursor": {
             "type": "string",
-            "maxLength": 512
+            "maxLength": 512,
+            "description": "Pagination cursor from a previous response."
           }
         },
         "additionalProperties": false
@@ -4325,29 +5000,35 @@
               "history",
               "latest"
             ],
-            "default": "latest"
+            "default": "latest",
+            "description": "Result ordering hint. Default `latest` (newest-first)."
           },
           "query": {
             "type": "string",
-            "maxLength": 200
+            "maxLength": 200,
+            "description": "Free-text search across message bodies and captions."
           },
           "limit": {
             "type": "integer",
             "minimum": 1,
             "maximum": 200,
-            "default": 50
+            "default": 50,
+            "description": "Max messages to return."
           },
           "cursor": {
             "type": "string",
-            "maxLength": 512
+            "maxLength": 512,
+            "description": "Pagination cursor from a previous response."
           },
           "since": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
           },
           "until": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
           },
           "message_types": {
             "type": "array",
@@ -4368,7 +5049,8 @@
                 "vcard",
                 "revoked"
               ]
-            }
+            },
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
           }
         },
         "additionalProperties": false
@@ -4384,6 +5066,28 @@
         },
         "required": [
           "emoji"
+        ],
+        "additionalProperties": false
+      },
+      "BatchMessageAcksRequest": {
+        "type": "object",
+        "properties": {
+          "message_keys": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 200
+          },
+          "chat_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "message_keys"
         ],
         "additionalProperties": false
       },
@@ -4454,6 +5158,10 @@
           },
           "from": {
             "type": "string"
+          },
+          "author": {
+            "type": "string",
+            "nullable": true
           },
           "timestamp": {
             "type": "string",
@@ -4577,6 +5285,85 @@
         ],
         "additionalProperties": false
       },
+      "EngineStatus": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "description": "Whether this engine is currently online and serving requests."
+          },
+          "state": {
+            "type": "string",
+            "nullable": true,
+            "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
+          },
+          "stream": {
+            "type": "string",
+            "nullable": true,
+            "description": "Underlying WA stream state. Null when unknown."
+          },
+          "has_synced": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the engine has completed its initial history sync."
+          }
+        },
+        "required": [
+          "connected",
+          "state",
+          "stream",
+          "has_synced"
+        ],
+        "additionalProperties": false
+      },
+      "EngineListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "connected": {
+                  "type": "boolean",
+                  "description": "Whether this engine is currently online and serving requests."
+                },
+                "state": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
+                },
+                "stream": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Underlying WA stream state. Null when unknown."
+                },
+                "has_synced": {
+                  "type": "boolean",
+                  "nullable": true,
+                  "description": "Whether the engine has completed its initial history sync."
+                }
+              },
+              "required": [
+                "connected",
+                "state",
+                "stream",
+                "has_synced"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Engines connected to this workspace. Empty when no engine is paired."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable note (e.g. why the array is empty). Present only when useful."
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false
+      },
       "GroupId": {
         "type": "string",
         "pattern": "^\\d+(?:-\\d+)?@g\\.us$"
@@ -4635,11 +5422,16 @@
         "properties": {
           "chat_id": {
             "type": "string"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 256
           }
         },
-        "required": [
-          "chat_id"
-        ],
         "additionalProperties": false
       },
       "SetPictureRequest": {
@@ -4650,6 +5442,11 @@
             "minLength": 1,
             "maxLength": 20971520
           },
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri"
+          },
           "file_name": {
             "type": "string",
             "maxLength": 255
@@ -4659,9 +5456,6 @@
             "maxLength": 127
           }
         },
-        "required": [
-          "file_data_url"
-        ],
         "additionalProperties": false
       },
       "ListGroupsQuery": {
@@ -4671,11 +5465,19 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 200,
-            "default": 50
+            "default": 50,
+            "description": "Page size (1-200, default 50)."
           },
           "cursor": {
             "type": "string",
-            "maxLength": 64
+            "maxLength": 64,
+            "description": "Opaque cursor returned by a prior call. Omit for the first page."
+          },
+          "q": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Case-insensitive substring match against the group name."
           }
         },
         "additionalProperties": false
@@ -4790,6 +5592,45 @@
         ],
         "additionalProperties": false
       },
+      "MessageId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "ListMessagesQuery": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Page size (1-200, default 50)."
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Opaque cursor from a previous response's `next_cursor`."
+          },
+          "chat_id": {
+            "type": "string",
+            "pattern": "^[0-9]+(?:-[0-9]+)?@(?:c\\.us|g\\.us|newsletter)$",
+            "description": "Filter to messages addressed to this WhatsApp JID. Matches the recipient stored on the queued/scheduled doc — for sends to a phone number, the JID is `<phone>@c.us`."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "queued",
+              "sending",
+              "delivered",
+              "read",
+              "failed"
+            ],
+            "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `send_at` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
+          }
+        },
+        "additionalProperties": false
+      },
       "MessageStatus": {
         "type": "string",
         "enum": [
@@ -4860,6 +5701,35 @@
           }
         }
       },
+      "PatchMessageRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "New text body. Replaces the previous text/caption."
+          },
+          "media_url": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "Replace the attached media URL (https only)."
+          },
+          "media_caption": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "description": "Replace the media's caption. When set alongside `text`, `text` wins."
+          },
+          "send_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Reschedule. ISO 8601 datetime (UTC) in the future."
+          }
+        },
+        "additionalProperties": false
+      },
       "LinkPreviewResponse": {
         "type": "object",
         "properties": {
@@ -4892,7 +5762,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "key": {
             "type": "string",
@@ -5034,7 +5905,8 @@
       },
       "NewsletterId": {
         "type": "string",
-        "pattern": "^\\d+@newsletter$"
+        "pattern": "^\\d+@newsletter$",
+        "description": "Newsletter JID, e.g. 12345@newsletter."
       },
       "ListNewslettersQuery": {
         "type": "object",
@@ -5043,11 +5915,13 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 200,
-            "default": 50
+            "default": 50,
+            "description": "Page size (1-200, default 50)."
           },
           "cursor": {
             "type": "string",
-            "maxLength": 512
+            "maxLength": 512,
+            "description": "Opaque cursor returned by a prior call. Omit for the first page."
           }
         }
       },
@@ -5126,150 +6000,31 @@
         ],
         "additionalProperties": false
       },
-      "ScheduledMessageId": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
-      "ListScheduledMessagesRequest": {
+      "PingResponse": {
         "type": "object",
         "properties": {
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 200
-          },
-          "cursor": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
-      "PatchScheduledMessageRequest": {
-        "type": "object",
-        "properties": {
-          "text": {
+          "account_id": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 8192
+            "description": "The account ID the API key belongs to."
           },
-          "media_url": {
+          "key_prefix": {
             "type": "string",
-            "maxLength": 2048,
-            "format": "uri"
+            "description": "Public prefix of the API key (first 8 chars, never the full secret)."
           },
-          "media_caption": {
-            "type": "string",
-            "maxLength": 2048
-          },
-          "send_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "additionalProperties": false
-      },
-      "ScheduledMessage": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "to": {
-            "type": "string",
-            "nullable": true
-          },
-          "text": {
-            "type": "string",
-            "nullable": true
-          },
-          "media_url": {
-            "type": "string",
-            "nullable": true
-          },
-          "media_caption": {
-            "type": "string",
-            "nullable": true
-          },
-          "media_filename": {
-            "type": "string",
-            "nullable": true
-          },
-          "media_mime_type": {
-            "type": "string",
-            "nullable": true
-          },
-          "send_at": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "is_recurring": {
-            "type": "boolean"
-          },
-          "recurrence_rule": {
-            "type": "string",
-            "nullable": true
-          },
-          "created_at": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Scopes granted to this API key."
           }
         },
         "required": [
-          "id",
-          "to",
-          "text",
-          "media_url",
-          "media_caption",
-          "media_filename",
-          "media_mime_type",
-          "send_at",
-          "status",
-          "is_recurring",
-          "recurrence_rule",
-          "created_at",
-          "updated_at"
+          "account_id",
+          "key_prefix",
+          "scopes"
         ],
         "additionalProperties": false
-      },
-      "AccountResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Stable identifier for the account."
-          },
-          "name": {
-            "type": "string",
-            "description": "Account display name."
-          },
-          "timezone": {
-            "type": "string",
-            "nullable": true,
-            "description": "IANA timezone (e.g. \"America/New_York\"), or null if unset."
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "RFC 3339 timestamp of account creation."
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "timezone",
-          "created_at"
-        ]
       },
       "CreateWebhookRequest": {
         "type": "object",
