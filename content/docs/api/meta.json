@@ -1,5 +1,6 @@
 {
   "pages": [
+    "ping",
     "account",
     "messages",
     "webhooks",
@@ -9,7 +10,6 @@
     "groups",
     "newsletters",
     "contacts",
-    "engines",
-    "scheduledmessages"
+    "engines"
   ]
 }

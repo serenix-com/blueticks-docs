@@ -4,6 +4,7 @@
   "pages": [
     "list-messages",
     "send-message",
-    "get-message"
+    "get-message",
+    "update-message"
   ]
 }

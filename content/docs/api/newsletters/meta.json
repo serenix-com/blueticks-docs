@@ -1,7 +1,9 @@
 {
   "title": "Newsletters",
-  "description": "Create WhatsApp newsletters (channels) via the connected engine.",
+  "description": "Create and inspect WhatsApp newsletters (channels) via the connected engine.",
   "pages": [
-    "create-newsletter"
+    "list-newsletters",
+    "create-newsletter",
+    "get-newsletter"
   ]
 }

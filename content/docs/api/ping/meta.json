@@ -1,0 +1,7 @@
+{
+  "title": "Ping",
+  "description": "Health/identity probe — verifies the API key and echoes its scopes.",
+  "pages": [
+    "ping"
+  ]
+}
