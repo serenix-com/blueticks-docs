@@ -69,8 +69,11 @@ const APIPage = createAPIPage(openapi, {
         <div data-response-tabs-anchor className="mt-8" />
 
         {/* Auto-expand collapsed Accordions/Collapsibles inside the Request
-            and Response sections so callers see the full schema by default. */}
-        <ApiAutoExpand selector='[data-api-section]' />
+            section so callers see the full request schema upfront. Response
+            stays collapsed — the status accordions (200/400/…) are mostly
+            the shared error envelope, so the reader opens just the status
+            they care about. */}
+        <ApiAutoExpand selector='[data-api-section="request"]' />
         <ResponseTabsRelocator />
       </div>
     ),

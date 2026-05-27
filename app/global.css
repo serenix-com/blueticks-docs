@@ -7,6 +7,13 @@
    vendor package and produces collapsed/overlapping API operation pages. */
 @import 'fumadocs-openapi/css/preset.css';
 
+/* Hide fumadocs-openapi's per-schema "Filter Properties" search bar.
+   Our schemas are small enough that the noise isn't worth the affordance,
+   and it competes visually with the property list right below it. */
+[data-api-section] div:has(> [data-object-search-input]) {
+  display: none;
+}
+
 /* When the playground exposes only one server URL, the Server URL pill
    has no useful action — clicking it would open a dialog with a single
    read-only option. Neutralize the trigger and hide the edit icon so it
