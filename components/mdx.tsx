@@ -28,11 +28,7 @@ const APIPage = createAPIPage(openapi, {
         {slots.header}
         {slots.description}
         {slots.apiExample}
-
-        {/* Wrap the playground so <ApiAutoExpand> also opens its inner
-            Authorization + Query collapsibles. fumadocs ships them collapsed
-            but the reader needs to see what they'd fill in. */}
-        <div data-api-section="playground">{slots.apiPlayground}</div>
+        {slots.apiPlayground}
 
         <section data-api-section="request" className="space-y-4">
           <h2 className="text-2xl font-semibold border-b border-fd-border pb-2 mt-8">
