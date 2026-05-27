@@ -5,6 +5,7 @@ import { createCodeUsageGeneratorRegistry } from 'fumadocs-openapi/requests/gene
 import { curl } from 'fumadocs-openapi/requests/generators/curl';
 import { openapi } from '@/lib/openapi';
 import { AppLink } from '@/components/app-link';
+import { ApiAutoExpand } from '@/components/api-auto-expand';
 
 // Trim the default code-generator registry to just cURL. Python / Node.js / PHP
 // come in per-operation via `x-codeSamples` injected in lib/openapi.ts.
@@ -15,9 +16,10 @@ const sdkOnlyRegistry = createCodeUsageGeneratorRegistry();
 sdkOnlyRegistry.add('curl', curl);
 
 // Operation layout — promote the code samples (`apiExample`) to a full-width
-// band at the top, drop the static `authSchemes` and `parameters` sections
-// (the playground card's Authorization / Query collapsibles render the same
-// info), and stack the rest vertically.
+// band at the top, drop the static `authSchemes` section (the playground
+// card's Authorization collapsible renders the same info), and group the
+// rest under clear "Request" / "Response" banners with all schema fields
+// expanded on mount (see <ApiAutoExpand />).
 const APIPage = createAPIPage(openapi, {
   codeUsages: sdkOnlyRegistry,
   content: {
@@ -26,10 +28,32 @@ const APIPage = createAPIPage(openapi, {
         {slots.header}
         {slots.description}
         {slots.apiExample}
-        {slots.apiPlayground}
-        {slots.body}
-        {slots.responses}
+
+        {/* Wrap the playground so <ApiAutoExpand> also opens its inner
+            Authorization + Query collapsibles. fumadocs ships them collapsed
+            but the reader needs to see what they'd fill in. */}
+        <div data-api-section="playground">{slots.apiPlayground}</div>
+
+        <section data-api-section="request" className="space-y-4">
+          <h2 className="text-2xl font-semibold border-b border-fd-border pb-2 mt-8">
+            Request
+          </h2>
+          {slots.parameters}
+          {slots.body}
+        </section>
+
+        <section data-api-section="response" className="space-y-4">
+          <h2 className="text-2xl font-semibold border-b border-fd-border pb-2 mt-8">
+            Response
+          </h2>
+          {slots.responses}
+        </section>
+
         {slots.callbacks}
+
+        {/* Auto-expand collapsed Accordions/Collapsibles inside the Request
+            and Response sections so callers see the full schema by default. */}
+        <ApiAutoExpand selector='[data-api-section]' />
       </div>
     ),
   },
