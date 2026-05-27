@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
  * Phase loop (≈10s):
  *   0 idle       400ms   reset — only inbound bubble visible
  *   1 typing     ~4-5s   characters stream into the editor
- *   2 calling    900ms   amber POST /v1/messages pill appears
+ *   2 calling    900ms   amber POST /v1/scheduled-messages pill appears
  *   3 response   1100ms  green 200 OK pill + JSON response
  *   4 sending    1600ms  outbound WhatsApp bubble slides up, "sending"
  *   5 delivered  2200ms  bubble shows double blue ticks
@@ -253,7 +253,7 @@ export function HeroDemo() {
                     background: '#F59E0B',
                   }}
                 />
-                POST /v1/messages
+                POST /v1/scheduled-messages
               </span>
             )}
             {phase >= 3 && (

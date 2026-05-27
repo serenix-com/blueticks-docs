@@ -1,0 +1,10 @@
+{
+  "title": "Scheduled Messages",
+  "description": "Send or schedule WhatsApp messages via the user-messages queue. Each request creates a queued send — set `send_at` (RFC 3339) to defer delivery, omit it to send immediately. List, retrieve, edit, and cancel queued sends.",
+  "pages": [
+    "list-messages",
+    "send-message",
+    "get-message",
+    "update-message"
+  ]
+}

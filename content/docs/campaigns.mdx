@@ -69,7 +69,7 @@ curl -X POST https://api.blueticks.co/v1/audiences \
 </Tabs>
 
 Each contact's `to` accepts an E.164 phone OR a WhatsApp JID (`@g.us` for groups,
-`@newsletter` for channels) — same rules as direct `POST /v1/messages`.
+`@newsletter` for channels) — same rules as direct `POST /v1/scheduled-messages`.
 
 Append more contacts to an existing audience later via
 `POST /v1/audiences/{id}/contacts` — up to 1000 per request, duplicates

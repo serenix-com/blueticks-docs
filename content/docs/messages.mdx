@@ -1,12 +1,12 @@
 ---
 title: Sending messages
-description: Send text, media, or poll messages immediately or schedule them for later via /v1/messages.
+description: Send text, media, or poll messages immediately or schedule them for later via /v1/scheduled-messages.
 ---
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Callout } from 'fumadocs-ui/components/callout';
 
-Every send goes through `POST /v1/messages`. The body is a discriminated
+Every send goes through `POST /v1/scheduled-messages`. The body is a discriminated
 union — set `type` to one of `text`, `media`, or `poll`. Optional fields
 `send_at`, `from`, and `reply_to` work on every variant.
 
@@ -59,7 +59,7 @@ $msg = $bt->messages->send([
   <Tab value="cURL">
 
 ```bash
-curl -X POST https://api.blueticks.co/v1/messages \
+curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -145,7 +145,7 @@ $channelMsg = $bt->messages->send('12345@newsletter', [
 
 ```bash
 # Send to a group
-curl -X POST https://api.blueticks.co/v1/messages \
+curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -155,7 +155,7 @@ curl -X POST https://api.blueticks.co/v1/messages \
   }'
 
 # Send to a channel
-curl -X POST https://api.blueticks.co/v1/messages \
+curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -224,7 +224,7 @@ $msg = $bt->messages->send('+972501234567', [
   <Tab value="cURL">
 
 ```bash
-curl -X POST https://api.blueticks.co/v1/messages \
+curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -314,7 +314,7 @@ $msg = $bt->messages->send('+972501234567', [
   <Tab value="cURL">
 
 ```bash
-curl -X POST https://api.blueticks.co/v1/messages \
+curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -467,7 +467,7 @@ $msg = $bt->messages->send('+972501234567', [
   <Tab value="cURL">
 
 ```bash
-curl -X POST https://api.blueticks.co/v1/messages \
+curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: order-42-reminder" \
@@ -507,7 +507,7 @@ scheduled ──▶ queued ──▶ sending ──┬──▶ delivered
 - **`delivered`** — terminal. The recipient's WhatsApp acknowledged delivery.
 - **`failed`** — terminal. See the `error` field on the message for the cause.
 
-Poll the current state with `GET /v1/messages/{id}`. Read receipts
+Poll the current state with `GET /v1/scheduled-messages/{id}`. Read receipts
 (`read_at` populated, `message.read` webhook fires) are delivered via
 webhooks — see the [Webhooks guide](/docs/webhooks).
 

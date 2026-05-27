@@ -32,7 +32,7 @@ export function getResolvedServerCount(): number {
 // (e.g. `{contactId}`, `{chat_id}`, `{key}`) for the lookup to hit.
 const SDK_METHOD_OVERRIDES: Record<string, string> = {
   'GET /v1/account': 'retrieve',
-  'POST /v1/messages': 'send',
+  'POST /v1/scheduled-messages': 'send',
   'POST /v1/campaigns/{id}/pause': 'pause',
   'POST /v1/campaigns/{id}/resume': 'resume',
   'POST /v1/campaigns/{id}/cancel': 'cancel',

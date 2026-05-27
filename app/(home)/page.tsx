@@ -197,9 +197,8 @@ export default function HomePage() {
               </h3>
               <div className="flex flex-col" style={{ gap: 2 }}>
                 {[
-                  ['POST', '/v1/messages', 'Send a message'],
-                  ['POST', '/v1/messages/schedule', 'Schedule'],
-                  ['GET', '/v1/messages/:id', 'Get status'],
+                  ['POST', '/v1/scheduled-messages', 'Send or schedule a message'],
+                  ['GET', '/v1/scheduled-messages/:id', 'Get status'],
                   ['POST', '/v1/campaigns', 'Start a campaign'],
                   ['GET', '/v1/campaigns/:id', 'Campaign details'],
                   ['POST', '/v1/agents', 'Create AI agent'],
@@ -305,7 +304,7 @@ export default function HomePage() {
                     color: 'var(--d-ink-3)',
                   }}
                 >
-                  <div style={{ color: '#FDBA74' }}>POST /v1/messages</div>
+                  <div style={{ color: '#FDBA74' }}>POST /v1/scheduled-messages</div>
                   <div style={{ marginTop: 8, color: 'var(--d-ink-5)' }}>
                     {'{'}
                   </div>
