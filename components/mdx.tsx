@@ -26,6 +26,11 @@ sdkOnlyRegistry.add('curl', curl);
 // <ResponseTabsRelocator />).
 const APIPage = createAPIPage(openapi, {
   codeUsages: sdkOnlyRegistry,
+  // Drop the per-response "TypeScript Definitions" panels. The dedicated
+  // Node.js SDK already exposes typed accessors; the auto-generated TS
+  // type dump adds visual weight without helping callers who use the SDK.
+  generateTypeScriptDefinitions: false,
+  generateTypeScriptSchema: false,
   content: {
     renderAPIExampleLayout: (slots) => (
       <>

@@ -7,6 +7,21 @@
    vendor package and produces collapsed/overlapping API operation pages. */
 @import 'fumadocs-openapi/css/preset.css';
 
+/* JetBrains Mono ships programming ligatures that fuse `->` into `→`,
+   `=>` into `⇒`, `!=` into `≠`, etc. — fine for editor display, terrible
+   for docs since readers literally copy-paste the operator. PHP's `$bt->`
+   was the visible regression. Turn ligatures off everywhere code renders. */
+code,
+pre,
+pre code,
+.shiki,
+[class*='language-'] {
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'liga' 0,
+    'calt' 0;
+}
+
 /* Hide fumadocs-openapi's per-schema "Filter Properties" search bar.
    Our schemas are small enough that the noise isn't worth the affordance,
    and it competes visually with the property list right below it. */
