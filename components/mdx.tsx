@@ -6,6 +6,7 @@ import { curl } from 'fumadocs-openapi/requests/generators/curl';
 import { openapi } from '@/lib/openapi';
 import { AppLink } from '@/components/app-link';
 import { ApiAutoExpand } from '@/components/api-auto-expand';
+import { ResponseTabsRelocator } from '@/components/response-tabs-relocator';
 
 // Trim the default code-generator registry to just cURL. Python / Node.js / PHP
 // come in per-operation via `x-codeSamples` injected in lib/openapi.ts.
@@ -19,10 +20,26 @@ sdkOnlyRegistry.add('curl', curl);
 // band at the top, drop the static `authSchemes` section (the playground
 // card's Authorization collapsible renders the same info), and group the
 // rest under clear "Request" / "Response" banners with all schema fields
-// expanded on mount (see <ApiAutoExpand />).
+// expanded on mount (see <ApiAutoExpand />). The example response payloads
+// (apiExample.responseTabs) are split out from the code samples and
+// re-anchored at the bottom of the page (see renderAPIExampleLayout +
+// <ResponseTabsRelocator />).
 const APIPage = createAPIPage(openapi, {
   codeUsages: sdkOnlyRegistry,
   content: {
+    renderAPIExampleLayout: (slots) => (
+      <>
+        <div className="space-y-4">
+          {slots.selector}
+          {slots.usageTabs}
+        </div>
+        {/* Wrap the response-tabs so <ResponseTabsRelocator> can move them
+            to the bottom of the page at runtime — see renderOperationLayout. */}
+        <div data-relocate-response-tabs hidden>
+          {slots.responseTabs}
+        </div>
+      </>
+    ),
     renderOperationLayout: (slots) => (
       <div className="space-y-6">
         {slots.header}
@@ -47,9 +64,14 @@ const APIPage = createAPIPage(openapi, {
 
         {slots.callbacks}
 
+        {/* Anchor: the relocator moves [data-relocate-response-tabs] here
+            and unhides it, so example response payloads land at the bottom. */}
+        <div data-response-tabs-anchor className="mt-8" />
+
         {/* Auto-expand collapsed Accordions/Collapsibles inside the Request
             and Response sections so callers see the full schema by default. */}
         <ApiAutoExpand selector='[data-api-section]' />
+        <ResponseTabsRelocator />
       </div>
     ),
   },
