@@ -49,13 +49,13 @@ const APIPage = createAPIPage(openapi, {
       <div className="space-y-6">
         {slots.header}
         {slots.description}
-        {slots.apiExample}
-        {slots.apiPlayground}
 
         <section data-api-section="request" className="space-y-4">
           <h2 className="text-2xl font-semibold border-b border-fd-border pb-2 mt-8">
             Request
           </h2>
+          {slots.apiExample}
+          {slots.apiPlayground}
           {slots.parameters}
           {slots.body}
         </section>
