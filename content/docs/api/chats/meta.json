@@ -5,6 +5,7 @@
     "list-chats",
     "get-chat",
     "list-chat-messages",
+    "send-message-to-chat",
     "get-chat-message",
     "list-chat-participants",
     "mark-chat-as-read",
