@@ -181,7 +181,7 @@ The validator accepts an E.164 phone (`+<digits>`) or any of the three JID suffi
 ## Send media
 
 `type: "media"` accepts an HTTPS URL plus an optional `kind`
-(`image` · `video` · `audio` · `document` · `sticker` · `voice`).
+(`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`).
 When `kind` is omitted, the engine auto-detects from the URL or the
 `Content-Type` of the fetched asset. `caption` shows under image/video
 in WhatsApp; `filename` is shown for documents.
@@ -526,15 +526,16 @@ Return codes: `409 no_active_session`, `409 ambiguous_session`,
 ## Status lifecycle
 
 ```
-scheduled ──▶ queued ──▶ sending ──┬──▶ delivered
+scheduled ──▶ queued ──▶ sending ──┬──▶ delivered ──▶ read
                                    └──▶ failed
 ```
 
 - **`scheduled`** — set when `send_at` is in the future; transitions to `queued` at the scheduled time.
 - **`queued`** — accepted by the API, waiting for an active WhatsApp session to dispatch.
 - **`sending`** — dispatched to the engine; on the wire.
-- **`delivered`** — terminal. The recipient's WhatsApp acknowledged delivery.
-- **`failed`** — terminal. See the `error` field on the message for the cause.
+- **`delivered`** — the recipient's WhatsApp acknowledged delivery. May further transition to `read`.
+- **`read`** — terminal. The recipient opened the message (read receipt received).
+- **`failed`** — terminal. See the `failure_reason` field on the message for the cause.
 
 Poll the current state with `GET /v1/scheduled-messages/{id}`. Read receipts
 (`read_at` populated, `message.read` webhook fires) are delivered via
