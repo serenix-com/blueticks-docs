@@ -1,0 +1,35 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Mini", "version": "1.0.0" },
+  "paths": {
+    "/v1/scheduled-messages": {
+      "post": { "summary": "Send message", "requestBody": { "content": { "application/json": {
+        "schema": { "$ref": "#/components/schemas/SendMessageRequest" } } } } }
+    },
+    "/v1/audiences": {
+      "post": { "requestBody": { "content": { "application/json": {
+        "schema": { "$ref": "#/components/schemas/CreateAudience" } } } } }
+    }
+  },
+  "components": { "schemas": {
+    "SendMessageRequest": {
+      "oneOf": [
+        { "$ref": "#/components/schemas/SendText" },
+        { "$ref": "#/components/schemas/SendPoll" }
+      ],
+      "discriminator": { "propertyName": "type", "mapping": {
+        "text": "#/components/schemas/SendText", "poll": "#/components/schemas/SendPoll" } }
+    },
+    "SendText": { "type": "object", "required": ["type", "to", "text"], "properties": {
+      "type": { "enum": ["text"] }, "to": { "type": "string" },
+      "text": { "type": "string" }, "send_at": { "type": "string", "format": "date-time" } } },
+    "SendPoll": { "type": "object", "required": ["type", "to", "poll"], "properties": {
+      "type": { "enum": ["poll"] }, "to": { "type": "string" },
+      "poll": { "type": "object", "required": ["question", "options"], "properties": {
+        "question": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "allow_multiple": { "type": "boolean" } } } } },
+    "CreateAudience": { "type": "object", "required": ["name"], "properties": {
+      "name": { "type": "string" } } }
+  } }
+}
