@@ -3,7 +3,9 @@
   "info": { "title": "Mini", "version": "1.0.0" },
   "paths": {
     "/v1/scheduled-messages": {
-      "post": { "summary": "Send message", "requestBody": { "content": { "application/json": {
+      "post": { "summary": "Send message", "parameters": [
+        { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string" } }
+      ], "requestBody": { "content": { "application/json": {
         "schema": { "$ref": "#/components/schemas/SendMessageRequest" } } } } }
     },
     "/v1/audiences": {

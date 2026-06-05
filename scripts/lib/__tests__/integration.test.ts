@@ -87,6 +87,58 @@ describe('validateFile — SDK path params stripped (Bug 3)', () => {
   });
 });
 
+// Bug 4 regression: SDK header-param kwargs (idempotency_key / idempotencyKey) must not be flagged as unknown body fields
+describe('validateFile — SDK header params stripped (Bug 4)', () => {
+  const headerParamMdx = [
+    '## Send',
+    '',
+    '<Tabs groupId="sdk" items={[\'cURL\', \'Python\']}>',
+    '  <Tab value="cURL">',
+    '',
+    '```bash',
+    "curl -X POST https://api.blueticks.co/v1/scheduled-messages -d '{ \"to\": \"+1\", \"type\": \"text\", \"text\": \"hi\" }'",
+    '```',
+    '',
+    '  </Tab>',
+    '  <Tab value="Python">',
+    '',
+    '```python',
+    'bt.scheduled_messages.create(type="text", to="+1", text="hi", idempotency_key="k1")',
+    '```',
+    '',
+    '  </Tab>',
+    '</Tabs>',
+  ].join('\n');
+
+  const headerParamCamelMdx = headerParamMdx
+    .replace('```python\nbt.scheduled_messages.create(type="text", to="+1", text="hi", idempotency_key="k1")\n```',
+             '```ts\nbt.scheduledMessages.create({ type: "text", to: "+1", text: "hi", idempotencyKey: "k1" })\n```');
+
+  it('Python send with idempotency_key (snake_case) → no findings', () => {
+    const f = validateFile('idempotency-snake.mdx', headerParamMdx, spec).findings;
+    // idempotency_key is a header param — must NOT appear as unknown-field
+    const badFields = f.filter((x) => x.kind === 'unknown-field' && x.field === 'idempotency_key');
+    expect(badFields).toEqual([]);
+    expect(f).toEqual([]);
+  });
+
+  it('Node send with idempotencyKey (camelCase) → no findings', () => {
+    const f = validateFile('idempotency-camel.mdx', headerParamCamelMdx, spec).findings;
+    const badFields = f.filter((x) => x.kind === 'unknown-field' && x.field === 'idempotencyKey');
+    expect(badFields).toEqual([]);
+    expect(f).toEqual([]);
+  });
+
+  it('genuinely unknown body field (txt) IS still flagged', () => {
+    const badFieldMdx = headerParamMdx.replace(
+      'bt.scheduled_messages.create(type="text", to="+1", text="hi", idempotency_key="k1")',
+      'bt.scheduled_messages.create(type="text", to="+1", txt="hi")',
+    );
+    const f = validateFile('bad-field.mdx', badFieldMdx, spec).findings;
+    expect(f.some((x) => x.kind === 'unknown-field' && x.field === 'txt')).toBe(true);
+  });
+});
+
 describe('validateFile', () => {
   it('clean example → no findings', () => {
     expect(validateFile('clean.mdx', cleanMdx, spec).findings).toEqual([]);

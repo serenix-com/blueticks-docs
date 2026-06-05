@@ -24,14 +24,46 @@ function pathParamNames(opPath: string): Set<string> {
   return names;
 }
 
-/** For SDK languages, strip path-parameter keys from a parsed body object. */
-function stripPathParams(body: Record<string, unknown>, opPath: string, lang: string): Record<string, unknown> {
+/**
+ * Convert an HTTP header name to the two kwarg forms SDKs use:
+ *   'Idempotency-Key' → snake: 'idempotency_key', camel: 'idempotencyKey'
+ */
+function headerToKwargForms(headerName: string): string[] {
+  const snake = headerName.toLowerCase().replace(/-/g, '_');
+  const parts = headerName.split('-');
+  const camel = parts[0].toLowerCase() + parts.slice(1).map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('');
+  return snake === camel ? [snake] : [snake, camel];
+}
+
+/** Collect header parameter names (as SDK kwarg forms) for a resolved operation. */
+function headerParamKwargs(spec: any, op: { path: string; verb: string }): Set<string> {
+  const kwargSet = new Set<string>();
+  const opObj = spec.paths?.[op.path]?.[op.verb];
+  const pathObj = spec.paths?.[op.path];
+  const allParams: any[] = [
+    ...(pathObj?.parameters ?? []),
+    ...(opObj?.parameters ?? []),
+  ];
+  for (const param of allParams) {
+    if (param?.in === 'header' && typeof param.name === 'string') {
+      for (const form of headerToKwargForms(param.name)) kwargSet.add(form);
+    }
+  }
+  return kwargSet;
+}
+
+/**
+ * For SDK languages, strip both path-parameter keys AND header-parameter kwargs
+ * from a parsed body object. cURL/JSON bodies contain only real body fields — skip.
+ */
+function stripNonBodyParams(body: Record<string, unknown>, op: { path: string; verb: string }, spec: any, lang: string): Record<string, unknown> {
   if (lang !== 'ts' && lang !== 'js' && lang !== 'python') return body;
-  const params = pathParamNames(opPath);
-  if (params.size === 0) return body;
+  const pathParams = pathParamNames(op.path);
+  const headerKwargs = headerParamKwargs(spec, op);
+  if (pathParams.size === 0 && headerKwargs.size === 0) return body;
   const stripped: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body)) {
-    if (!params.has(k)) stripped[k] = v;
+    if (!pathParams.has(k) && !headerKwargs.has(k)) stripped[k] = v;
   }
   return stripped;
 }
@@ -66,7 +98,7 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
         });
         continue;
       }
-      const body = stripPathParams(parsed.body, op.path, b.lang);
+      const body = stripNonBodyParams(parsed.body, op, spec, b.lang);
       findings.push(...checkBody(body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang));
     }
   }
@@ -85,7 +117,7 @@ function applyFileFixes(file: string, src: string, spec: any): { content: string
     for (const b of group.blocks.filter(isRequestCandidate)) {
       const parsed = parseBody(b.lang, b.code);
       if (!parsed.ok) continue;
-      const body = stripPathParams(parsed.body, op.path, b.lang);
+      const body = stripNonBodyParams(parsed.body, op, spec, b.lang);
       const f = checkBody(body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang);
       const r = applyFixes(content, f, { startLine: b.startLine, endLine: b.endLine });
       content = r.content;
