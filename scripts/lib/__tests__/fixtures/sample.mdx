@@ -1,0 +1,38 @@
+---
+title: Sample
+---
+
+## Send a poll
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+  <Tab value="Python">
+
+```python
+msg = bt.messages.send(
+    to="+972",
+    type="poll",
+    poll={"question": "Q?", "options": ["Yes", "No"], "allow_multiple": False},
+)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+const msg = await bt.messages.send({
+  to: '+972',
+  type: 'poll',
+  poll: { question: 'Q?', options: ['Yes', 'No'], allow_multiple: false },
+});
+```
+
+  </Tab>
+</Tabs>
+
+## Schedule for later
+
+{/* example:skip forward-looking field not in spec yet */}
+
+```json
+{ "to": "+972", "type": "text", "text": "Reminder", "future_field": "x" }
+```
