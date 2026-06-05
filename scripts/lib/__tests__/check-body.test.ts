@@ -37,4 +37,16 @@ describe('checkBody', () => {
     expect(finding?.fixable).toBe(true);
     expect(finding?.suggestion).toBe('allow_multiple');
   });
+
+  it('reports a MISSING discriminator as missing-required (not bad-enum)', () => {
+    const f = checkBody({ to: '+1', text: 'hi' }, sendOp, spec, base, 'json'); // no `type`
+    expect(f).toHaveLength(1);
+    expect(f[0]).toMatchObject({ kind: 'missing-required', field: 'type' });
+  });
+
+  it('reports an INVALID discriminator as exactly one bad-enum (no oneOf noise)', () => {
+    const f = checkBody({ to: '+1', type: 'polls', poll: { question: 'Q', options: ['a'] } }, sendOp, spec, base, 'json');
+    expect(f).toHaveLength(1);
+    expect(f[0]).toMatchObject({ kind: 'bad-enum', field: 'type', badValue: 'polls' });
+  });
 });

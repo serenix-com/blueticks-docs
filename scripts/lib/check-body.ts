@@ -96,11 +96,14 @@ export function checkBody(
   const { schema: variant, variantRef, badDiscriminator } = resolveVariant(spec, rootSchema, body);
 
   if (badDiscriminator) {
+    const present = body[badDiscriminator] !== undefined;
     out.push({
-      kind: 'bad-enum',
+      kind: present ? 'bad-enum' : 'missing-required',
       field: badDiscriminator,
-      badValue: String(body[badDiscriminator]),
-      message: `Invalid discriminator value '${String(body[badDiscriminator])}' for '${badDiscriminator}'`,
+      badValue: present ? String(body[badDiscriminator]) : undefined,
+      message: present
+        ? `Invalid discriminator value '${String(body[badDiscriminator])}' for '${badDiscriminator}'`
+        : `Missing required discriminator field '${badDiscriminator}'`,
       fixable: false,
     });
     // Return early — don't run structural checks or ajv with an invalid discriminator
