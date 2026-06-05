@@ -26,3 +26,7 @@ jobs:
             echo "::error::Run 'pnpm run generate:openapi' locally and commit the diff."
             exit 1
           fi
+      - name: Unit tests
+        run: pnpm test:unit
+      - name: Validate guide code examples against openapi.json
+        run: pnpm validate:examples
