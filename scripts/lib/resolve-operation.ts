@@ -34,12 +34,20 @@ function matchPath(spec: Spec, urlPath: string): string | null {
   return null;
 }
 
+/** Escape a JSON Pointer token per RFC 6901: ~ → ~0, / → ~1. */
+function escapePointerToken(token: string): string {
+  return token.replace(/~/g, '~0').replace(/\//g, '~1');
+}
+
 function requestSchemaPointer(spec: Spec, path: string, verb: string): string | null {
   const op = spec.paths?.[path]?.[verb];
   const schema = op?.requestBody?.content?.['application/json']?.schema;
   if (!schema) return null;
   if (typeof schema.$ref === 'string') return `openapi#${schema.$ref.slice(1)}`;
-  return `openapi#/paths/${encodeURIComponent(path)}/${verb}/requestBody/content/application~1json/schema`;
+  // Build a JSON Pointer using ~0/~1 escaping (NOT percent-encoding) so that
+  // both deref() (which un-escapes ~1/~0 per segment) and ajv.getSchema() can
+  // resolve the pointer against the spec object.
+  return `openapi#/paths/${escapePointerToken(path)}/${verb}/requestBody/content/application~1json/schema`;
 }
 
 export function resolveOperation(group: ExampleGroup, spec: Spec): ResolvedOp | null {

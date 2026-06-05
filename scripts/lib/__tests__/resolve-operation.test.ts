@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import Ajv from 'ajv';
 import { resolveOperation, isRequestCandidate } from '../resolve-operation';
+import { checkBody } from '../check-body';
 import type { ExampleGroup } from '../types';
 
 const spec = JSON.parse(readFileSync(join(__dirname, 'fixtures/mini-openapi.json'), 'utf8'));
@@ -26,6 +28,47 @@ describe('resolveOperation', () => {
   it('returns null for a non-request group (no curl, no bt call)', () => {
     const g = group([{ lang: 'bash', code: 'export BLUETICKS_API_KEY=sk_123', file: 'f', startLine: 1, endLine: 1, groupId: 'g', skip: false }]);
     expect(resolveOperation(g, spec)).toBeNull();
+  });
+});
+
+// Bug 1 regression: inline schema (no $ref) must use JSON-pointer ~1 escaping, not percent-encoding
+describe('requestSchemaPointer — inline schema (Bug 1)', () => {
+  const base = { file: 'f.mdx', line: 1, groupId: 'g' };
+
+  it('resolves inline schema via cURL: valid body → no findings', () => {
+    const g = group([{
+      lang: 'bash',
+      code: "curl -X POST https://api.blueticks.co/v1/audiences-inline -d '{\"name\":\"x\",\"contacts\":[]}'",
+      file: 'f', startLine: 1, endLine: 1, groupId: 'g', skip: false,
+    }]);
+    const op = resolveOperation(g, spec);
+    expect(op).not.toBeNull();
+    // The pointer must be resolvable — checkBody should find no unknown fields
+    const findings = checkBody({ name: 'x', contacts: [] }, op!, spec, base, 'bash');
+    expect(findings).toEqual([]);
+  });
+
+  it('resolves inline schema via cURL: unknown field → unknown-field finding', () => {
+    const g = group([{
+      lang: 'bash',
+      code: "curl -X POST https://api.blueticks.co/v1/audiences-inline -d '{\"name\":\"x\",\"contactz\":[]}'",
+      file: 'f', startLine: 1, endLine: 1, groupId: 'g', skip: false,
+    }]);
+    const op = resolveOperation(g, spec);
+    expect(op).not.toBeNull();
+    const findings = checkBody({ name: 'x', contactz: [] }, op!, spec, base, 'bash');
+    expect(findings.some((x) => x.kind === 'unknown-field' && x.field === 'contactz')).toBe(true);
+  });
+
+  it('requestSchemaPointer uses ~1 escaping not percent-encoding', () => {
+    const g = group([{
+      lang: 'bash',
+      code: "curl -X POST https://api.blueticks.co/v1/audiences-inline -d '{}'",
+      file: 'f', startLine: 1, endLine: 1, groupId: 'g', skip: false,
+    }]);
+    const op = resolveOperation(g, spec);
+    expect(op?.requestSchemaPointer).toContain('~1v1~1audiences-inline');
+    expect(op?.requestSchemaPointer).not.toContain('%2F');
   });
 });
 

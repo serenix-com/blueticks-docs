@@ -9,6 +9,7 @@ const sendOp: ResolvedOp = { verb: 'post', path: '/v1/scheduled-messages', reque
 
 const base = { file: 'f.mdx', line: 1, groupId: 'g' };
 
+
 describe('checkBody', () => {
   it('passes a valid poll body', () => {
     const f = checkBody({ to: '+1', type: 'poll', poll: { question: 'Q', options: ['a', 'b'] } }, sendOp, spec, base, 'json');

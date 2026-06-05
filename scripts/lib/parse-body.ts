@@ -50,14 +50,25 @@ function parseBash(code: string): ParseResult {
  * Pattern: after a colon (value position) or comma / opening brace (element
  * position), an unquoted word that is NOT a JSON5 keyword (true/false/null/
  * Infinity/NaN) and not a number.
+ *
+ * NOTE: We first strip quoted string contents so that template-style {{...}}
+ * placeholders inside legitimate single/double-quoted string values don't
+ * trip the guard.
  */
 const BARE_IDENT_VALUE = /(?::\s*|[([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)(?=\s*[,}\])])/g;
 const JSON5_KEYWORDS = new Set(['true', 'false', 'null', 'undefined', 'Infinity', 'NaN']);
 
+/** Replace the contents of all single- and double-quoted strings with placeholder spaces. */
+function stripQuotedStrings(src: string): string {
+  return src.replace(/'(?:[^'\\]|\\.)*'/g, (m) => "'" + ' '.repeat(m.length - 2) + "'")
+            .replace(/"(?:[^"\\]|\\.)*"/g, (m) => '"' + ' '.repeat(m.length - 2) + '"');
+}
+
 function hasBareIdentifierValue(obj: string): boolean {
+  const stripped = stripQuotedStrings(obj);
   BARE_IDENT_VALUE.lastIndex = 0;
   let m: RegExpExecArray | null;
-  while ((m = BARE_IDENT_VALUE.exec(obj)) !== null) {
+  while ((m = BARE_IDENT_VALUE.exec(stripped)) !== null) {
     const word = m[1];
     if (!JSON5_KEYWORDS.has(word)) return true;
   }

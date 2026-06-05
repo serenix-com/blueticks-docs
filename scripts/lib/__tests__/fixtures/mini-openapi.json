@@ -9,6 +9,32 @@
     "/v1/audiences": {
       "post": { "requestBody": { "content": { "application/json": {
         "schema": { "$ref": "#/components/schemas/CreateAudience" } } } } }
+    },
+    "/v1/audiences-inline": {
+      "post": { "requestBody": { "content": { "application/json": {
+        "schema": { "type": "object", "required": ["name"], "properties": {
+          "name": { "type": "string" },
+          "contacts": { "type": "array", "items": { "type": "object" } }
+        } } } } } }
+    },
+    "/v1/things/{id}/rotate": {
+      "post": { "summary": "Rotate", "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ] }
+    },
+    "/v1/things/{id}": {
+      "get": { "summary": "Get thing", "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ] }
+    },
+    "/v1/chats/{chat_id}/messages/{key}/reactions": {
+      "post": { "parameters": [
+        { "name": "chat_id", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "key", "in": "path", "required": true, "schema": { "type": "string" } }
+      ], "requestBody": { "content": { "application/json": {
+        "schema": { "type": "object", "required": ["emoji"], "properties": {
+          "emoji": { "type": "string" }
+        } } } } } }
     }
   },
   "components": { "schemas": {

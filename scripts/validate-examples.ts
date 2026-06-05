@@ -12,6 +12,30 @@ const DOCS_ROOT = join(__dirname, '..');
 const SPEC_PATH = join(DOCS_ROOT, 'openapi.json');
 const GUIDE_GLOB = 'content/docs/*.mdx'; // top-level guides only; excludes content/docs/api/**
 
+/** Returns true if the resolved operation defines a JSON request body in the spec. */
+function hasRequestBody(spec: any, op: { path: string; verb: string }): boolean {
+  return !!(spec.paths?.[op.path]?.[op.verb]?.requestBody?.content?.['application/json']?.schema);
+}
+
+/** Extract path parameter names from an OpenAPI path template, e.g. '/v1/chats/{chat_id}/messages/{key}' → ['chat_id', 'key']. */
+function pathParamNames(opPath: string): Set<string> {
+  const names = new Set<string>();
+  for (const m of opPath.matchAll(/\{([^}]+)\}/g)) names.add(m[1]);
+  return names;
+}
+
+/** For SDK languages, strip path-parameter keys from a parsed body object. */
+function stripPathParams(body: Record<string, unknown>, opPath: string, lang: string): Record<string, unknown> {
+  if (lang !== 'ts' && lang !== 'js' && lang !== 'python') return body;
+  const params = pathParamNames(opPath);
+  if (params.size === 0) return body;
+  const stripped: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(body)) {
+    if (!params.has(k)) stripped[k] = v;
+  }
+  return stripped;
+}
+
 export function validateFile(file: string, src: string, spec: any): { findings: Finding[] } {
   const groups = extractExamples(file, src);
   const findings: Finding[] = [];
@@ -30,6 +54,9 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
       continue;
     }
 
+    // Skip body parsing/checking entirely for operations with no request body schema
+    if (!hasRequestBody(spec, op)) continue;
+
     for (const b of candidates) {
       const parsed = parseBody(b.lang, b.code);
       if (!parsed.ok) {
@@ -39,7 +66,8 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
         });
         continue;
       }
-      findings.push(...checkBody(parsed.body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang));
+      const body = stripPathParams(parsed.body, op.path, b.lang);
+      findings.push(...checkBody(body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang));
     }
   }
   return { findings };
@@ -53,10 +81,12 @@ function applyFileFixes(file: string, src: string, spec: any): { content: string
     if (group.skip) continue;
     const op = resolveOperation(group, spec);
     if (!op) continue;
+    if (!hasRequestBody(spec, op)) continue;
     for (const b of group.blocks.filter(isRequestCandidate)) {
       const parsed = parseBody(b.lang, b.code);
       if (!parsed.ok) continue;
-      const f = checkBody(parsed.body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang);
+      const body = stripPathParams(parsed.body, op.path, b.lang);
+      const f = checkBody(body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang);
       const r = applyFixes(content, f, { startLine: b.startLine, endLine: b.endLine });
       content = r.content;
       applied += r.applied;

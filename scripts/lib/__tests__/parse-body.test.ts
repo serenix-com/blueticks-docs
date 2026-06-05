@@ -44,4 +44,19 @@ describe('parseBody', () => {
     const code = `bt.messages.send({ to: recipient, type: 'text', text: \`hi \${name}\` })`;
     expect(parseBody('ts', code).ok).toBe(false);
   });
+
+  // Bug 4 regression: {{...}} inside a single-quoted string must NOT trip the bare-identifier guard
+  it('parses a Node campaigns.create object with {{...}} template placeholder in a string value', () => {
+    const code = `await bt.campaigns.create({
+  name: 'Launch blast',
+  audience_id: 'aud_01h7...',
+  text: 'Hey {{first_name}}! Your order ships today.',
+  on_missing_variable: 'fail',
+});`;
+    const r = parseBody('ts', code);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.body).toMatchObject({ name: 'Launch blast', on_missing_variable: 'fail' });
+    }
+  });
 });
