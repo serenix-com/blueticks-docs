@@ -10,12 +10,12 @@ const miniSpec = {
 };
 
 describe('sdk-mapping forward', () => {
-  it('maps POST /v1/scheduled-messages to scheduled_messages.send (override)', () => {
+  it('maps POST /v1/scheduled-messages to scheduled_messages.create (override)', () => {
     // NOTE: forwardResource returns the first path segment with hyphens→underscores,
     // so /v1/scheduled-messages → "scheduled_messages", NOT "messages".
-    // SDK_METHOD_OVERRIDES overrides only the method ("send"), not the resource.
+    // SDK_METHOD_OVERRIDES overrides only the method ("create"), not the resource.
     expect(forwardResource('/v1/scheduled-messages')).toBe('scheduled_messages');
-    expect(forwardMethod('post', '/v1/scheduled-messages')).toBe('send');
+    expect(forwardMethod('post', '/v1/scheduled-messages')).toBe('create');
   });
   it('maps POST /v1/audiences to audiences.create (convention)', () => {
     expect(forwardResource('/v1/audiences')).toBe('audiences');
@@ -24,9 +24,9 @@ describe('sdk-mapping forward', () => {
 });
 
 describe('sdk-mapping inverse (derived from spec)', () => {
-  it('resolves scheduled_messages.send back to POST /v1/scheduled-messages', () => {
+  it('resolves scheduled_messages.create back to POST /v1/scheduled-messages', () => {
     const inv = buildInverseMap(miniSpec as any);
-    expect(inv.get('scheduled_messages.send')).toEqual({ verb: 'post', path: '/v1/scheduled-messages' });
+    expect(inv.get('scheduled_messages.create')).toEqual({ verb: 'post', path: '/v1/scheduled-messages' });
   });
   it('resolves audiences.list back to GET /v1/audiences', () => {
     const inv = buildInverseMap(miniSpec as any);
