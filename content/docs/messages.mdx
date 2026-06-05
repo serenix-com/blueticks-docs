@@ -92,12 +92,14 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 # Send to a group
 msg = bt.messages.send(
     to="120363427920657250@g.us",
+    type="text",
     text="Team standup in 10 minutes!",
 )
 
 # Send to a channel
 msg = bt.messages.send(
     to="12345@newsletter",
+    type="text",
     text="New announcement for all subscribers.",
 )
 ```
@@ -112,12 +114,14 @@ const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 // Send to a group
 const groupMsg = await bt.messages.send({
   to: '120363427920657250@g.us',
+  type: 'text',
   text: 'Team standup in 10 minutes!',
 });
 
 // Send to a channel
 const channelMsg = await bt.messages.send({
   to: '12345@newsletter',
+  type: 'text',
   text: 'New announcement for all subscribers.',
 });
 ```
@@ -131,11 +135,13 @@ $bt = new Blueticks('BLUETICKS_API_KEY');
 
 // Send to a group
 $groupMsg = $bt->messages->send('120363427920657250@g.us', [
+    'type' => 'text',
     'text' => 'Team standup in 10 minutes!',
 ]);
 
 // Send to a channel
 $channelMsg = $bt->messages->send('12345@newsletter', [
+    'type' => 'text',
     'text' => 'New announcement for all subscribers.',
 ]);
 ```
@@ -187,8 +193,13 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 msg = bt.messages.send(
     to="+972501234567",
-    media_url="https://cdn.example.com/receipt.pdf",
-    media_caption="Order #A-42",
+    type="media",
+    media={
+        "url": "https://cdn.example.com/receipt.pdf",
+        "kind": "document",
+        "filename": "receipt-A42.pdf",
+        "caption": "Order #A-42",
+    },
 )
 print(msg.id, msg.status)
 ```
@@ -202,8 +213,13 @@ const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
 const msg = await bt.messages.send({
   to: '+972501234567',
-  media_url: 'https://cdn.example.com/receipt.pdf',
-  media_caption: 'Order #A-42',
+  type: 'media',
+  media: {
+    url: 'https://cdn.example.com/receipt.pdf',
+    kind: 'document',
+    filename: 'receipt-A42.pdf',
+    caption: 'Order #A-42',
+  },
 });
 ```
 
@@ -215,8 +231,13 @@ use Blueticks\Blueticks;
 $bt = new Blueticks('BLUETICKS_API_KEY');
 
 $msg = $bt->messages->send('+972501234567', [
-    'media_url'     => 'https://cdn.example.com/receipt.pdf',
-    'media_caption' => 'Order #A-42',
+    'type'  => 'media',
+    'media' => [
+        'url'      => 'https://cdn.example.com/receipt.pdf',
+        'kind'     => 'document',
+        'filename' => 'receipt-A42.pdf',
+        'caption'  => 'Order #A-42',
+    ],
 ]);
 ```
 
@@ -431,6 +452,7 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 msg = bt.messages.send(
     to="+972501234567",
+    type="text",
     text="Your order is confirmed.",
     idempotency_key="order-42-reminder",
 )
@@ -445,6 +467,7 @@ const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
 const msg = await bt.messages.send({
   to: '+972501234567',
+  type: 'text',
   text: 'Your order is confirmed.',
   idempotencyKey: 'order-42-reminder',
 });
@@ -458,6 +481,7 @@ use Blueticks\Blueticks;
 $bt = new Blueticks('BLUETICKS_API_KEY');
 
 $msg = $bt->messages->send('+972501234567', [
+    'type'            => 'text',
     'text'            => 'Your order is confirmed.',
     'idempotency_key' => 'order-42-reminder',
 ]);
