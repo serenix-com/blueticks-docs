@@ -6,6 +6,7 @@ import { resolveOperation, isRequestCandidate } from './lib/resolve-operation';
 import { parseBody } from './lib/parse-body';
 import { checkBody } from './lib/check-body';
 import { checkResponseBody } from './lib/check-response';
+import { checkParams } from './lib/check-params';
 import { applyFixes } from './lib/autofix';
 import type { Finding, ResolvedOp } from './lib/types';
 
@@ -78,6 +79,54 @@ function stripNonBodyParams(body: Record<string, unknown>, op: { path: string; v
   return stripped;
 }
 
+/**
+ * Headers that are auth/standard transport concerns, not operation parameters.
+ * Matched case-insensitively (cURL header names are case-insensitive).
+ */
+const HEADER_ALLOWLIST = new Set(['authorization', 'content-type', 'accept']);
+
+/**
+ * Extract query-string parameter keys from the blueticks API URL in a cURL/bash
+ * block. Joins backslash-continued lines, finds the first /v1/ blueticks URL,
+ * and reads its `?a=…&b=…` keys. Returns [] when there is no query string.
+ */
+function curlQueryKeys(code: string): string[] {
+  const joined = code.replace(/\\\r?\n/g, ' ');
+  const m = joined.match(/https?:\/\/[^/\s'"]+(\/v1\/[^\s'"]*)/i);
+  if (!m) return [];
+  const full = joined.slice(m.index!).match(/https?:\/\/[^\s'"]+/i);
+  const urlStr = full ? full[0] : '';
+  const q = urlStr.indexOf('?');
+  if (q === -1) return [];
+  const query = urlStr.slice(q + 1);
+  try {
+    return [...new URLSearchParams(query).keys()];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Extract header names from `-H 'Name: value'` / `-H "Name: value"` (and
+ * unquoted) flags in a cURL/bash block. Drops auth/standard headers via the
+ * case-insensitive allowlist. Backslash-continued lines are joined first.
+ */
+function curlHeaderNames(code: string): string[] {
+  const joined = code.replace(/\\\r?\n/g, ' ');
+  const names: string[] = [];
+  const re = /-H\s+(?:'([^']*)'|"([^"]*)"|(\S+:[^\s]*))/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(joined)) !== null) {
+    const raw = m[1] ?? m[2] ?? m[3] ?? '';
+    const colon = raw.indexOf(':');
+    if (colon === -1) continue;
+    const name = raw.slice(0, colon).trim();
+    if (!name || HEADER_ALLOWLIST.has(name.toLowerCase())) continue;
+    names.push(name);
+  }
+  return names;
+}
+
 export function validateFile(file: string, src: string, spec: any): { findings: Finding[] } {
   const groups = extractExamples(file, src);
   const findings: Finding[] = [];
@@ -117,6 +166,15 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
       continue;
     }
     lastOp = op;
+
+    // Parameter-existence checks: validate query keys (from the cURL URL) and
+    // header names (from -H flags) against the operation's declared parameters.
+    for (const b of candidates) {
+      if (b.lang !== 'bash' || !/curl/.test(b.code)) continue;
+      const base = { file, line: b.startLine, groupId: group.groupId };
+      findings.push(...checkParams(curlQueryKeys(b.code), 'query', op, spec, base, 'bash'));
+      findings.push(...checkParams(curlHeaderNames(b.code), 'header', op, spec, base, 'bash'));
+    }
 
     // Skip body parsing/checking entirely for operations with no request body schema
     if (!hasRequestBody(spec, op)) continue;
