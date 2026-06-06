@@ -6,7 +6,10 @@
       "post": { "summary": "Send message", "parameters": [
         { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string" } }
       ], "requestBody": { "content": { "application/json": {
-        "schema": { "$ref": "#/components/schemas/SendMessageRequest" } } } } }
+        "schema": { "$ref": "#/components/schemas/SendMessageRequest" } } } },
+        "responses": { "200": { "content": { "application/json": {
+          "schema": { "type": "object", "additionalProperties": false, "properties": {
+            "id": { "type": "string" }, "status": { "type": "string" } } } } } } } }
     },
     "/v1/audiences": {
       "post": { "requestBody": { "content": { "application/json": {

@@ -5,8 +5,9 @@ import { extractExamples } from './lib/extract-examples';
 import { resolveOperation, isRequestCandidate } from './lib/resolve-operation';
 import { parseBody } from './lib/parse-body';
 import { checkBody } from './lib/check-body';
+import { checkResponseBody } from './lib/check-response';
 import { applyFixes } from './lib/autofix';
-import type { Finding } from './lib/types';
+import type { Finding, ResolvedOp } from './lib/types';
 
 const DOCS_ROOT = join(__dirname, '..');
 const SPEC_PATH = join(DOCS_ROOT, 'openapi.json');
@@ -81,8 +82,29 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
   const groups = extractExamples(file, src);
   const findings: Finding[] = [];
 
+  // The op resolved from the most recent request group; response examples
+  // reuse it (a response block follows the request it documents).
+  let lastOp: ResolvedOp | null = null;
+
   for (const group of groups) {
     if (group.skip) continue;
+
+    // Response example: a group flagged with a responseStatus marker (or under a
+    // "Response" heading). Validate its JSON body against the response schema,
+    // reusing the op from the preceding request group.
+    if (group.responseStatus) {
+      const op = lastOp;
+      if (!op) continue; // standalone response with no resolvable op — skip gracefully
+      const status = group.responseStatus;
+      for (const b of group.blocks) {
+        if (b.lang !== 'json') continue;
+        const parsed = parseBody('json', b.code);
+        if (!parsed.ok) continue; // don't crash on an unparseable response sample
+        findings.push(...checkResponseBody(parsed.body, op, status, spec, { file, line: b.startLine, groupId: group.groupId }, 'json'));
+      }
+      continue;
+    }
+
     const candidates = group.blocks.filter(isRequestCandidate);
     if (candidates.length === 0) continue;
 
@@ -94,6 +116,7 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
       });
       continue;
     }
+    lastOp = op;
 
     // Skip body parsing/checking entirely for operations with no request body schema
     if (!hasRequestBody(spec, op)) continue;

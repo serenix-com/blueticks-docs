@@ -61,9 +61,28 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
     return { reason };
   }
 
-  // Document-order traversal: carry a pending skip forward to the
-  // next Tabs or code node, then consume it.
+  // Parse a response annotation from an mdxFlowExpression node.
+  // The node.value looks like: /* example:response 200 */
+  function parseResponseMarker(node: any): { status: string } | null {
+    const value: string = node.value ?? '';
+    const m = value.match(/example:response\s+(\d{3})/);
+    return m ? { status: m[1] } : null;
+  }
+
+  // Extract the plain-text of a heading node (concatenate child text values).
+  function headingText(node: any): string {
+    let text = '';
+    visit(node, 'text', (t: any) => { text += t.value ?? ''; });
+    return text.trim();
+  }
+
+  // Document-order traversal: carry a pending skip / response marker forward to
+  // the next Tabs or code node, then consume it. Also track whether the most
+  // recent heading was a "Response" heading (case-insensitive) so a JSON block
+  // following it is treated as a response candidate (the explicit marker wins).
   let pendingSkip: { reason: string } | null = null;
+  let pendingResponse: { status: string } | null = null;
+  let underResponseHeading = false;
 
   for (const node of (tree.children as any[])) {
     if (node.type === 'mdxFlowExpression') {
@@ -72,6 +91,18 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
         // A skip marker — hold it for the next emittable node
         pendingSkip = s;
       }
+      const r = parseResponseMarker(node);
+      if (r) {
+        // A response marker — hold it for the next emittable node
+        pendingResponse = r;
+      }
+      continue;
+    }
+
+    if (node.type === 'heading') {
+      // Track whether we're now under a "Response" heading. A bare status
+      // (e.g. "### Response") implies status 200 unless a marker overrides it.
+      underResponseHeading = /^response/i.test(headingText(node));
       continue;
     }
 
@@ -85,12 +116,16 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
       if (blocks.length) {
         const skip = pendingSkip;
         pendingSkip = null; // consume
+        const response = pendingResponse ?? (underResponseHeading ? { status: '200' } : null);
+        pendingResponse = null; // consume
+        if (response) for (const b of blocks) b.responseStatus = response.status;
         groups.push({
           groupId,
           file,
           blocks,
           skip: !!skip,
           skipReason: skip?.reason,
+          responseStatus: response?.status,
         });
       }
       continue;
@@ -101,22 +136,23 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
       if (b) {
         const skip = pendingSkip;
         pendingSkip = null; // consume
+        const response = pendingResponse ?? (underResponseHeading ? { status: '200' } : null);
+        pendingResponse = null; // consume
+        if (response) b.responseStatus = response.status;
         groups.push({
           groupId: null,
           file,
           blocks: [b],
           skip: !!skip,
           skipReason: skip?.reason,
+          responseStatus: response?.status,
         });
       }
       continue;
     }
 
-    // Any other structural node (heading, paragraph, thematicBreak, etc.)
-    // does NOT consume the pending skip — only code/Tabs nodes do.
-    // This means a skip before a heading before a code block still applies.
-    // However, if that is undesirable in edge cases, consider clearing
-    // pendingSkip on headings (not needed for current tests).
+    // Any other structural node (paragraph, thematicBreak, etc.) does NOT
+    // consume the pending skip / response marker — only code/Tabs nodes do.
   }
 
   return groups;
