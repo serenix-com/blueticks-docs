@@ -6,7 +6,7 @@ type Spec = {
   components?: { schemas?: Record<string, unknown> };
 };
 
-const BT_CALL = /\bbt\.([A-Za-z_]\w*)\.([A-Za-z_]\w*)\s*\(/;
+const BT_CALL = /\b(?:bt|client)\.([A-Za-z_]\w*)\.([A-Za-z_]\w*)\s*\(/;
 
 // Two separate regexes: one that captures the HTTP verb (-X VERB), one that doesn't.
 // Branching on which matched avoids any m.length ambiguity.

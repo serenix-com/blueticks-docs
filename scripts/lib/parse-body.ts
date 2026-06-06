@@ -76,7 +76,7 @@ function hasBareIdentifierValue(obj: string): boolean {
 }
 
 function parseNode(code: string): ParseResult {
-  const call = code.search(/\bbt\.[A-Za-z_]\w*\.[A-Za-z_]\w*\s*\(/);
+  const call = code.search(/\b(?:bt|client)\.[A-Za-z_]\w*\.[A-Za-z_]\w*\s*\(/);
   const obj = balanced(code, '{', '}', call < 0 ? 0 : call);
   if (!obj) return { ok: false, reason: 'no object literal' };
   if (/`|\$\{/.test(obj)) return { ok: false, reason: 'template literal' };
@@ -85,7 +85,7 @@ function parseNode(code: string): ParseResult {
 }
 
 function parsePython(code: string): ParseResult {
-  const call = code.search(/\bbt\.[A-Za-z_]\w*\.[A-Za-z_]\w*\s*\(/);
+  const call = code.search(/\b(?:bt|client)\.[A-Za-z_]\w*\.[A-Za-z_]\w*\s*\(/);
   if (call < 0) return { ok: false, reason: 'no bt.*.* call' };
   const args = balanced(code, '(', ')', call);
   if (!args) return { ok: false, reason: 'unbalanced call' };

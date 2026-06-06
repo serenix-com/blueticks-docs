@@ -25,6 +25,12 @@ describe('resolveOperation', () => {
     expect(op).toMatchObject({ verb: 'post', path: '/v1/audiences' });
   });
 
+  it('resolves an SDK call using the client. prefix via the inverse map', () => {
+    const g = group([{ lang: 'ts', code: 'await client.audiences.create({ name: "x" })', file: 'f', startLine: 1, endLine: 1, groupId: 'g', skip: false }]);
+    const op = resolveOperation(g, spec);
+    expect(op).toMatchObject({ verb: 'post', path: '/v1/audiences' });
+  });
+
   it('returns null for a non-request group (no curl, no bt call)', () => {
     const g = group([{ lang: 'bash', code: 'export BLUETICKS_API_KEY=sk_123', file: 'f', startLine: 1, endLine: 1, groupId: 'g', skip: false }]);
     expect(resolveOperation(g, spec)).toBeNull();
@@ -78,6 +84,9 @@ describe('isRequestCandidate', () => {
   });
   it('true for a bt.*.* call', () => {
     expect(isRequestCandidate({ lang: 'ts', code: 'bt.messages.send({})', file: 'f', startLine: 1, endLine: 1, groupId: null, skip: false })).toBe(true);
+  });
+  it('true for a client.*.* call', () => {
+    expect(isRequestCandidate({ lang: 'ts', code: 'client.messages.send({})', file: 'f', startLine: 1, endLine: 1, groupId: null, skip: false })).toBe(true);
   });
   it('true for a request-shaped standalone json (has to + type)', () => {
     expect(isRequestCandidate({ lang: 'json', code: '{ "to": "+1", "type": "text" }', file: 'f', startLine: 1, endLine: 1, groupId: null, skip: false })).toBe(true);
