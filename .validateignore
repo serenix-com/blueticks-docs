@@ -1,0 +1,10 @@
+# .validateignore — operations exempt from the coverage gate.
+# One "METHOD /v1/path" per line, each with a trailing "# reason".
+# Example:
+#   GET /v1/internal-thing   # internal-only, intentionally undocumented
+
+GET /v1/ping                                # trivial health check, no example warranted
+GET /v1/engines                             # engine-introspection plumbing, not user-facing API surface
+POST /v1/chats/{chat_id}/open               # low-level engine plumbing (force-open a chat in the engine)
+POST /v1/chats/message_acks                 # batch ack-polling primitive, internal to delivery tracking
+POST /v1/chats/{chat_id}/messages/load_older  # engine sync primitive (pull older history from phone)

@@ -6,7 +6,7 @@ description: Send templated messages to a named contact list with per-contact va
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
 A **campaign** sends one message template to every contact in an
-**audience**, with `{{variable}}` placeholders swapped in per contact.
+**audience**, with `{variable}` placeholders swapped in per contact.
 
 ## 1. Create an audience
 
@@ -43,10 +43,10 @@ const aud = await bt.audiences.create({
 ```php
 $aud = $bt->audiences->create(
     name: 'Summer 2026 launch',
-    opts: ['contacts' => [
+    contacts: [
         ['to' => '+972501234567', 'variables' => ['first_name' => 'Rachel']],
         ['to' => '+15551234567',  'variables' => ['first_name' => 'Alex']],
-    ]],
+    ],
 );
 ```
 
@@ -73,14 +73,39 @@ Each contact's `to` accepts an E.164 phone OR a WhatsApp JID (`@g.us` for groups
 
 Append more contacts to an existing audience later via
 `POST /v1/audiences/{id}/contacts` — up to 1000 per request, duplicates
-silently skipped.
+silently skipped:
+
+<ApiExample op="POST /v1/audiences/{id}/contacts" kind="request" />
+
+List, fetch, rename, or delete an audience:
+
+<ApiExample op="GET /v1/audiences" kind="request" />
+
+<ApiExample op="GET /v1/audiences/{id}" kind="request" />
+
+<ApiExample op="PATCH /v1/audiences/{id}" kind="request" />
+
+<ApiExample op="DELETE /v1/audiences/{id}" kind="request" />
+
+Update or remove an individual contact's variables within an audience:
+
+<ApiExample op="PATCH /v1/audiences/{id}/contacts/{contactId}" kind="request" />
+
+<ApiExample op="DELETE /v1/audiences/{id}/contacts/{contactId}" kind="request" />
+
+Your workspace-wide contact book (everyone you've ever messaged) is at
+`GET /v1/contacts`:
+
+<ApiExample op="GET /v1/contacts" kind="request" />
 
 ## 2. Launch a campaign
 
-Use `{{var_name}}` in `text`; each contact's `variables` fill in. If
+Use `{var_name}` in `text`; each contact's `variables` fill in. If
 any contact is missing a referenced variable, `on_missing_variable`
-decides: `"fail"` (default — 400 before the campaign starts) or
-`"skip"` (those contacts are counted as failed).
+decides: `"fail"` (default — 400 request rejected before the campaign starts,
+no messages sent) or `"skip"` (the campaign is accepted and contacts missing
+the variable still receive the message with the literal `{token}` left in
+place).
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
   <Tab value="Python">
@@ -89,7 +114,7 @@ decides: `"fail"` (default — 400 before the campaign starts) or
 cmp = bt.campaigns.create(
     name="Launch blast",
     audience_id="aud_01h7...",
-    text="Hey {{first_name}}! Your order ships today.",
+    text="Hey {first_name}! Your order ships today.",
     on_missing_variable="fail",
 )
 print(cmp.id, cmp.status)
@@ -102,7 +127,7 @@ print(cmp.id, cmp.status)
 const cmp = await bt.campaigns.create({
   name: 'Launch blast',
   audience_id: 'aud_01h7...',
-  text: 'Hey {{first_name}}! Your order ships today.',
+  text: 'Hey {first_name}! Your order ships today.',
   on_missing_variable: 'fail',
 });
 ```
@@ -114,7 +139,7 @@ const cmp = await bt.campaigns.create({
 $cmp = $bt->campaigns->create(
     'Launch blast',
     'aud_01h7...',
-    ['text' => 'Hey {{first_name}}! Your order ships today.', 'on_missing_variable' => 'fail'],
+    ['text' => 'Hey {first_name}! Your order ships today.', 'on_missing_variable' => 'fail'],
 );
 ```
 
@@ -128,7 +153,7 @@ curl -X POST https://api.blueticks.co/v1/campaigns \
   -d '{
     "name": "Launch blast",
     "audience_id": "aud_01h7...",
-    "text": "Hey {{first_name}}! Your order ships today.",
+    "text": "Hey {first_name}! Your order ships today.",
     "on_missing_variable": "fail"
   }'
 ```
@@ -137,7 +162,7 @@ curl -X POST https://api.blueticks.co/v1/campaigns \
 </Tabs>
 
 Response includes live counters (`sent_count`, `delivered_count`,
-`read_count`, `failed_count`) plus `status: "running"`.
+`read_count`, `failed_count`) plus `status: "pending"`.
 
 ## 3. Track progress
 
@@ -161,7 +186,7 @@ console.log(cmp.status, cmp.sent_count, cmp.delivered_count);
   <Tab value="PHP">
 
 ```php
-$cmp = $bt->campaigns->get('cmp_01h7...');
+$cmp = $bt->campaigns->retrieve('cmp_01h7...');
 echo $cmp->status, ' ', $cmp->sent_count, '/', $cmp->delivered_count, "\n";
 ```
 
@@ -175,6 +200,10 @@ curl https://api.blueticks.co/v1/campaigns/cmp_01h7... \
 
   </Tab>
 </Tabs>
+
+List all campaigns in the workspace with `GET /v1/campaigns`:
+
+<ApiExample op="GET /v1/campaigns" kind="request" />
 
 Status lifecycle: `pending → running → complete_sent →
 complete_delivered`, with `paused` and `aborted` as side states.
@@ -249,11 +278,17 @@ curl -X POST https://api.blueticks.co/v1/campaigns/cmp_01h7.../cancel \
 
 All three return `409` when the campaign isn't in a compatible state.
 
+The resume and cancel transitions map to dedicated endpoints:
+
+<ApiExample op="POST /v1/campaigns/{id}/resume" kind="request" />
+
+<ApiExample op="POST /v1/campaigns/{id}/cancel" kind="request" />
+
 ## Limits to know
 
 - Audience: max 1000 contacts per `create` or `append` request. Split
   larger lists client-side.
 - Variables: max 32 per contact, each ≤ 1024 chars, keys match
-  `^[a-z][a-z0-9_]{0,31}$`.
+  `^[A-Za-z_][A-Za-z0-9_]{0,31}$`.
 - Pacing is server-controlled — the internal send engine rate-limits
   per linked WhatsApp number. No customer-facing throttle knob.
