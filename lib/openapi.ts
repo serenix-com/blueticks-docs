@@ -46,7 +46,7 @@ interface CodeSample {
   label: string;
   source: string;
 }
-function buildCodeSamples(verb: string, path: string, op: { requestBody?: unknown }): CodeSample[] {
+export function buildCodeSamples(verb: string, path: string, op: { requestBody?: unknown }): CodeSample[] {
   const out: CodeSample[] = [];
   const py = pyResource(path);
   const js = jsResource(path);

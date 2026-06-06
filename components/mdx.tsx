@@ -5,6 +5,7 @@ import { createCodeUsageGeneratorRegistry } from 'fumadocs-openapi/requests/gene
 import { curl } from 'fumadocs-openapi/requests/generators/curl';
 import { openapi } from '@/lib/openapi';
 import { AppLink } from '@/components/app-link';
+import { ApiExample } from '@/components/api-example';
 import { ApiAutoExpand } from '@/components/api-auto-expand';
 import { ResponseTabsRelocator } from '@/components/response-tabs-relocator';
 
@@ -90,6 +91,7 @@ export function getMDXComponents(components?: MDXComponents) {
     ...defaultMdxComponents,
     APIPage,
     AppLink,
+    ApiExample,
     ...components,
   } satisfies MDXComponents;
 }
