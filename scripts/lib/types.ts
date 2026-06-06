@@ -10,6 +10,7 @@ export interface CodeBlock {
   groupId: string | null;  // synthetic id of the enclosing <Tabs>, or null
   skip: boolean;       // preceded by {/* example:skip ... */}
   skipReason?: string;
+  responseStatus?: string;  // set when this block is a response example for the given HTTP status
 }
 
 /** All blocks belonging to one <Tabs> group (or one standalone block). */
@@ -19,6 +20,8 @@ export interface ExampleGroup {
   blocks: CodeBlock[];
   skip: boolean;
   skipReason?: string;
+  responseStatus?: string;  // set when this group is a response example for the given HTTP status
+  ignore?: { kinds: string[]; reason: string };  // inline {/* validate:ignore <kind> — reason */} suppression
 }
 
 /** An OpenAPI operation a group was resolved to. */
@@ -35,7 +38,10 @@ export type FindingKind =
   | 'missing-required'
   | 'dead-endpoint'
   | 'unparseable'
-  | 'schema-invalid';
+  | 'schema-invalid'
+  | 'response-shape'   // new
+  | 'unknown-param'    // new
+  | 'coverage-gap';    // new
 
 export interface Finding {
   file: string;

@@ -78,18 +78,24 @@ function walkUnknown(spec: Spec, schema: any, body: any, path: string, out: Part
   }
 }
 
-export function checkBody(
+/**
+ * Walk a value against a schema referenced by a JSON-pointer string (the part
+ * AFTER the schema pointer has been resolved). The pointer may be either:
+ *   - 'openapi#/components/schemas/X'  (a named component), or
+ *   - 'openapi#/paths/.../schema'      (an inline schema reachable by pointer).
+ * Emits unknown-field / bad-enum / missing-required / schema-invalid findings.
+ */
+export function checkValueAgainstSchema(
   body: Record<string, unknown>,
-  op: ResolvedOp,
+  schemaPointer: string,
   spec: Spec,
   base: { file: string; line: number; groupId: string | null },
   lang: Lang,
 ): Finding[] {
   const out: PartialFinding[] = [];
-  if (!op.requestSchemaPointer) return [];
 
   // Resolve root schema from pointer (e.g. 'openapi#/components/schemas/SendMessageRequest')
-  const pointerPath = op.requestSchemaPointer.split('#')[1]; // '/components/schemas/SendMessageRequest'
+  const pointerPath = schemaPointer.split('#')[1]; // '/components/schemas/SendMessageRequest'
   const rootSchema = deref(spec, { $ref: '#' + pointerPath });
 
   // Attempt discriminator resolution
@@ -118,7 +124,7 @@ export function checkBody(
   // Use the variant schema pointer when available (avoids oneOf noise from the root discriminated schema)
   const ajvPointer = variantRef
     ? 'openapi' + variantRef  // e.g. 'openapi#/components/schemas/SendPoll'
-    : op.requestSchemaPointer; // fallback to root pointer for non-discriminated schemas
+    : schemaPointer; // fallback to root pointer for non-discriminated schemas
 
   const ajv = new Ajv({ strict: false, allErrors: true });
   addFormats(ajv);
@@ -176,4 +182,16 @@ export function checkBody(
     findings.push({ ...f, file: base.file, line: base.line, groupId: base.groupId, lang });
   }
   return findings;
+}
+
+export function checkBody(
+  body: Record<string, unknown>,
+  op: ResolvedOp,
+  spec: Spec,
+  base: { file: string; line: number; groupId: string | null },
+  lang: Lang,
+): Finding[] {
+  return op.requestSchemaPointer
+    ? checkValueAgainstSchema(body, op.requestSchemaPointer, spec, base, lang)
+    : [];
 }

@@ -73,7 +73,30 @@ Each contact's `to` accepts an E.164 phone OR a WhatsApp JID (`@g.us` for groups
 
 Append more contacts to an existing audience later via
 `POST /v1/audiences/{id}/contacts` — up to 1000 per request, duplicates
-silently skipped.
+silently skipped:
+
+<ApiExample op="POST /v1/audiences/{id}/contacts" kind="request" />
+
+List, fetch, rename, or delete an audience:
+
+<ApiExample op="GET /v1/audiences" kind="request" />
+
+<ApiExample op="GET /v1/audiences/{id}" kind="request" />
+
+<ApiExample op="PATCH /v1/audiences/{id}" kind="request" />
+
+<ApiExample op="DELETE /v1/audiences/{id}" kind="request" />
+
+Update or remove an individual contact's variables within an audience:
+
+<ApiExample op="PATCH /v1/audiences/{id}/contacts/{contactId}" kind="request" />
+
+<ApiExample op="DELETE /v1/audiences/{id}/contacts/{contactId}" kind="request" />
+
+Your workspace-wide contact book (everyone you've ever messaged) is at
+`GET /v1/contacts`:
+
+<ApiExample op="GET /v1/contacts" kind="request" />
 
 ## 2. Launch a campaign
 
@@ -178,6 +201,10 @@ curl https://api.blueticks.co/v1/campaigns/cmp_01h7... \
   </Tab>
 </Tabs>
 
+List all campaigns in the workspace with `GET /v1/campaigns`:
+
+<ApiExample op="GET /v1/campaigns" kind="request" />
+
 Status lifecycle: `pending → running → complete_sent →
 complete_delivered`, with `paused` and `aborted` as side states.
 
@@ -250,6 +277,12 @@ curl -X POST https://api.blueticks.co/v1/campaigns/cmp_01h7.../cancel \
 </Tabs>
 
 All three return `409` when the campaign isn't in a compatible state.
+
+The resume and cancel transitions map to dedicated endpoints:
+
+<ApiExample op="POST /v1/campaigns/{id}/resume" kind="request" />
+
+<ApiExample op="POST /v1/campaigns/{id}/cancel" kind="request" />
 
 ## Limits to know
 

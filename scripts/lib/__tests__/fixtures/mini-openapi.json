@@ -6,7 +6,10 @@
       "post": { "summary": "Send message", "parameters": [
         { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string" } }
       ], "requestBody": { "content": { "application/json": {
-        "schema": { "$ref": "#/components/schemas/SendMessageRequest" } } } } }
+        "schema": { "$ref": "#/components/schemas/SendMessageRequest" } } } },
+        "responses": { "200": { "content": { "application/json": {
+          "schema": { "type": "object", "additionalProperties": false, "properties": {
+            "id": { "type": "string" }, "status": { "type": "string" } } } } } } } }
     },
     "/v1/audiences": {
       "post": { "requestBody": { "content": { "application/json": {
@@ -26,7 +29,8 @@
     },
     "/v1/things/{id}": {
       "get": { "summary": "Get thing", "parameters": [
-        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "expand", "in": "query", "schema": { "type": "string" } }
       ] }
     },
     "/v1/chats/{chat_id}/messages/{key}/reactions": {

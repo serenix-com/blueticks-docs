@@ -12,65 +12,11 @@ union — set `type` to one of `text`, `media`, or `poll`. Optional fields
 
 ## Send a text message
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
-  <Tab value="Python">
+<ApiExample op="POST /v1/scheduled-messages" kind="request" />
 
-```python
-import blueticks
-bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
+### Response
 
-msg = bt.scheduled_messages.create(
-    to="+972501234567",
-    type="text",
-    text="Your order is on the way 🎉",
-)
-print(msg.id, msg.status)
-```
-
-  </Tab>
-  <Tab value="Node.js">
-
-```ts
-import { Blueticks } from 'blueticks';
-const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
-
-const msg = await bt.scheduledMessages.create({
-  to: '+972501234567',
-  type: 'text',
-  text: 'Your order is on the way 🎉',
-});
-```
-
-  </Tab>
-  <Tab value="PHP">
-
-```php
-use Blueticks\Blueticks;
-$bt = new Blueticks('BLUETICKS_API_KEY');
-
-$msg = $bt->scheduled_messages->create([
-    'to'   => '+972501234567',
-    'type' => 'text',
-    'text' => 'Your order is on the way 🎉',
-]);
-```
-
-  </Tab>
-  <Tab value="cURL">
-
-```bash
-curl -X POST https://api.blueticks.co/v1/scheduled-messages \
-  -H "Authorization: Bearer BLUETICKS_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "to": "+972501234567",
-    "type": "text",
-    "text": "Your order is on the way 🎉"
-  }'
-```
-
-  </Tab>
-</Tabs>
+<ApiExample op="POST /v1/scheduled-messages" kind="response" status="200" />
 
 ## Send to a group or channel
 
@@ -540,6 +486,108 @@ scheduled ──▶ queued ──▶ sending ──┬──▶ delivered ──
 Poll the current state with `GET /v1/scheduled-messages/{id}`. Read receipts
 (`read_at` populated, `message.read` webhook fires) are delivered via
 webhooks — see the [Webhooks guide](/docs/webhooks).
+
+## Manage scheduled messages
+
+List everything you've queued or scheduled with `GET /v1/scheduled-messages`:
+
+<ApiExample op="GET /v1/scheduled-messages" kind="request" />
+
+Fetch one by id to read its current status:
+
+<ApiExample op="GET /v1/scheduled-messages/{id}" kind="request" />
+
+Before a message leaves the queue you can still edit it — reschedule it, change
+the recipient, or rewrite the body — with `PATCH /v1/scheduled-messages/{id}`:
+
+<ApiExample op="PATCH /v1/scheduled-messages/{id}" kind="request" />
+
+## Immediate send into an open chat
+
+`POST /v1/scheduled-messages` is the high-level entry point. If you're working
+directly against an already-open conversation you can post straight into it with
+`POST /v1/chats/{chat_id}/messages` — the wire-level send used internally by the
+scheduler:
+
+<ApiExample op="POST /v1/chats/{chat_id}/messages" kind="request" />
+
+### Response
+
+<ApiExample op="POST /v1/chats/{chat_id}/messages" kind="response" status="201" />
+
+## Read a conversation
+
+List your chats, drill into one, page its history, and inspect a single message:
+
+<ApiExample op="GET /v1/chats" kind="request" />
+
+<ApiExample op="GET /v1/chats/{id}" kind="request" />
+
+<ApiExample op="GET /v1/chats/{chat_id}/messages" kind="request" />
+
+<ApiExample op="GET /v1/chats/{chat_id}/messages/{key}" kind="request" />
+
+The participants of a group or channel chat:
+
+<ApiExample op="GET /v1/chats/{chat_id}/participants" kind="request" />
+
+## Acknowledgements & read state
+
+Check delivery/read ticks for a single message with
+`GET /v1/chats/{chat_id}/messages/{key}/ack`, and mark a whole chat as read:
+
+<ApiExample op="GET /v1/chats/{chat_id}/messages/{key}/ack" kind="request" />
+
+<ApiExample op="POST /v1/chats/{chat_id}/mark_read" kind="request" />
+
+## Fetch inbound media
+
+When an incoming message carries media, resolve a temporary download URL (or pull
+the bytes directly) keyed off the message `key`:
+
+<ApiExample op="GET /v1/chats/{chat_id}/messages/{key}/media_url" kind="request" />
+
+<ApiExample op="GET /v1/chats/{chat_id}/messages/{key}/media" kind="request" />
+
+## Manage groups
+
+Beyond sending into a group by its `@g.us` JID, you can create and administer
+groups directly. List them, create one, fetch its metadata, or rename it /
+change its description:
+
+<ApiExample op="GET /v1/groups" kind="request" />
+
+<ApiExample op="POST /v1/groups" kind="request" />
+
+<ApiExample op="GET /v1/groups/{id}" kind="request" />
+
+<ApiExample op="PATCH /v1/groups/{id}" kind="request" />
+
+Add or remove members, grant or revoke admin, leave a group yourself, or set its
+picture:
+
+<ApiExample op="POST /v1/groups/{id}/members" kind="request" />
+
+<ApiExample op="DELETE /v1/groups/{id}/members/{chatId}" kind="request" />
+
+<ApiExample op="DELETE /v1/groups/{id}/members/me" kind="request" />
+
+<ApiExample op="POST /v1/groups/{id}/members/{chatId}/admin" kind="request" />
+
+<ApiExample op="DELETE /v1/groups/{id}/members/{chatId}/admin" kind="request" />
+
+<ApiExample op="PUT /v1/groups/{id}/picture" kind="request" />
+
+## Manage channels (newsletters)
+
+WhatsApp channels are exposed as **newsletters**. List the ones you own, create a
+new channel, or fetch one by id:
+
+<ApiExample op="GET /v1/newsletters" kind="request" />
+
+<ApiExample op="POST /v1/newsletters" kind="request" />
+
+<ApiExample op="GET /v1/newsletters/{id}" kind="request" />
 
 ## Not yet supported
 

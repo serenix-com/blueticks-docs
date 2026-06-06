@@ -28,5 +28,9 @@ jobs:
           fi
       - name: Unit tests
         run: pnpm test:unit
+      # Validates ALL guide MDX code blocks (request + response + params) against
+      # openapi.json and enforces operation coverage. Suppress false positives with
+      # {/* validate:ignore <kind> — reason */} or .validateignore. See
+      # specs/2026-06-06-comprehensive-doc-validation-design.md.
       - name: Validate guide code examples against openapi.json
         run: pnpm validate:examples

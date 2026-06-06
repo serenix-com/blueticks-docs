@@ -40,6 +40,22 @@ describe('parseBody', () => {
     });
   });
 
+  it('parses a Node object literal using the client. prefix', () => {
+    const code = `await client.messages.send({ to: "+1", type: "text", text: "x" })`;
+    expect(parseBody('ts', code)).toEqual({
+      ok: true,
+      body: { to: '+1', type: 'text', text: 'x' },
+    });
+  });
+
+  it('parses Python kwargs using the client. prefix', () => {
+    const code = `client.messages.send(to="+1", type="text", text="x")`;
+    expect(parseBody('python', code)).toEqual({
+      ok: true,
+      body: { to: '+1', type: 'text', text: 'x' },
+    });
+  });
+
   it('returns ok:false for unparseable bodies (variables / f-strings)', () => {
     const code = `bt.messages.send({ to: recipient, type: 'text', text: \`hi \${name}\` })`;
     expect(parseBody('ts', code).ok).toBe(false);
