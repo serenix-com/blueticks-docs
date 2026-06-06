@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { readFileSync, writeFileSync, globSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, globSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { extractExamples } from './lib/extract-examples';
 import { resolveOperation, isRequestCandidate } from './lib/resolve-operation';
@@ -8,6 +8,7 @@ import { checkBody } from './lib/check-body';
 import { checkResponseBody } from './lib/check-response';
 import { checkParams } from './lib/check-params';
 import { applyFixes } from './lib/autofix';
+import { apiExampleOps, coverageFindings, loadValidateIgnore } from './lib/coverage';
 import type { Finding, ResolvedOp } from './lib/types';
 
 const DOCS_ROOT = join(__dirname, '..');
@@ -127,9 +128,13 @@ function curlHeaderNames(code: string): string[] {
   return names;
 }
 
-export function validateFile(file: string, src: string, spec: any): { findings: Finding[] } {
+export function validateFile(file: string, src: string, spec: any): { findings: Finding[]; covered: Set<string> } {
   const groups = extractExamples(file, src);
   const findings: Finding[] = [];
+
+  // Operation keys (`METHOD /v1/path`) this file documents, for the coverage
+  // gate: every <ApiExample op="…"> reference plus every resolved request group.
+  const covered = new Set<string>(apiExampleOps(src));
 
   // The op resolved from the most recent request group; response examples
   // reuse it (a response block follows the request it documents).
@@ -166,6 +171,7 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
       continue;
     }
     lastOp = op;
+    covered.add(`${op.verb.toUpperCase()} ${op.path}`);
 
     // Parameter-existence checks: validate query keys (from the cURL URL) and
     // header names (from -H flags) against the operation's declared parameters.
@@ -192,7 +198,7 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
       findings.push(...checkBody(body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang));
     }
   }
-  return { findings };
+  return { findings, covered };
 }
 
 function applyFileFixes(file: string, src: string, spec: any): { content: string; applied: number } {
@@ -222,9 +228,9 @@ function main() {
   const spec = JSON.parse(readFileSync(SPEC_PATH, 'utf8'));
   const files = guideFiles(DOCS_ROOT);
 
-  let total = 0;
   let fixedTotal = 0;
   const allFindings: Finding[] = [];
+  const covered = new Set<string>();
 
   for (const abs of files) {
     const rel = relative(DOCS_ROOT, abs);
@@ -233,10 +239,19 @@ function main() {
       const r = applyFileFixes(rel, src, spec);
       if (r.applied > 0) { writeFileSync(abs, r.content); src = r.content; fixedTotal += r.applied; }
     }
-    const { findings } = validateFile(rel, src, spec);
+    const { findings, covered: fileCovered } = validateFile(rel, src, spec);
     allFindings.push(...findings);
-    total += findings.length;
+    for (const key of fileCovered) covered.add(key);
   }
+
+  // Coverage gate: every /v1 operation must be documented by a guide example
+  // (an <ApiExample> reference or a resolved request group) unless exempted in
+  // .validateignore. Gaps count toward the exit code.
+  const ignorePath = join(DOCS_ROOT, '.validateignore');
+  const ignored = existsSync(ignorePath) ? loadValidateIgnore(readFileSync(ignorePath, 'utf8')) : new Set<string>();
+  allFindings.push(...coverageFindings(spec, covered, ignored));
+
+  const total = allFindings.length;
 
   for (const f of allFindings) {
     console.error(`${f.file}:${f.line}  [${f.kind}] ${f.message}${f.suggestion ? `  → did you mean '${f.suggestion}'?` : ''}`);
