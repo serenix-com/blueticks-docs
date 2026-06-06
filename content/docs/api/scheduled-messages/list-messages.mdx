@@ -2,7 +2,7 @@
 title: List messages
 description: >-
   List messages in the user-messages queue (all sources: API, dashboard,
-  extension), newest first (cursor-paginated).
+  extension), newest first (offset-paginated).
 full: true
 _openapi:
   method: GET
@@ -12,7 +12,7 @@ _openapi:
     contents:
       - content: >-
           List messages in the user-messages queue (all sources: API, dashboard,
-          extension), newest first (cursor-paginated). Optionally filter by
+          extension), newest first (offset-paginated). Optionally filter by
           `chat_id` and/or lifecycle `status`.
 ---
 

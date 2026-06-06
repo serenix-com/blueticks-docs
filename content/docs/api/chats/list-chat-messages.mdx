@@ -1,6 +1,6 @@
 ---
 title: List chat messages
-description: Cursor-paginated list of messages in a chat.
+description: Offset-paginated list of messages in a chat.
 full: true
 _openapi:
   method: GET
@@ -9,7 +9,7 @@ _openapi:
     headings: []
     contents:
       - content: >-
-          Cursor-paginated list of messages in a chat. Supports free-text search
+          Offset-paginated list of messages in a chat. Supports free-text search
           (`query`), date range (`since`/`until`), and message-kind filtering
           (`message_types`). Requires `chats:read`.
 ---

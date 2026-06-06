@@ -13,6 +13,12 @@ import { useEffect } from 'react';
 // Each trigger is marked after its one auto-click so the MutationObserver
 // (watching for lazily-mounted accordions) never re-expands what the user
 // just collapsed, and never enters a click→DOM-mutation→re-click loop.
+//
+// We only target Accordion/Collapsible triggers, not popup triggers. The
+// "Server URL" selector is a Radix Dialog trigger that also carries
+// aria-expanded; excluding [aria-haspopup] (which Dialog/Popover/Menu
+// triggers set, but Accordion/Collapsible triggers do not) keeps us from
+// auto-opening that modal on every page load.
 export function ApiAutoExpand({ selector }: { selector: string }) {
   useEffect(() => {
     const MARK = 'data-auto-expanded';
@@ -21,7 +27,7 @@ export function ApiAutoExpand({ selector }: { selector: string }) {
       document.querySelectorAll(selector).forEach((root) => {
         root
           .querySelectorAll<HTMLButtonElement>(
-            `button[aria-expanded="false"]:not([${MARK}])`,
+            `button[aria-expanded="false"]:not([${MARK}]):not([aria-haspopup])`,
           )
           .forEach((btn) => {
             btn.setAttribute(MARK, 'true');

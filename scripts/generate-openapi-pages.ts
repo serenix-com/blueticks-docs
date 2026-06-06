@@ -98,6 +98,16 @@ async function main(): Promise<void> {
     await fs.writeFile(file, content);
   }
 
+  // Flatten single-operation tag folders. fumadocs groups every tag into a
+  // folder with its own meta.json, so a tag with just one operation renders
+  // as a collapsible dropdown wrapping a single link — redundant nesting.
+  // We promote the lone page to a top-level file named after the tag
+  // (e.g. api/ping/ping.mdx -> api/ping.mdx). The new file's slug equals the
+  // folder slug, so the parent meta.json's "ping" entry resolves to it
+  // unchanged — no meta rewrite needed. The page title is set to the tag
+  // title so the sidebar shows the resource name.
+  await flattenSingleOperationTags(OUTPUT_DIR);
+
   // Copy spec to public/ so /openapi.json is served verbatim for Postman etc.
   await fs.mkdir('public', { recursive: true });
   await fs.copyFile(SPEC_PATH, join('public', 'openapi.json'));
@@ -162,6 +172,52 @@ function injectDescriptionBody(mdxContent: string, body: string): string {
   const before = mdxContent.slice(0, apiPageMatch);
   const after = mdxContent.slice(apiPageMatch);
   return `${before}${body}\n\n${after}`;
+}
+
+/**
+ * Promote each single-operation tag folder to a top-level MDX file, removing
+ * the redundant one-item dropdown from the sidebar. A folder qualifies when
+ * it holds exactly one .mdx and no subdirectories. The lone page is moved to
+ * `<tag>.mdx` (folder slug == file slug, so the parent meta.json entry still
+ * resolves) and its title is overridden with the tag title from the folder's
+ * meta.json.
+ */
+async function flattenSingleOperationTags(dir: string): Promise<void> {
+  for (const ent of await fs.readdir(dir, { withFileTypes: true })) {
+    if (!ent.isDirectory()) continue;
+    const folder = join(dir, ent.name);
+    const entries = await fs.readdir(folder, { withFileTypes: true });
+    const mdx = entries.filter((e) => e.isFile() && e.name.endsWith('.mdx'));
+    const hasSubdir = entries.some((e) => e.isDirectory());
+    if (mdx.length !== 1 || hasSubdir) continue;
+
+    // Tag title from the folder meta.json; fall back to the folder slug.
+    let tagTitle = ent.name;
+    try {
+      const meta = JSON.parse(
+        await fs.readFile(join(folder, 'meta.json'), 'utf8'),
+      ) as { title?: string };
+      if (typeof meta.title === 'string' && meta.title) tagTitle = meta.title;
+    } catch {
+      // No meta.json — keep the folder slug as the title.
+    }
+
+    const content = setFrontmatterTitle(
+      await fs.readFile(join(folder, mdx[0]!.name), 'utf8'),
+      tagTitle,
+    );
+    await fs.rm(folder, { recursive: true, force: true });
+    await fs.writeFile(join(dir, `${ent.name}.mdx`), content);
+  }
+}
+
+/** Rewrite the `title:` field inside the leading YAML frontmatter block. */
+function setFrontmatterTitle(mdx: string, title: string): string {
+  const fm = mdx.match(/^---\r?\n[\s\S]*?\r?\n---/);
+  if (!fm) return mdx;
+  const escaped = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const rewritten = fm[0].replace(/^title:.*$/m, `title: "${escaped}"`);
+  return mdx.replace(fm[0], rewritten);
 }
 
 async function collectMdx(dir: string): Promise<string[]> {

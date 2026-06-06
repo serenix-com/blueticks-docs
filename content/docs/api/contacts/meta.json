@@ -1,7 +1,0 @@
-{
-  "title": "Contacts",
-  "description": "Read WhatsApp contacts known to the connected engine.",
-  "pages": [
-    "list-contacts"
-  ]
-}

@@ -7,6 +7,18 @@ The API and each official SDK track versions independently.
 
 ## API specification
 
+### v2.0.0 — 2026-06-06 (breaking)
+
+- **Pagination switched from cursor to offset.** Every list endpoint now takes
+  `limit` + `skip` and returns `{ data[], limit, skip, total }`. The previous
+  `cursor` query param and the `has_more` / `next_cursor` response fields are
+  removed. `total` is the full count of matching items across all pages.
+- **All responses now carry a `success` flag.** Success responses are
+  `{ success: true, ... }` — list endpoints add `data`/`limit`/`skip`/`total`,
+  and single-resource / create / update responses nest the payload under
+  `data` (`{ success: true, data: {...} }`). Errors are
+  `{ success: false, error: { code, message, request_id } }`.
+
 ### v1.0.0 — 2026-04-23
 
 - Initial public release.

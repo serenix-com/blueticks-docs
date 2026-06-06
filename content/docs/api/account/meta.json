@@ -1,7 +1,0 @@
-{
-  "title": "Account",
-  "description": "Account metadata for the authenticated API key.",
-  "pages": [
-    "get-account"
-  ]
-}

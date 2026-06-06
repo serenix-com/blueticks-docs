@@ -1,7 +1,0 @@
-{
-  "title": "Engines",
-  "description": "Inspect or control the WhatsApp engine(s) connected to the workspace.",
-  "pages": [
-    "list-engines"
-  ]
-}
