@@ -19,7 +19,7 @@ union — set `type` to one of `text`, `media`, or `poll`. Optional fields
 import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
-msg = bt.messages.send(
+msg = bt.scheduled_messages.create(
     to="+972501234567",
     type="text",
     text="Your order is on the way 🎉",
@@ -34,7 +34,7 @@ print(msg.id, msg.status)
 import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
-const msg = await bt.messages.send({
+const msg = await bt.scheduledMessages.create({
   to: '+972501234567',
   type: 'text',
   text: 'Your order is on the way 🎉',
@@ -48,7 +48,7 @@ const msg = await bt.messages.send({
 use Blueticks\Blueticks;
 $bt = new Blueticks('BLUETICKS_API_KEY');
 
-$msg = $bt->messages->send([
+$msg = $bt->scheduled_messages->create([
     'to'   => '+972501234567',
     'type' => 'text',
     'text' => 'Your order is on the way 🎉',
@@ -90,14 +90,16 @@ import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 # Send to a group
-msg = bt.messages.send(
+msg = bt.scheduled_messages.create(
     to="120363427920657250@g.us",
+    type="text",
     text="Team standup in 10 minutes!",
 )
 
 # Send to a channel
-msg = bt.messages.send(
+msg = bt.scheduled_messages.create(
     to="12345@newsletter",
+    type="text",
     text="New announcement for all subscribers.",
 )
 ```
@@ -110,14 +112,16 @@ import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
 // Send to a group
-const groupMsg = await bt.messages.send({
+const groupMsg = await bt.scheduledMessages.create({
   to: '120363427920657250@g.us',
+  type: 'text',
   text: 'Team standup in 10 minutes!',
 });
 
 // Send to a channel
-const channelMsg = await bt.messages.send({
+const channelMsg = await bt.scheduledMessages.create({
   to: '12345@newsletter',
+  type: 'text',
   text: 'New announcement for all subscribers.',
 });
 ```
@@ -130,12 +134,16 @@ use Blueticks\Blueticks;
 $bt = new Blueticks('BLUETICKS_API_KEY');
 
 // Send to a group
-$groupMsg = $bt->messages->send('120363427920657250@g.us', [
+$groupMsg = $bt->scheduled_messages->create([
+    'to'   => '120363427920657250@g.us',
+    'type' => 'text',
     'text' => 'Team standup in 10 minutes!',
 ]);
 
 // Send to a channel
-$channelMsg = $bt->messages->send('12345@newsletter', [
+$channelMsg = $bt->scheduled_messages->create([
+    'to'   => '12345@newsletter',
+    'type' => 'text',
     'text' => 'New announcement for all subscribers.',
 ]);
 ```
@@ -173,7 +181,7 @@ The validator accepts an E.164 phone (`+<digits>`) or any of the three JID suffi
 ## Send media
 
 `type: "media"` accepts an HTTPS URL plus an optional `kind`
-(`image` · `video` · `audio` · `document` · `sticker` · `voice`).
+(`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`).
 When `kind` is omitted, the engine auto-detects from the URL or the
 `Content-Type` of the fetched asset. `caption` shows under image/video
 in WhatsApp; `filename` is shown for documents.
@@ -185,10 +193,15 @@ in WhatsApp; `filename` is shown for documents.
 import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
-msg = bt.messages.send(
+msg = bt.scheduled_messages.create(
     to="+972501234567",
-    media_url="https://cdn.example.com/receipt.pdf",
-    media_caption="Order #A-42",
+    type="media",
+    media={
+        "url": "https://cdn.example.com/receipt.pdf",
+        "kind": "document",
+        "filename": "receipt-A42.pdf",
+        "caption": "Order #A-42",
+    },
 )
 print(msg.id, msg.status)
 ```
@@ -200,10 +213,15 @@ print(msg.id, msg.status)
 import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
-const msg = await bt.messages.send({
+const msg = await bt.scheduledMessages.create({
   to: '+972501234567',
-  media_url: 'https://cdn.example.com/receipt.pdf',
-  media_caption: 'Order #A-42',
+  type: 'media',
+  media: {
+    url: 'https://cdn.example.com/receipt.pdf',
+    kind: 'document',
+    filename: 'receipt-A42.pdf',
+    caption: 'Order #A-42',
+  },
 });
 ```
 
@@ -214,9 +232,15 @@ const msg = await bt.messages.send({
 use Blueticks\Blueticks;
 $bt = new Blueticks('BLUETICKS_API_KEY');
 
-$msg = $bt->messages->send('+972501234567', [
-    'media_url'     => 'https://cdn.example.com/receipt.pdf',
-    'media_caption' => 'Order #A-42',
+$msg = $bt->scheduled_messages->create([
+    'to'    => '+972501234567',
+    'type'  => 'media',
+    'media' => [
+        'url'      => 'https://cdn.example.com/receipt.pdf',
+        'kind'     => 'document',
+        'filename' => 'receipt-A42.pdf',
+        'caption'  => 'Order #A-42',
+    ],
 ]);
 ```
 
@@ -263,7 +287,7 @@ pick more than one (default `false`).
 import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
-msg = bt.messages.send(
+msg = bt.scheduled_messages.create(
     to="+972501234567",
     type="poll",
     poll={
@@ -282,7 +306,7 @@ print(msg.id, msg.status)
 import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
-const msg = await bt.messages.send({
+const msg = await bt.scheduledMessages.create({
   to: '+972501234567',
   type: 'poll',
   poll: {
@@ -300,7 +324,8 @@ const msg = await bt.messages.send({
 use Blueticks\Blueticks;
 $bt = new Blueticks('BLUETICKS_API_KEY');
 
-$msg = $bt->messages->send('+972501234567', [
+$msg = $bt->scheduled_messages->create([
+    'to'   => '+972501234567',
     'type' => 'poll',
     'poll' => [
         'question'       => 'Pizza tonight?',
@@ -429,8 +454,9 @@ same key returns `409 idempotency_key_conflict`.
 import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
-msg = bt.messages.send(
+msg = bt.scheduled_messages.create(
     to="+972501234567",
+    type="text",
     text="Your order is confirmed.",
     idempotency_key="order-42-reminder",
 )
@@ -443,8 +469,9 @@ msg = bt.messages.send(
 import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
-const msg = await bt.messages.send({
+const msg = await bt.scheduledMessages.create({
   to: '+972501234567',
+  type: 'text',
   text: 'Your order is confirmed.',
   idempotencyKey: 'order-42-reminder',
 });
@@ -457,7 +484,9 @@ const msg = await bt.messages.send({
 use Blueticks\Blueticks;
 $bt = new Blueticks('BLUETICKS_API_KEY');
 
-$msg = $bt->messages->send('+972501234567', [
+$msg = $bt->scheduled_messages->create([
+    'to'              => '+972501234567',
+    'type'            => 'text',
     'text'            => 'Your order is confirmed.',
     'idempotency_key' => 'order-42-reminder',
 ]);
@@ -497,15 +526,16 @@ Return codes: `409 no_active_session`, `409 ambiguous_session`,
 ## Status lifecycle
 
 ```
-scheduled ──▶ queued ──▶ sending ──┬──▶ delivered
+scheduled ──▶ queued ──▶ sending ──┬──▶ delivered ──▶ read
                                    └──▶ failed
 ```
 
 - **`scheduled`** — set when `send_at` is in the future; transitions to `queued` at the scheduled time.
 - **`queued`** — accepted by the API, waiting for an active WhatsApp session to dispatch.
 - **`sending`** — dispatched to the engine; on the wire.
-- **`delivered`** — terminal. The recipient's WhatsApp acknowledged delivery.
-- **`failed`** — terminal. See the `error` field on the message for the cause.
+- **`delivered`** — the recipient's WhatsApp acknowledged delivery. May further transition to `read`.
+- **`read`** — terminal. The recipient opened the message (read receipt received).
+- **`failed`** — terminal. See the `failure_reason` field on the message for the cause.
 
 Poll the current state with `GET /v1/scheduled-messages/{id}`. Read receipts
 (`read_at` populated, `message.read` webhook fires) are delivered via

@@ -11,6 +11,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
+    "test:unit": "vitest run",
+    "validate:examples": "tsx scripts/validate-examples.ts",
+    "validate:examples:fix": "tsx scripts/validate-examples.ts --fix",
     "test:e2e": "playwright test",
     "test:e2e:visual": "playwright test tests/visual.spec.ts",
     "postinstall": "fumadocs-mdx"
@@ -33,11 +36,19 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "json5": "^2.2.3",
+    "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-mdx": "^3.0.0",
+    "micromark-extension-mdxjs": "^3.0.0",
     "openapi-to-postmanv2": "^6.0.1",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "unist-util-visit": "^5.1.0",
+    "vitest": "^4.1.8"
   },
   "optionalDependencies": {
     "@tailwindcss/oxide-win32-x64-msvc": "^4.2.4"
