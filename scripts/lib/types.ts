@@ -35,7 +35,10 @@ export type FindingKind =
   | 'missing-required'
   | 'dead-endpoint'
   | 'unparseable'
-  | 'schema-invalid';
+  | 'schema-invalid'
+  | 'response-shape'   // new
+  | 'unknown-param'    // new
+  | 'coverage-gap';    // new
 
 export interface Finding {
   file: string;

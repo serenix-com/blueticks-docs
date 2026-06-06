@@ -10,7 +10,16 @@ import type { Finding } from './lib/types';
 
 const DOCS_ROOT = join(__dirname, '..');
 const SPEC_PATH = join(DOCS_ROOT, 'openapi.json');
-const GUIDE_GLOB = 'content/docs/*.mdx'; // top-level guides only; excludes content/docs/api/**
+/**
+ * Enumerate all hand-written guide MDX files (recursively), excluding the
+ * generated API reference pages under content/docs/api/. Returns absolute paths.
+ * The `root` param exists for the test signature; resolution uses DOCS_ROOT.
+ */
+export function guideFiles(root: string): string[] {
+  return globSync('content/docs/**/*.mdx', { cwd: DOCS_ROOT })
+    .filter((f: string) => !f.startsWith('content/docs/api/'))
+    .map((f: string) => join(DOCS_ROOT, f));
+}
 
 /** Returns true if the resolved operation defines a JSON request body in the spec. */
 function hasRequestBody(spec: any, op: { path: string; verb: string }): boolean {
@@ -130,7 +139,7 @@ function applyFileFixes(file: string, src: string, spec: any): { content: string
 function main() {
   const fix = process.argv.includes('--fix');
   const spec = JSON.parse(readFileSync(SPEC_PATH, 'utf8'));
-  const files = globSync(GUIDE_GLOB, { cwd: DOCS_ROOT }).map((f: string) => join(DOCS_ROOT, f));
+  const files = guideFiles(DOCS_ROOT);
 
   let total = 0;
   let fixedTotal = 0;
