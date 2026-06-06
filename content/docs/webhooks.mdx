@@ -166,6 +166,22 @@ exponential backoff: `1m → 5m → 15m → 1h → 2h → 6h → 12h → 24h`.
 After 8 consecutive failures the webhook auto-disables — you'll need
 to PATCH `status: "enabled"` to re-enable after fixing your endpoint.
 
+## Manage your webhooks
+
+List every registered endpoint, fetch one by id, change its URL/events/status,
+or delete it:
+
+<ApiExample op="GET /v1/webhooks" kind="request" />
+
+<ApiExample op="GET /v1/webhooks/{id}" kind="request" />
+
+<ApiExample op="PATCH /v1/webhooks/{id}" kind="request" />
+
+<ApiExample op="DELETE /v1/webhooks/{id}" kind="request" />
+
+To re-enable an auto-disabled endpoint, `PATCH` it with `status: "enabled"`
+once your server is healthy again.
+
 ## Rotate the secret
 
 If your secret leaks, rotate it. The old secret is invalidated

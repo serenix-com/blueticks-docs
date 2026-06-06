@@ -24,6 +24,11 @@ Host: api.blueticks.co
 Authorization: Bearer BLUETICKS_API_KEY
 ```
 
+`GET /v1/account` is the simplest authenticated call — use it to verify a key
+works and to read back the workspace it belongs to:
+
+<ApiExample op="GET /v1/account" kind="request" />
+
 ### SDKs
 
 All three official SDKs read `BLUETICKS_API_KEY` from the environment as
