@@ -3,6 +3,7 @@ import { mdxjs } from 'micromark-extension-mdxjs';
 import { mdxFromMarkdown } from 'mdast-util-mdx';
 import { visit } from 'unist-util-visit';
 import type { CodeBlock, ExampleGroup, Lang } from './types';
+import { parseIgnoreMarker } from './suppress';
 
 const LANG_MAP: Record<string, Lang> = {
   python: 'python', py: 'python',
@@ -82,6 +83,7 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
   // following it is treated as a response candidate (the explicit marker wins).
   let pendingSkip: { reason: string } | null = null;
   let pendingResponse: { status: string } | null = null;
+  let pendingIgnore: { kinds: string[]; reason: string } | null = null;
   let underResponseHeading = false;
 
   for (const node of (tree.children as any[])) {
@@ -95,6 +97,11 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
       if (r) {
         // A response marker — hold it for the next emittable node
         pendingResponse = r;
+      }
+      const ig = parseIgnoreMarker(node.value ?? '');
+      if (ig) {
+        // A validate:ignore marker — hold it for the next emittable node
+        pendingIgnore = ig;
       }
       continue;
     }
@@ -119,6 +126,8 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
         const response = pendingResponse ?? (underResponseHeading ? { status: '200' } : null);
         pendingResponse = null; // consume
         if (response) for (const b of blocks) b.responseStatus = response.status;
+        const ignore = pendingIgnore;
+        pendingIgnore = null; // consume
         groups.push({
           groupId,
           file,
@@ -126,6 +135,7 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
           skip: !!skip,
           skipReason: skip?.reason,
           responseStatus: response?.status,
+          ignore: ignore ?? undefined,
         });
       }
       continue;
@@ -139,6 +149,8 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
         const response = pendingResponse ?? (underResponseHeading ? { status: '200' } : null);
         pendingResponse = null; // consume
         if (response) b.responseStatus = response.status;
+        const ignore = pendingIgnore;
+        pendingIgnore = null; // consume
         groups.push({
           groupId: null,
           file,
@@ -146,6 +158,7 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
           skip: !!skip,
           skipReason: skip?.reason,
           responseStatus: response?.status,
+          ignore: ignore ?? undefined,
         });
       }
       continue;

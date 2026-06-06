@@ -21,6 +21,7 @@ export interface ExampleGroup {
   skip: boolean;
   skipReason?: string;
   responseStatus?: string;  // set when this group is a response example for the given HTTP status
+  ignore?: { kinds: string[]; reason: string };  // inline {/* validate:ignore <kind> — reason */} suppression
 }
 
 /** An OpenAPI operation a group was resolved to. */

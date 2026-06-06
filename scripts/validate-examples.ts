@@ -9,6 +9,7 @@ import { checkResponseBody } from './lib/check-response';
 import { checkParams } from './lib/check-params';
 import { applyFixes } from './lib/autofix';
 import { apiExampleOps, coverageFindings, loadValidateIgnore } from './lib/coverage';
+import { isSuppressed } from './lib/suppress';
 import type { Finding, ResolvedOp } from './lib/types';
 
 const DOCS_ROOT = join(__dirname, '..');
@@ -140,35 +141,38 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
   // reuse it (a response block follows the request it documents).
   let lastOp: ResolvedOp | null = null;
 
-  for (const group of groups) {
-    if (group.skip) continue;
+  // Validate a single group, collecting its findings into `groupFindings`.
+  // Returns so the bare `continue` early-exits stay intact; the caller then
+  // filters out inline-suppressed kinds before merging into the file findings.
+  function validateGroup(group: typeof groups[number], groupFindings: Finding[]): void {
+    if (group.skip) return;
 
     // Response example: a group flagged with a responseStatus marker (or under a
     // "Response" heading). Validate its JSON body against the response schema,
     // reusing the op from the preceding request group.
     if (group.responseStatus) {
       const op = lastOp;
-      if (!op) continue; // standalone response with no resolvable op — skip gracefully
+      if (!op) return; // standalone response with no resolvable op — skip gracefully
       const status = group.responseStatus;
       for (const b of group.blocks) {
         if (b.lang !== 'json') continue;
         const parsed = parseBody('json', b.code);
         if (!parsed.ok) continue; // don't crash on an unparseable response sample
-        findings.push(...checkResponseBody(parsed.body, op, status, spec, { file, line: b.startLine, groupId: group.groupId }, 'json'));
+        groupFindings.push(...checkResponseBody(parsed.body, op, status, spec, { file, line: b.startLine, groupId: group.groupId }, 'json'));
       }
-      continue;
+      return;
     }
 
     const candidates = group.blocks.filter(isRequestCandidate);
-    if (candidates.length === 0) continue;
+    if (candidates.length === 0) return;
 
     const op = resolveOperation(group, spec);
     if (!op) {
-      for (const b of candidates) findings.push({
+      for (const b of candidates) groupFindings.push({
         file, line: b.startLine, groupId: group.groupId, lang: b.lang,
         kind: 'dead-endpoint', message: 'Could not resolve example to an OpenAPI operation', fixable: false,
       });
-      continue;
+      return;
     }
     lastOp = op;
     covered.add(`${op.verb.toUpperCase()} ${op.path}`);
@@ -178,25 +182,34 @@ export function validateFile(file: string, src: string, spec: any): { findings: 
     for (const b of candidates) {
       if (b.lang !== 'bash' || !/curl/.test(b.code)) continue;
       const base = { file, line: b.startLine, groupId: group.groupId };
-      findings.push(...checkParams(curlQueryKeys(b.code), 'query', op, spec, base, 'bash'));
-      findings.push(...checkParams(curlHeaderNames(b.code), 'header', op, spec, base, 'bash'));
+      groupFindings.push(...checkParams(curlQueryKeys(b.code), 'query', op, spec, base, 'bash'));
+      groupFindings.push(...checkParams(curlHeaderNames(b.code), 'header', op, spec, base, 'bash'));
     }
 
     // Skip body parsing/checking entirely for operations with no request body schema
-    if (!hasRequestBody(spec, op)) continue;
+    if (!hasRequestBody(spec, op)) return;
 
     for (const b of candidates) {
       const parsed = parseBody(b.lang, b.code);
       if (!parsed.ok) {
-        findings.push({
+        groupFindings.push({
           file, line: b.startLine, groupId: group.groupId, lang: b.lang,
           kind: 'unparseable', message: `Could not parse request body: ${parsed.reason}`, fixable: false,
         });
         continue;
       }
       const body = stripNonBodyParams(parsed.body, op, spec, b.lang);
-      findings.push(...checkBody(body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang));
+      groupFindings.push(...checkBody(body, op, spec, { file, line: b.startLine, groupId: group.groupId }, b.lang));
     }
+  }
+
+  for (const group of groups) {
+    const groupFindings: Finding[] = [];
+    validateGroup(group, groupFindings);
+    // Drop inline-suppressed findings ({/* validate:ignore <kind> — reason */}).
+    // Coverage-gap findings are file-level (appended in main()) and are NOT
+    // affected here — only by .validateignore.
+    findings.push(...groupFindings.filter((f) => !isSuppressed(group.ignore, f.kind)));
   }
   return { findings, covered };
 }
