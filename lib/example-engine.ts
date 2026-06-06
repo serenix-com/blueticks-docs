@@ -2,6 +2,9 @@
 // Shared example engine: turns an OpenAPI operation into a canonical
 // request/response example with synthesized field values.
 
+// The engine only synthesizes `curl` and `json` snippets. `python` and `node`
+// are populated later by the SDK layer (see lib/openapi.ts buildCodeSamples),
+// which the consuming <ApiExample> component merges in.
 export type ExampleLang = 'curl' | 'python' | 'node' | 'json';
 
 export interface ResolvedOperation {
@@ -168,7 +171,8 @@ export function buildRequestExample(spec: Spec, opKey: string): RequestExample |
   const headerFlags = Object.entries(allHeaders)
     .map(([k, v]) => `  -H '${k}: ${v}'`)
     .join(' \\\n');
-  const dataFlag = body ? ` \\\n  -d '${JSON.stringify(body, null, 2)}'` : '';
+  const bodyStr = JSON.stringify(body, null, 2).replace(/'/g, `'\\''`);
+  const dataFlag = body ? ` \\\n  -d '${bodyStr}'` : '';
   const curl = `curl -X ${verb.toUpperCase()} '${fullUrl}' \\\n${headerFlags}${dataFlag}`;
 
   return {

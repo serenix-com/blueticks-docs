@@ -123,6 +123,25 @@ describe('exampleForSchema', () => {
     const result = exampleForSchema(spec, schema) as Record<string, unknown>;
     expect(result).toMatchObject({ a: 'string', b: 0 });
   });
+
+  it('does not throw or hang on a self-referential $ref (cycle guard)', () => {
+    const cyclicSpec = {
+      paths: {},
+      components: {
+        schemas: {
+          Node: {
+            type: 'object',
+            required: ['child'],
+            properties: { child: { $ref: '#/components/schemas/Node' } },
+          },
+        },
+      },
+    } as any;
+    // Should terminate (cycle guard in deref + depth backstop) and not throw.
+    expect(() =>
+      exampleForSchema(cyclicSpec, { $ref: '#/components/schemas/Node' }),
+    ).not.toThrow();
+  });
 });
 
 // ---------------------------------------------------------------------------
