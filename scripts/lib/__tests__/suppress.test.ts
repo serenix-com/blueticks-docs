@@ -13,6 +13,13 @@ describe('suppress', () => {
   it('returns null when no marker', () => {
     expect(parseIgnoreMarker('/* example:skip x */')).toBeNull();
   });
+  it('returns null for a reason-less hyphenated kind (no garbage split)', () => {
+    expect(parseIgnoreMarker('/* validate:ignore unknown-field */')).toBeNull();
+  });
+  it('still parses a long-dash (--) separator with reason', () => {
+    expect(parseIgnoreMarker('/* validate:ignore unknown-field -- legacy alias */'))
+      .toEqual({ kinds: ['unknown-field'], reason: 'legacy alias' });
+  });
   it('suppresses a matching finding kind', () => {
     expect(isSuppressed({ kinds: ['unknown-field'] }, 'unknown-field')).toBe(true);
     expect(isSuppressed({ kinds: ['unknown-field'] }, 'bad-enum')).toBe(false);

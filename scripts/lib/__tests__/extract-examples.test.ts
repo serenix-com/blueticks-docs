@@ -29,3 +29,38 @@ describe('extractExamples', () => {
     expect(py.endLine).toBeGreaterThan(py.startLine);
   });
 });
+
+describe('extractExamples — response-heading carry is one-shot', () => {
+  const src = [
+    '## Create something',
+    '',
+    '### Response',
+    '',
+    '```json',
+    '{ "id": "abc", "status": "ok" }',
+    '```',
+    '',
+    'Some prose that is not a heading.',
+    '',
+    '```bash',
+    'curl -X POST https://api.example.com/v1/things -d \'{"name":"x"}\'',
+    '```',
+    '',
+  ].join('\n');
+
+  const groups = extractExamples('inline.mdx', src);
+
+  it('tags the FIRST block after a ### Response heading as response', () => {
+    const jsonGroup = groups.find((g) => g.blocks.some((b) => b.lang === 'json'))!;
+    expect(jsonGroup).toBeDefined();
+    expect(jsonGroup.responseStatus).toBe('200');
+    expect(jsonGroup.blocks[0].responseStatus).toBe('200');
+  });
+
+  it('does NOT tag a SECOND block under the same Response heading as response', () => {
+    const bashGroup = groups.find((g) => g.blocks.some((b) => b.lang === 'bash'))!;
+    expect(bashGroup).toBeDefined();
+    expect(bashGroup.responseStatus).toBeUndefined();
+    expect(bashGroup.blocks[0].responseStatus).toBeUndefined();
+  });
+});

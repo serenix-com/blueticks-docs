@@ -84,7 +84,12 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
   let pendingSkip: { reason: string } | null = null;
   let pendingResponse: { status: string } | null = null;
   let pendingIgnore: { kinds: string[]; reason: string } | null = null;
-  let underResponseHeading = false;
+  // One-shot carry: a "### Response" heading marks ONLY the first following
+  // code/Tabs block as a response candidate. It is consumed-and-cleared like
+  // the other pending carries so a second block under the same heading is not
+  // misrouted to the response branch. An explicit example:response marker still
+  // wins when both are present.
+  let pendingResponseFromHeading = false;
 
   for (const node of (tree.children as any[])) {
     if (node.type === 'mdxFlowExpression') {
@@ -107,9 +112,10 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
     }
 
     if (node.type === 'heading') {
-      // Track whether we're now under a "Response" heading. A bare status
-      // (e.g. "### Response") implies status 200 unless a marker overrides it.
-      underResponseHeading = /^response/i.test(headingText(node));
+      // A "Response" heading (e.g. "### Response") marks the NEXT code/Tabs
+      // block as an implicit status-200 response candidate (unless an explicit
+      // marker overrides it). A non-Response heading clears any pending carry.
+      pendingResponseFromHeading = /^response/i.test(headingText(node));
       continue;
     }
 
@@ -123,8 +129,9 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
       if (blocks.length) {
         const skip = pendingSkip;
         pendingSkip = null; // consume
-        const response = pendingResponse ?? (underResponseHeading ? { status: '200' } : null);
+        const response = pendingResponse ?? (pendingResponseFromHeading ? { status: '200' } : null);
         pendingResponse = null; // consume
+        pendingResponseFromHeading = false; // consume (one-shot)
         if (response) for (const b of blocks) b.responseStatus = response.status;
         const ignore = pendingIgnore;
         pendingIgnore = null; // consume
@@ -146,8 +153,9 @@ export function extractExamples(file: string, src: string): ExampleGroup[] {
       if (b) {
         const skip = pendingSkip;
         pendingSkip = null; // consume
-        const response = pendingResponse ?? (underResponseHeading ? { status: '200' } : null);
+        const response = pendingResponse ?? (pendingResponseFromHeading ? { status: '200' } : null);
         pendingResponse = null; // consume
+        pendingResponseFromHeading = false; // consume (one-shot)
         if (response) b.responseStatus = response.status;
         const ignore = pendingIgnore;
         pendingIgnore = null; // consume
