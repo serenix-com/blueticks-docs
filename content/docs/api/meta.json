@@ -1,15 +1,16 @@
 {
   "pages": [
-    "ping",
-    "account",
+    "messages",
     "scheduled-messages",
-    "webhooks",
-    "audiences",
-    "campaigns",
     "chats",
+    "campaigns",
+    "audiences",
+    "contacts",
     "groups",
     "newsletters",
-    "contacts",
+    "webhooks",
+    "account",
+    "ping",
     "engines"
   ]
 }

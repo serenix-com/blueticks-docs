@@ -6,10 +6,11 @@ description: How the Blueticks API reports failures and how your client should r
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
 All error responses use a single envelope shape, regardless of endpoint
-or status code:
+or status code. `success` is always `false`, and the details live under `error`:
 
 ```json
 {
+  "success": false,
   "error": {
     "code": "authentication_required",
     "message": "API key required or invalid.",

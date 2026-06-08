@@ -25,7 +25,7 @@
     },
     {
       "name": "Chats",
-      "description": "Read WhatsApp chats and their messages on the connected engine."
+      "description": "Read and manage WhatsApp chats on the connected engine."
     },
     {
       "name": "Contacts",
@@ -40,12 +40,16 @@
       "description": "Create and manage WhatsApp groups via the connected engine."
     },
     {
+      "name": "Messages",
+      "description": "Send, list, search, react to, and fetch media for individual WhatsApp messages on the connected engine."
+    },
+    {
       "name": "Newsletters",
       "description": "Create and inspect WhatsApp newsletters (channels) via the connected engine."
     },
     {
       "name": "Ping",
-      "description": "Health/identity probe — verifies the API key and echoes its scopes."
+      "description": "Connectivity probe for the Blueticks API and the account's WhatsApp engine(s)."
     },
     {
       "name": "Scheduled Messages",
@@ -63,7 +67,7 @@
           "Ping"
         ],
         "summary": "Ping",
-        "description": "Probe the API: returns the account ID, key prefix, and granted scopes for the authenticated API key. Useful as a connection test and to inspect what an integration is allowed to do. No scope required.",
+        "description": "Health and connectivity probe. Confirms the Blueticks API server is live (`api: \"ok\"`) and lists the WhatsApp engines currently connected to this account in `whatsapp_connections`. Each connection is labelled `gateway` (a remote, server-side engine — the Blueticks 24/7 gateway / baileys pod) or `regular` (the user's own WhatsApp Web browser extension). An empty `whatsapp_connections` array means no WhatsApp is connected — this is not an error, and `message` explains it. Requires a valid API key; no scope required.",
         "security": [
           {
             "BearerAuth": []
@@ -87,26 +91,60 @@
                     "data": {
                       "type": "object",
                       "properties": {
+                        "api": {
+                          "type": "string",
+                          "enum": [
+                            "ok"
+                          ],
+                          "description": "Blueticks API server liveness. \"ok\" means the API server is up and served this request."
+                        },
                         "account_id": {
                           "type": "string",
-                          "description": "The account ID the API key belongs to."
+                          "description": "The account (workspace) the API key belongs to."
                         },
-                        "key_prefix": {
-                          "type": "string",
-                          "description": "Public prefix of the API key (first 8 chars, never the full secret)."
-                        },
-                        "scopes": {
+                        "whatsapp_connections": {
                           "type": "array",
                           "items": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Stable id of the live engine session (its MQTT presence client id)."
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "gateway",
+                                  "regular"
+                                ],
+                                "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
+                              },
+                              "connected": {
+                                "type": "boolean",
+                                "enum": [
+                                  true
+                                ],
+                                "description": "Always true — an entry appears only while its presence heartbeat is live."
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "type",
+                              "connected"
+                            ],
+                            "additionalProperties": false
                           },
-                          "description": "Scopes granted to this API key."
+                          "description": "WhatsApp engines currently connected for this account. Empty means no WhatsApp is connected."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Present only when whatsapp_connections is empty; explains the empty state."
                         }
                       },
                       "required": [
+                        "api",
                         "account_id",
-                        "key_prefix",
-                        "scopes"
+                        "whatsapp_connections"
                       ],
                       "additionalProperties": false
                     }
@@ -322,7 +360,7 @@
         "tags": [
           "Scheduled Messages"
         ],
-        "summary": "List messages",
+        "summary": "List scheduled messages",
         "description": "List messages in the user-messages queue (all sources: API, dashboard, extension), newest first (offset-paginated). Optionally filter by `chat_id` and/or lifecycle `status`.",
         "security": [
           {
@@ -383,7 +421,7 @@
             "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `send_at` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
           },
           {
-            "name": "q",
+            "name": "searchToken",
             "in": "query",
             "required": false,
             "schema": {
@@ -391,7 +429,7 @@
               "minLength": 1,
               "maxLength": 200
             },
-            "description": "Substring match over message body (case-insensitive)."
+            "description": "Search token; when set, only items whose name matches are returned."
           }
         ],
         "responses": {
@@ -651,7 +689,7 @@
         "tags": [
           "Scheduled Messages"
         ],
-        "summary": "Send message",
+        "summary": "Schedule message",
         "description": "Send a message via WhatsApp. The body is a discriminated union — set the `type` field to one of `text`, `media`, or `poll`.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). Example body:\n  ```json\n  {\"type\":\"text\",\"to\":\"+15551234567\",\"text\":\"hello\"}\n  ```\n- `type: \"media\"` — required `media.url` (HTTPS). Optional `media.kind` (`image` · `video` · `audio` · `document` · `sticker` · `voice`; auto-detected when omitted), `media.caption`, `media.filename`. Example:\n  ```json\n  {\"type\":\"media\",\"to\":\"+15551234567\",\"media\":{\"url\":\"https://cdn.example.com/x.pdf\",\"kind\":\"document\",\"filename\":\"receipt.pdf\"}}\n  ```\n- `type: \"poll\"` — required `poll.question` and `poll.options` (2–12 items). Optional `poll.allow_multiple` (default false). Example:\n  ```json\n  {\"type\":\"poll\",\"to\":\"+15551234567\",\"poll\":{\"question\":\"Pizza?\",\"options\":[\"Yes\",\"No\"]}}\n  ```\n\nAll variants accept optional `send_at` (ISO 8601 ≥10s future, ≤365d), `from` (E.164 sender for multi-session workspaces), and `reply_to` (wire `key` of a prior message to quote).\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
         "security": [
           {
@@ -1181,7 +1219,7 @@
         "tags": [
           "Scheduled Messages"
         ],
-        "summary": "Get message",
+        "summary": "Get scheduled message",
         "description": "Get the current status of a message by ID.",
         "security": [
           {
@@ -1449,7 +1487,7 @@
         "tags": [
           "Scheduled Messages"
         ],
-        "summary": "Update message",
+        "summary": "Update scheduled message",
         "description": "Edit a previously-queued message that has not dispatched yet. Accepts a subset of `text`, `media_url`, `media_caption`, `send_at` — at least one is required. Returns 400 once the message has advanced past the editable window (status not in `pending`/`sending`).",
         "security": [
           {
@@ -4567,7 +4605,7 @@
           "Groups"
         ],
         "summary": "List groups",
-        "description": "List the groups the connected WhatsApp engine sees. Supports offset pagination (`limit`+`skip`) and an optional case-insensitive substring search on the group name via `q`.",
+        "description": "List the groups the connected WhatsApp engine sees. Supports offset pagination (`limit`+`skip`) and an optional case-insensitive substring search on the group name via `searchToken`.",
         "security": [
           {
             "BearerAuth": [
@@ -4600,7 +4638,7 @@
             "description": "Number of items to skip before the page (default 0)."
           },
           {
-            "name": "q",
+            "name": "searchToken",
             "in": "query",
             "required": false,
             "schema": {
@@ -4608,7 +4646,7 @@
               "minLength": 1,
               "maxLength": 128
             },
-            "description": "Case-insensitive substring match against the group name."
+            "description": "Search token; when set, only items whose name matches are returned."
           }
         ],
         "responses": {
@@ -6060,14 +6098,14 @@
         ],
         "parameters": [
           {
-            "name": "q",
+            "name": "searchToken",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string",
               "maxLength": 200
             },
-            "description": "Search token; when set, only contacts matching the term are returned."
+            "description": "Search token; when set, only items whose name matches are returned."
           },
           {
             "name": "limit",
@@ -6109,23 +6147,18 @@
                         "type": "object",
                         "properties": {
                           "chat_id": {
-                            "type": "string",
-                            "description": "WhatsApp contact JID (e.g. `12345@c.us`)."
+                            "type": "string"
                           },
                           "name": {
                             "type": "string",
-                            "nullable": true,
-                            "description": "Display name on the engine; null when the contact has no saved name."
+                            "nullable": true
                           },
                           "is_business": {
-                            "type": "boolean",
-                            "description": "`true` for WhatsApp Business contacts."
+                            "type": "boolean"
                           }
                         },
                         "required": [
-                          "chat_id",
-                          "name",
-                          "is_business"
+                          "chat_id"
                         ],
                         "additionalProperties": false
                       }
@@ -7672,10 +7705,10 @@
     "/v1/chats/{chat_id}/messages": {
       "get": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
-        "summary": "List chat messages",
-        "description": "Offset-paginated list of messages in a chat. Supports free-text search (`query`), date range (`since`/`until`), and message-kind filtering (`message_types`). Requires `chats:read`.",
+        "summary": "List messages",
+        "description": "Offset-paginated list of messages in a chat. Supports free-text search (`searchToken`), date range (`since`/`until`), and message-kind filtering (`message_types`). Requires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -7719,24 +7752,14 @@
             "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
           },
           {
-            "name": "q",
+            "name": "searchToken",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string",
               "maxLength": 200
             },
-            "description": "Free-text search across message bodies and captions."
-          },
-          {
-            "name": "query",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 200
-            },
-            "description": "Deprecated alias for `q` — prefer `q`. Will be removed in v2."
+            "description": "Search token; when set, only items whose name matches are returned."
           },
           {
             "name": "limit",
@@ -7940,13 +7963,16 @@
                       }
                     },
                     "limit": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Page size echoed back from the request."
                     },
                     "skip": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Offset echoed back from the request."
                     },
                     "total": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Total number of items matching the query, across all pages."
                     }
                   },
                   "required": [
@@ -8036,9 +8062,9 @@
       },
       "post": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
-        "summary": "Send message to chat",
+        "summary": "Send message",
         "description": "Send a message immediately to a specific chat. The body is the same discriminated union as `POST /v1/scheduled-messages` minus `to` (derived from the URL path) and `send_at` (this endpoint is fire-and-forget). Variants: `text`, `media`, `poll`. The dispatch is direct — no DB row is created; the response carries the WhatsApp wire key under `key`. For scheduled or queue-managed sends use `POST /v1/scheduled-messages` instead. Requires `messages:write`.",
         "security": [
           {
@@ -8596,9 +8622,9 @@
     "/v1/chats/{chat_id}/messages/{key}": {
       "get": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
-        "summary": "Get chat message",
+        "summary": "Get message",
         "description": "Fetch a single message by its WhatsApp message key. Requires `chats:read`.",
         "security": [
           {
@@ -10120,13 +10146,16 @@
                       }
                     },
                     "limit": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Page size echoed back from the request."
                     },
                     "skip": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Offset echoed back from the request."
                     },
                     "total": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "Total number of items matching the query, across all pages."
                     }
                   },
                   "required": [
@@ -10491,7 +10520,7 @@
     "/v1/chats/{chat_id}/messages/{key}/ack": {
       "get": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
         "summary": "Get message delivery status",
         "description": "Returns the WhatsApp ack value for a sent message: -1=error, 0=pending, 1=server, 2=device, 3=read, 4=played. Requires `chats:read`.",
@@ -10636,7 +10665,7 @@
     "/v1/chats/{chat_id}/messages/{key}/reactions": {
       "post": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
         "summary": "React to message",
         "description": "Add or replace your reaction to a message. Pass an empty `emoji` string to remove. Requires `chats:write`.",
@@ -10803,9 +10832,9 @@
     "/v1/chats/{chat_id}/messages/load_older": {
       "post": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
-        "summary": "Load older messages from phone",
+        "summary": "Load older messages",
         "description": "Asks the engine to pull older history from the connected phone for chats that haven`t been fully synced yet. Use this once before paginating with `since` if you need messages older than what`s already cached. Requires `chats:read`.",
         "security": [
           {
@@ -10948,7 +10977,7 @@
     "/v1/chats/{chat_id}/messages/{key}/media_url": {
       "get": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
         "summary": "Get message media URL",
         "description": "Returns a hosted URL for the message media without inlining bytes. Faster + cheaper than `media` when the caller can fetch the URL themselves. Same `media_unavailable` semantics. Requires `chats:read`.",
@@ -10998,7 +11027,7 @@
                         "url": {
                           "type": "string",
                           "nullable": true,
-                          "description": "Hosted URL for the media bytes, or null if the engine couldn`t produce one."
+                          "description": "Hosted URL for the media bytes, or null if the engine could not produce one."
                         }
                       },
                       "required": [
@@ -11093,7 +11122,7 @@
     "/v1/chats/message_acks": {
       "post": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
         "summary": "Batch get message acks",
         "description": "Get delivery status for up to 200 sent messages in one call. Useful for campaign dashboards / status reconciliation. Requires `chats:read`.",
@@ -11114,10 +11143,15 @@
                   "message_keys": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "minItems": 1,
                     "maxItems": 200
+                  },
+                  "chat_id": {
+                    "type": "string",
+                    "minLength": 1
                   }
                 },
                 "required": [
@@ -11144,38 +11178,45 @@
                       "description": "Always `true` on success responses."
                     },
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "key": {
-                                "type": "string"
-                              },
-                              "ack": {
-                                "type": "integer",
-                                "nullable": true
-                              }
-                            },
-                            "required": [
-                              "key",
-                              "ack"
-                            ],
-                            "additionalProperties": false
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "ack": {
+                            "type": "integer",
+                            "nullable": true,
+                            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when the engine could not determine."
                           }
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ],
-                      "additionalProperties": false
+                        },
+                        "required": [
+                          "key",
+                          "ack"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Page size echoed back from the request."
+                    },
+                    "skip": {
+                      "type": "integer",
+                      "description": "Offset echoed back from the request."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of items matching the query, across all pages."
                     }
                   },
                   "required": [
                     "success",
-                    "data"
+                    "data",
+                    "limit",
+                    "skip",
+                    "total"
                   ],
                   "additionalProperties": false
                 }
@@ -11249,9 +11290,9 @@
     "/v1/chats/{chat_id}/messages/{key}/media": {
       "get": {
         "tags": [
-          "Chats"
+          "Messages"
         ],
-        "summary": "Get chat-message media",
+        "summary": "Get message media",
         "description": "Download the media attached to a WhatsApp message (image, video, document, audio).\nReturns either a hosted URL (`url`) or inline `data_base64`, plus mimetype + filename.\n\nCAVEAT: for own-sent newsletter media (messages you sent to a `@newsletter` chat), the bytes returned are a WA-generated preview JPEG (~7KB) rather than the original you uploaded — WA releases the original blob from memory immediately after the unencrypted upload. The response will include `original_quality:false` when this fallback is in effect; the caller can warn the user or decide to retry from a different source.\n\nRequires `chats:read`.",
         "security": [
           {
@@ -11422,6 +11463,168 @@
           }
         },
         "operationId": "chats.messages.media.get"
+      }
+    },
+    "/v1/chats/{chat_id}/pinned_messages": {
+      "get": {
+        "tags": [
+          "Messages"
+        ],
+        "summary": "List pinned messages",
+        "description": "List the currently pinned messages in a chat. Requires `chats:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "chats:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "pinned messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "chat_id",
+                          "text"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Page size echoed back from the request."
+                    },
+                    "skip": {
+                      "type": "integer",
+                      "description": "Offset echoed back from the request."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of items matching the query, across all pages."
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "limit",
+                    "skip",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "chats.pinnedmessages.list"
       }
     }
   },
@@ -11803,15 +12006,10 @@
       "ListChatsQuery": {
         "type": "object",
         "properties": {
-          "q": {
+          "searchToken": {
             "type": "string",
             "maxLength": 200,
-            "description": "Case-insensitive substring match against chat name / phone."
-          },
-          "query": {
-            "type": "string",
-            "maxLength": 200,
-            "description": "Deprecated alias for `q` — prefer `q`. Will be removed in v2."
+            "description": "Search token; when set, only items whose name matches are returned."
           },
           "limit": {
             "type": "integer",
@@ -11890,15 +12088,10 @@
             ],
             "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
           },
-          "q": {
+          "searchToken": {
             "type": "string",
             "maxLength": 200,
-            "description": "Free-text search across message bodies and captions."
-          },
-          "query": {
-            "type": "string",
-            "maxLength": 200,
-            "description": "Deprecated alias for `q` — prefer `q`. Will be removed in v2."
+            "description": "Search token; when set, only items whose name matches are returned."
           },
           "limit": {
             "type": "integer",
@@ -11969,6 +12162,29 @@
         "required": [
           "emoji"
         ],
+        "additionalProperties": false
+      },
+      "UnifiedSearchQuery": {
+        "type": "object",
+        "properties": {
+          "searchToken": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Search token matched against contact and chat names."
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts",
+                "chats",
+                "newsletters"
+              ]
+            },
+            "description": "Restrict results to these kinds. Comma-separated or repeated. Default: all."
+          }
+        },
         "additionalProperties": false
       },
       "MuteChatRequest": {
@@ -12292,6 +12508,122 @@
         ],
         "additionalProperties": false
       },
+      "OkResult": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "additionalProperties": false
+      },
+      "ChatRef": {
+        "type": "object",
+        "properties": {
+          "chat_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "chat_id"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAck": {
+        "type": "object",
+        "properties": {
+          "ack": {
+            "type": "integer",
+            "nullable": true,
+            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when no engine response."
+          }
+        },
+        "required": [
+          "ack"
+        ],
+        "additionalProperties": false
+      },
+      "LoadOlderResult": {
+        "type": "object",
+        "properties": {
+          "total_messages": {
+            "type": "integer",
+            "nullable": true
+          },
+          "added": {
+            "type": "integer",
+            "nullable": true
+          },
+          "can_load_more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "total_messages",
+          "added",
+          "can_load_more"
+        ],
+        "additionalProperties": false
+      },
+      "MediaUrl": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hosted URL for the media bytes, or null if the engine could not produce one."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "PinnedMessage": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "chat_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "key",
+          "chat_id",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "BatchMessageAckEntry": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "ack": {
+            "type": "integer",
+            "nullable": true,
+            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when the engine could not determine."
+          }
+        },
+        "required": [
+          "key",
+          "ack"
+        ],
+        "additionalProperties": false
+      },
       "EngineStatus": {
         "type": "object",
         "properties": {
@@ -12485,11 +12817,11 @@
             "default": 0,
             "description": "Number of items to skip before the page (default 0)."
           },
-          "q": {
+          "searchToken": {
             "type": "string",
             "minLength": 1,
             "maxLength": 128,
-            "description": "Case-insensitive substring match against the group name."
+            "description": "Search token; when set, only items whose name matches are returned."
           }
         },
         "additionalProperties": false
@@ -12897,29 +13229,93 @@
         ],
         "additionalProperties": false
       },
-      "PingResponse": {
+      "PingConnection": {
         "type": "object",
         "properties": {
-          "account_id": {
+          "id": {
             "type": "string",
-            "description": "The account ID the API key belongs to."
+            "description": "Stable id of the live engine session (its MQTT presence client id)."
           },
-          "key_prefix": {
+          "type": {
             "type": "string",
-            "description": "Public prefix of the API key (first 8 chars, never the full secret)."
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
           },
-          "scopes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Scopes granted to this API key."
+          "connected": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Always true — an entry appears only while its presence heartbeat is live."
           }
         },
         "required": [
+          "id",
+          "type",
+          "connected"
+        ],
+        "additionalProperties": false
+      },
+      "PingResponse": {
+        "type": "object",
+        "properties": {
+          "api": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ],
+            "description": "Blueticks API server liveness. \"ok\" means the API server is up and served this request."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "The account (workspace) the API key belongs to."
+          },
+          "whatsapp_connections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Stable id of the live engine session (its MQTT presence client id)."
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "gateway",
+                    "regular"
+                  ],
+                  "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
+                },
+                "connected": {
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ],
+                  "description": "Always true — an entry appears only while its presence heartbeat is live."
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "connected"
+              ],
+              "additionalProperties": false
+            },
+            "description": "WhatsApp engines currently connected for this account. Empty means no WhatsApp is connected."
+          },
+          "message": {
+            "type": "string",
+            "description": "Present only when whatsapp_connections is empty; explains the empty state."
+          }
+        },
+        "required": [
+          "api",
           "account_id",
-          "key_prefix",
-          "scopes"
+          "whatsapp_connections"
         ],
         "additionalProperties": false
       },
@@ -12961,11 +13357,11 @@
             ],
             "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `send_at` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
           },
-          "q": {
+          "searchToken": {
             "type": "string",
             "minLength": 1,
             "maxLength": 200,
-            "description": "Substring match over message body (case-insensitive)."
+            "description": "Search token; when set, only items whose name matches are returned."
           }
         },
         "additionalProperties": false
@@ -13290,7 +13686,8 @@
           "read_at",
           "failed_at",
           "failure_reason"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CreateWebhookRequest": {
         "type": "object",

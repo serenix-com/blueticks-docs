@@ -6,11 +6,30 @@ description: Send text, media, or poll messages immediately or schedule them for
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Callout } from 'fumadocs-ui/components/callout';
 
-Every send goes through `POST /v1/scheduled-messages`. The body is a discriminated
-union — set `type` to one of `text`, `media`, or `poll`. Optional fields
-`send_at`, `from`, and `reply_to` work on every variant.
+There are two ways to send a WhatsApp message. Pick based on whether you want a
+tracked record:
+
+| Endpoint | When to use it | Tracked? |
+| --- | --- | --- |
+| `POST /v1/scheduled-messages` | **The default for almost everything.** Send right now *or* schedule for later. | **Yes** — returns a record you can list, poll for status, edit, and cancel. |
+| `POST /v1/chats/{chat_id}/messages` | A lightweight, fire-and-forget send into one chat. | No — dispatched directly, no record kept. |
+
+<Callout type="info">
+Despite the name, **`POST /v1/scheduled-messages` is the main "send a message"
+endpoint** — not just for scheduling. Omit `send_at` and the message goes out
+immediately; add `send_at` and it's scheduled for later. This guide uses it for
+every example below.
+</Callout>
+
+The body is a discriminated union — set `type` to one of `text`, `media`, or
+`poll`. The optional fields `send_at` (schedule), `from` (pick the sending
+number), and `reply_to` (quote a message) work on every variant.
 
 ## Send a text message
+
+Omit `send_at` to send it right now:
+
+
 
 <ApiExample op="POST /v1/scheduled-messages" kind="request" />
 
@@ -504,10 +523,12 @@ the recipient, or rewrite the body — with `PATCH /v1/scheduled-messages/{id}`:
 
 ## Immediate send into an open chat
 
-`POST /v1/scheduled-messages` is the high-level entry point. If you're working
-directly against an already-open conversation you can post straight into it with
-`POST /v1/chats/{chat_id}/messages` — the wire-level send used internally by the
-scheduler:
+The second send path from the top of this guide. `POST /v1/chats/{chat_id}/messages`
+posts straight into one conversation and returns the WhatsApp wire `key`. It's
+fire-and-forget — no record is created, so there's nothing to list, poll, edit,
+or cancel afterwards. Reach for it only when you don't need tracking; otherwise
+use `POST /v1/scheduled-messages` (above). The body is the same `text` / `media` /
+`poll` union, minus `to` (it's in the URL) and `send_at`:
 
 <ApiExample op="POST /v1/chats/{chat_id}/messages" kind="request" />
 

@@ -1,20 +1,11 @@
 {
   "title": "Chats",
-  "description": "Read WhatsApp chats and their messages on the connected engine.",
+  "description": "Read and manage WhatsApp chats on the connected engine.",
   "pages": [
     "list-chats",
     "get-chat",
-    "list-chat-messages",
-    "send-message-to-chat",
-    "get-chat-message",
     "list-chat-participants",
     "mark-chat-as-read",
-    "open-chat-in-engine",
-    "get-message-delivery-status",
-    "react-to-message",
-    "load-older-messages-from-phone",
-    "get-message-media-url",
-    "batch-get-message-acks",
-    "get-chat-message-media"
+    "open-chat-in-engine"
   ]
 }

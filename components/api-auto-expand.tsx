@@ -14,11 +14,12 @@ import { useEffect } from 'react';
 // (watching for lazily-mounted accordions) never re-expands what the user
 // just collapsed, and never enters a click→DOM-mutation→re-click loop.
 //
-// We only target Accordion/Collapsible triggers, not popup triggers. The
-// "Server URL" selector is a Radix Dialog trigger that also carries
-// aria-expanded; excluding [aria-haspopup] (which Dialog/Popover/Menu
-// triggers set, but Accordion/Collapsible triggers do not) keeps us from
-// auto-opening that modal on every page load.
+// We only target Accordion/Collapsible triggers, not popup/select triggers.
+// The "Server URL" selector is a Radix Dialog trigger and the auth-scheme
+// selector is a Radix Select trigger (role="combobox") — both carry
+// aria-expanded but neither should be auto-opened. Excluding [aria-haspopup]
+// (Dialog/Popover/Menu) and [role="combobox"] (Select) leaves only the
+// Accordion/Collapsible schema triggers, which is what we want expanded.
 export function ApiAutoExpand({ selector }: { selector: string }) {
   useEffect(() => {
     const MARK = 'data-auto-expanded';
@@ -27,7 +28,7 @@ export function ApiAutoExpand({ selector }: { selector: string }) {
       document.querySelectorAll(selector).forEach((root) => {
         root
           .querySelectorAll<HTMLButtonElement>(
-            `button[aria-expanded="false"]:not([${MARK}]):not([aria-haspopup])`,
+            `button[aria-expanded="false"]:not([${MARK}]):not([aria-haspopup]):not([role="combobox"])`,
           )
           .forEach((btn) => {
             btn.setAttribute(MARK, 'true');

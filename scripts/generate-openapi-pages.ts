@@ -17,6 +17,36 @@ import { join } from 'node:path';
 const OUTPUT_DIR = 'content/docs/api';
 const SPEC_PATH = './openapi.json';
 
+// Canonical sidebar order for the API reference (folder/file slugs under
+// content/docs/api). Ordered by relevance to a developer integrating the API,
+// not by service-registration order. Anything not listed is appended in its
+// existing order, so adding a new tag still renders (just at the end) until
+// it's placed here.
+const TAG_ORDER = [
+  // Core messaging — the headline use cases.
+  'messages', //          send a message now
+  'scheduled-messages', // schedule / recurring sends
+  'chats', //             read & manage conversations
+  // Bulk outreach.
+  'campaigns', //         run campaigns
+  'audiences', //         recipient lists for campaigns
+  // Directory / address book.
+  'contacts',
+  'groups',
+  'newsletters',
+  // Inbound — receive messages & delivery events.
+  'webhooks',
+  // Account & connectivity utilities.
+  'account', //           account metadata for the API key
+  'ping', //              connectivity / key check
+  // Low-level gateway infrastructure (least relevant to most integrators).
+  'engines',
+];
+
+// Within the Messages section: lead with Send + List + Get; the rest keep
+// their generated order. (Page slugs derived from operation summaries.)
+const MESSAGES_PAGE_LEAD = ['send-message', 'list-messages', 'get-message'];
+
 async function main(): Promise<void> {
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
@@ -107,6 +137,15 @@ async function main(): Promise<void> {
   // unchanged — no meta rewrite needed. The page title is set to the tag
   // title so the sidebar shows the resource name.
   await flattenSingleOperationTags(OUTPUT_DIR);
+
+  // Deterministic sidebar order. fumadocs writes meta.json `pages` in the order
+  // tags first appear in the spec `paths`, which equals service-registration
+  // order — and leaves CUSTOM_PATHS-only tags (e.g. "Messages", whose paths are
+  // appended last) at the bottom. Rewrite the root meta to a fixed tag order so
+  // "Messages" sits right after "Scheduled Messages". Within the Messages
+  // section, lead with Send + List.
+  await reorderMeta(join(OUTPUT_DIR, 'meta.json'), TAG_ORDER);
+  await reorderMeta(join(OUTPUT_DIR, 'messages', 'meta.json'), MESSAGES_PAGE_LEAD);
 
   // Copy spec to public/ so /openapi.json is served verbatim for Postman etc.
   await fs.mkdir('public', { recursive: true });
@@ -209,6 +248,29 @@ async function flattenSingleOperationTags(dir: string): Promise<void> {
     await fs.rm(folder, { recursive: true, force: true });
     await fs.writeFile(join(dir, `${ent.name}.mdx`), content);
   }
+}
+
+/**
+ * Reorder a fumadocs meta.json `pages` array so entries in `lead` come first
+ * and entries in `trail` come last (each in the given order, when present),
+ * with every other page keeping its existing order in the middle. A missing
+ * file or missing/!array `pages` is tolerated (no-op). Section separators
+ * ("---Foo---") and any unlisted slugs are preserved in the middle band.
+ */
+async function reorderMeta(metaPath: string, lead: string[], trail: string[] = []): Promise<void> {
+  let meta: { pages?: string[] } & Record<string, unknown>;
+  try {
+    meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as typeof meta;
+  } catch {
+    return; // no meta.json at this path — nothing to order
+  }
+  if (!Array.isArray(meta.pages)) return;
+  const pages = meta.pages;
+  const leadPresent = lead.filter((slug) => pages.includes(slug));
+  const trailPresent = trail.filter((slug) => pages.includes(slug));
+  const middle = pages.filter((slug) => !leadPresent.includes(slug) && !trailPresent.includes(slug));
+  meta.pages = [...leadPresent, ...middle, ...trailPresent];
+  await fs.writeFile(metaPath, `${JSON.stringify(meta, null, 2)}\n`);
 }
 
 /** Rewrite the `title:` field inside the leading YAML frontmatter block. */

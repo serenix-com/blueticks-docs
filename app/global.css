@@ -45,6 +45,28 @@ pre code,
   display: none;
 }
 
+/* The playground's Authorization panel is always relevant (every request
+   needs the API key), so keep it permanently open with no collapse toggle.
+   <ApiAutoExpand> opens it on mount via a synthetic click (which ignores
+   pointer-events); these rules neutralize the CollapsibleTrigger and hide
+   its chevron so it reads as a static header and can't be collapsed. */
+[data-type='authorization'] > button {
+  pointer-events: none;
+  cursor: default;
+}
+[data-type='authorization'] > button svg {
+  display: none;
+}
+
+/* Playground response viewer (PrettyResultDisplay marks its panel with
+   data-bt-result). The shiki code block holding the response body grows with
+   its content but is capped at 500px and scrolls vertically, so a large
+   payload stays readable without pushing the rest of the page down. */
+[data-bt-result] figure {
+  max-height: 500px;
+  overflow: auto;
+}
+
 /* Brand primary: Blueticks blue (was teal). */
 :root {
   --color-fd-primary: #1d8ff7;

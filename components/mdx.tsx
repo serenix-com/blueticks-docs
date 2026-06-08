@@ -3,10 +3,14 @@ import type { MDXComponents } from 'mdx/types';
 import { createAPIPage } from 'fumadocs-openapi/ui';
 import { createCodeUsageGeneratorRegistry } from 'fumadocs-openapi/requests/generators';
 import { curl } from 'fumadocs-openapi/requests/generators/curl';
-import { openapi } from '@/lib/openapi';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Fragment } from 'react';
+import { openapi, ERROR_RESPONSE_KEY } from '@/lib/openapi';
 import { AppLink } from '@/components/app-link';
 import { ApiExample } from '@/components/api-example';
 import { ApiAutoExpand } from '@/components/api-auto-expand';
+import { AuthFieldCustomizer } from '@/components/auth-field-customizer';
+import { PrettyResultDisplay } from '@/components/pretty-result-display';
 import { ResponseTabsRelocator } from '@/components/response-tabs-relocator';
 
 // Trim the default code-generator registry to just cURL. Python / Node.js / PHP
@@ -27,12 +31,52 @@ sdkOnlyRegistry.add('curl', curl);
 // <ResponseTabsRelocator />).
 const APIPage = createAPIPage(openapi, {
   codeUsages: sdkOnlyRegistry,
+  // Override the playground's response viewer to pretty-print JSON bodies
+  // (our API returns minified JSON, which otherwise shows as one cramped
+  // line). A client-component override serializes across the RSC boundary;
+  // see components/pretty-result-display.tsx + the height/scroll CSS.
+  client: {
+    playground: {
+      components: { ResultDisplay: PrettyResultDisplay },
+    },
+  },
   // Drop the per-response "TypeScript Definitions" panels. The dedicated
   // Node.js SDK already exposes typed accessors; the auto-generated TS
   // type dump adds visual weight without helping callers who use the SDK.
   generateTypeScriptDefinitions: false,
   generateTypeScriptSchema: false,
   content: {
+    // Response example tabs. The collapsed error response keys its accordion
+    // "Error codes" (the status table); here we label its *example* tab
+    // "Error response" instead. Each of our responses carries a single
+    // example, so we stack examples rather than re-deriving the default
+    // renderer's multi-example accordion.
+    renderResponseTabs: (tabs, ctx) => {
+      const label = (code: string) =>
+        code === ERROR_RESPONSE_KEY ? 'Error response' : code;
+      return (
+        <Tabs
+          groupId="fumadocs_openapi_responses"
+          items={tabs.map((tab) => label(tab.code))}
+        >
+          {tabs.map((tab) => (
+            <Tab key={label(tab.code)} value={label(tab.code)}>
+              {(tab.examples ?? []).map((example, i) => (
+                <Fragment key={i}>
+                  {example.description
+                    ? ctx.renderMarkdown(example.description)
+                    : null}
+                  {ctx.renderCodeBlock(
+                    'json',
+                    JSON.stringify(example.sample, null, 2),
+                  )}
+                </Fragment>
+              ))}
+            </Tab>
+          ))}
+        </Tabs>
+      );
+    },
     renderAPIExampleLayout: (slots) => (
       <>
         <div className="space-y-4">
@@ -80,6 +124,9 @@ const APIPage = createAPIPage(openapi, {
             the shared error envelope, so the reader opens just the status
             they care about. */}
         <ApiAutoExpand selector='[data-api-section="request"]' />
+        {/* Set the API-key placeholder and hide the single-option auth-scheme
+            dropdown in the playground's Authorization panel. */}
+        <AuthFieldCustomizer placeholder="Enter your Blueticks API key" />
         <ResponseTabsRelocator />
       </div>
     ),

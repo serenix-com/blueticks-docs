@@ -1,0 +1,16 @@
+{
+  "title": "Messages",
+  "description": "Send, list, search, react to, and fetch media for individual WhatsApp messages on the connected engine.",
+  "pages": [
+    "send-message",
+    "list-messages",
+    "get-message",
+    "get-message-delivery-status",
+    "react-to-message",
+    "load-older-messages",
+    "get-message-media-url",
+    "batch-get-message-acks",
+    "get-message-media",
+    "list-pinned-messages"
+  ]
+}
