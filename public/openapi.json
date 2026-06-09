@@ -53,7 +53,7 @@
     },
     {
       "name": "Scheduled Messages",
-      "description": "Send or schedule WhatsApp messages via the user-messages queue. Each request creates a queued send — set `send_at` (RFC 3339) to defer delivery, omit it to send immediately. List, retrieve, edit, and cancel queued sends."
+      "description": "Send or schedule WhatsApp messages via the user-messages queue. Each request creates a queued send — set `sendAt` (RFC 3339) to defer delivery, omit it to send immediately. List, retrieve, edit, and cancel queued sends."
     },
     {
       "name": "Webhooks",
@@ -361,7 +361,7 @@
           "Scheduled Messages"
         ],
         "summary": "List scheduled messages",
-        "description": "List messages in the user-messages queue (all sources: API, dashboard, extension), newest first (offset-paginated). Optionally filter by `chat_id` and/or lifecycle `status`.",
+        "description": "List messages in the user-messages queue (all sources: API, dashboard, extension), newest first (offset-paginated). Optionally filter by `chatId` and/or lifecycle `status`.",
         "security": [
           {
             "BearerAuth": [
@@ -394,7 +394,7 @@
             "description": "Number of items to skip before the page (default 0)."
           },
           {
-            "name": "chat_id",
+            "name": "chatId",
             "in": "query",
             "required": false,
             "schema": {
@@ -418,7 +418,7 @@
                 "failed"
               ]
             },
-            "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `send_at` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
+            "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `sendAt` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
           },
           {
             "name": "searchToken",
@@ -480,11 +480,11 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "media_url": {
+                          "mediaUrl": {
                             "type": "string",
                             "nullable": true
                           },
-                          "media_kind": {
+                          "mediaKind": {
                             "type": "string",
                             "enum": [
                               "image",
@@ -497,7 +497,7 @@
                             ],
                             "nullable": true
                           },
-                          "poll_question": {
+                          "pollQuestion": {
                             "type": "string",
                             "nullable": true
                           },
@@ -512,40 +512,40 @@
                               "failed"
                             ]
                           },
-                          "send_at": {
+                          "sendAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "created_at": {
+                          "createdAt": {
                             "type": "string",
                             "format": "date-time"
                           },
-                          "sent_at": {
+                          "sentAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "delivered_at": {
+                          "deliveredAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "read_at": {
+                          "readAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "failed_at": {
+                          "failedAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "failure_reason": {
+                          "failureReason": {
                             "type": "string",
                             "nullable": true
                           },
-                          "link_preview": {
+                          "linkPreview": {
                             "type": "object",
                             "properties": {
                               "title": {
@@ -556,7 +556,7 @@
                                 "type": "string",
                                 "nullable": true
                               },
-                              "canonical_url": {
+                              "canonicalUrl": {
                                 "type": "string",
                                 "nullable": true
                               },
@@ -568,7 +568,7 @@
                             "required": [
                               "title",
                               "description",
-                              "canonical_url",
+                              "canonicalUrl",
                               "thumbnail"
                             ],
                             "additionalProperties": false,
@@ -582,17 +582,17 @@
                           "from",
                           "type",
                           "text",
-                          "media_url",
-                          "media_kind",
-                          "poll_question",
+                          "mediaUrl",
+                          "mediaKind",
+                          "pollQuestion",
                           "status",
-                          "send_at",
-                          "created_at",
-                          "sent_at",
-                          "delivered_at",
-                          "read_at",
-                          "failed_at",
-                          "failure_reason"
+                          "sendAt",
+                          "createdAt",
+                          "sentAt",
+                          "deliveredAt",
+                          "readAt",
+                          "failedAt",
+                          "failureReason"
                         ],
                         "additionalProperties": false
                       }
@@ -690,7 +690,7 @@
           "Scheduled Messages"
         ],
         "summary": "Schedule message",
-        "description": "Send a message via WhatsApp. The body is a discriminated union — set the `type` field to one of `text`, `media`, or `poll`.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). Example body:\n  ```json\n  {\"type\":\"text\",\"to\":\"+15551234567\",\"text\":\"hello\"}\n  ```\n- `type: \"media\"` — required `media.url` (HTTPS). Optional `media.kind` (`image` · `video` · `audio` · `document` · `sticker` · `voice`; auto-detected when omitted), `media.caption`, `media.filename`. Example:\n  ```json\n  {\"type\":\"media\",\"to\":\"+15551234567\",\"media\":{\"url\":\"https://cdn.example.com/x.pdf\",\"kind\":\"document\",\"filename\":\"receipt.pdf\"}}\n  ```\n- `type: \"poll\"` — required `poll.question` and `poll.options` (2–12 items). Optional `poll.allow_multiple` (default false). Example:\n  ```json\n  {\"type\":\"poll\",\"to\":\"+15551234567\",\"poll\":{\"question\":\"Pizza?\",\"options\":[\"Yes\",\"No\"]}}\n  ```\n\nAll variants accept optional `send_at` (ISO 8601 ≥10s future, ≤365d), `from` (E.164 sender for multi-session workspaces), and `reply_to` (wire `key` of a prior message to quote).\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
+        "description": "Send a message via WhatsApp. The body is a discriminated union — set the `type` field to one of `text`, `media`, or `poll`.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). Example body:\n  ```json\n  {\"type\":\"text\",\"to\":\"+15551234567\",\"text\":\"hello\"}\n  ```\n- `type: \"media\"` — required `media.url` (HTTPS). Optional `media.kind` (`image` · `video` · `audio` · `document` · `sticker` · `voice`; auto-detected when omitted), `media.caption`, `media.filename`. Example:\n  ```json\n  {\"type\":\"media\",\"to\":\"+15551234567\",\"media\":{\"url\":\"https://cdn.example.com/x.pdf\",\"kind\":\"document\",\"filename\":\"receipt.pdf\"}}\n  ```\n- `type: \"poll\"` — required `poll.question` and `poll.options` (2–12 items). Optional `poll.allowMultiple` (default false). Example:\n  ```json\n  {\"type\":\"poll\",\"to\":\"+15551234567\",\"poll\":{\"question\":\"Pizza?\",\"options\":[\"Yes\",\"No\"]}}\n  ```\n\nAll variants accept optional `sendAt` (ISO 8601 ≥10s future, ≤365d), `from` (E.164 sender for multi-session workspaces), and `replyTo` (wire `key` of a prior message to quote).\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
         "security": [
           {
             "BearerAuth": [
@@ -727,10 +727,10 @@
                     "to": "+15555550100",
                     "type": "text",
                     "text": "Check this out: https://blueticks.co",
-                    "link_preview": {
+                    "linkPreview": {
                       "title": "Blueticks",
                       "description": "WhatsApp business automation",
-                      "canonical_url": "https://blueticks.co"
+                      "canonicalUrl": "https://blueticks.co"
                     }
                   }
                 },
@@ -779,16 +779,16 @@
                     "to": "+15555550100",
                     "type": "text",
                     "text": "Reminder: meeting in 3 hours",
-                    "send_at": "2026-12-31T12:00:00Z"
+                    "sendAt": "2026-12-31T12:00:00Z"
                   }
                 },
-                "reply_to": {
+                "replyTo": {
                   "summary": "Reply quoting a prior message",
                   "value": {
                     "to": "+15555550100",
                     "type": "text",
                     "text": "Sounds good!",
-                    "reply_to": "true_15555550100@c.us_3EB0ABCDEF1234567890"
+                    "replyTo": "true_15555550100@c.us_3EB0ABCDEF1234567890"
                   }
                 }
               }
@@ -853,11 +853,11 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "media_url": {
+                        "mediaUrl": {
                           "type": "string",
                           "nullable": true
                         },
-                        "media_kind": {
+                        "mediaKind": {
                           "type": "string",
                           "enum": [
                             "image",
@@ -870,7 +870,7 @@
                           ],
                           "nullable": true
                         },
-                        "poll_question": {
+                        "pollQuestion": {
                           "type": "string",
                           "nullable": true
                         },
@@ -885,40 +885,40 @@
                             "failed"
                           ]
                         },
-                        "send_at": {
+                        "sendAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sent_at": {
+                        "sentAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "delivered_at": {
+                        "deliveredAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "read_at": {
+                        "readAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failed_at": {
+                        "failedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failure_reason": {
+                        "failureReason": {
                           "type": "string",
                           "nullable": true
                         },
-                        "link_preview": {
+                        "linkPreview": {
                           "type": "object",
                           "properties": {
                             "title": {
@@ -929,7 +929,7 @@
                               "type": "string",
                               "nullable": true
                             },
-                            "canonical_url": {
+                            "canonicalUrl": {
                               "type": "string",
                               "nullable": true
                             },
@@ -941,7 +941,7 @@
                           "required": [
                             "title",
                             "description",
-                            "canonical_url",
+                            "canonicalUrl",
                             "thumbnail"
                           ],
                           "additionalProperties": false,
@@ -955,17 +955,17 @@
                         "from",
                         "type",
                         "text",
-                        "media_url",
-                        "media_kind",
-                        "poll_question",
+                        "mediaUrl",
+                        "mediaKind",
+                        "pollQuestion",
                         "status",
-                        "send_at",
-                        "created_at",
-                        "sent_at",
-                        "delivered_at",
-                        "read_at",
-                        "failed_at",
-                        "failure_reason"
+                        "sendAt",
+                        "createdAt",
+                        "sentAt",
+                        "deliveredAt",
+                        "readAt",
+                        "failedAt",
+                        "failureReason"
                       ],
                       "additionalProperties": false
                     }
@@ -1024,11 +1024,11 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "media_url": {
+                        "mediaUrl": {
                           "type": "string",
                           "nullable": true
                         },
-                        "media_kind": {
+                        "mediaKind": {
                           "type": "string",
                           "enum": [
                             "image",
@@ -1041,7 +1041,7 @@
                           ],
                           "nullable": true
                         },
-                        "poll_question": {
+                        "pollQuestion": {
                           "type": "string",
                           "nullable": true
                         },
@@ -1056,40 +1056,40 @@
                             "failed"
                           ]
                         },
-                        "send_at": {
+                        "sendAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sent_at": {
+                        "sentAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "delivered_at": {
+                        "deliveredAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "read_at": {
+                        "readAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failed_at": {
+                        "failedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failure_reason": {
+                        "failureReason": {
                           "type": "string",
                           "nullable": true
                         },
-                        "link_preview": {
+                        "linkPreview": {
                           "type": "object",
                           "properties": {
                             "title": {
@@ -1100,7 +1100,7 @@
                               "type": "string",
                               "nullable": true
                             },
-                            "canonical_url": {
+                            "canonicalUrl": {
                               "type": "string",
                               "nullable": true
                             },
@@ -1112,7 +1112,7 @@
                           "required": [
                             "title",
                             "description",
-                            "canonical_url",
+                            "canonicalUrl",
                             "thumbnail"
                           ],
                           "additionalProperties": false,
@@ -1126,17 +1126,17 @@
                         "from",
                         "type",
                         "text",
-                        "media_url",
-                        "media_kind",
-                        "poll_question",
+                        "mediaUrl",
+                        "mediaKind",
+                        "pollQuestion",
                         "status",
-                        "send_at",
-                        "created_at",
-                        "sent_at",
-                        "delivered_at",
-                        "read_at",
-                        "failed_at",
-                        "failure_reason"
+                        "sendAt",
+                        "createdAt",
+                        "sentAt",
+                        "deliveredAt",
+                        "readAt",
+                        "failedAt",
+                        "failureReason"
                       ],
                       "additionalProperties": false
                     }
@@ -1274,11 +1274,11 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "media_url": {
+                        "mediaUrl": {
                           "type": "string",
                           "nullable": true
                         },
-                        "media_kind": {
+                        "mediaKind": {
                           "type": "string",
                           "enum": [
                             "image",
@@ -1291,7 +1291,7 @@
                           ],
                           "nullable": true
                         },
-                        "poll_question": {
+                        "pollQuestion": {
                           "type": "string",
                           "nullable": true
                         },
@@ -1306,40 +1306,40 @@
                             "failed"
                           ]
                         },
-                        "send_at": {
+                        "sendAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sent_at": {
+                        "sentAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "delivered_at": {
+                        "deliveredAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "read_at": {
+                        "readAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failed_at": {
+                        "failedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failure_reason": {
+                        "failureReason": {
                           "type": "string",
                           "nullable": true
                         },
-                        "link_preview": {
+                        "linkPreview": {
                           "type": "object",
                           "properties": {
                             "title": {
@@ -1350,7 +1350,7 @@
                               "type": "string",
                               "nullable": true
                             },
-                            "canonical_url": {
+                            "canonicalUrl": {
                               "type": "string",
                               "nullable": true
                             },
@@ -1362,7 +1362,7 @@
                           "required": [
                             "title",
                             "description",
-                            "canonical_url",
+                            "canonicalUrl",
                             "thumbnail"
                           ],
                           "additionalProperties": false,
@@ -1376,17 +1376,17 @@
                         "from",
                         "type",
                         "text",
-                        "media_url",
-                        "media_kind",
-                        "poll_question",
+                        "mediaUrl",
+                        "mediaKind",
+                        "pollQuestion",
                         "status",
-                        "send_at",
-                        "created_at",
-                        "sent_at",
-                        "delivered_at",
-                        "read_at",
-                        "failed_at",
-                        "failure_reason"
+                        "sendAt",
+                        "createdAt",
+                        "sentAt",
+                        "deliveredAt",
+                        "readAt",
+                        "failedAt",
+                        "failureReason"
                       ],
                       "additionalProperties": false
                     }
@@ -1488,7 +1488,7 @@
           "Scheduled Messages"
         ],
         "summary": "Update scheduled message",
-        "description": "Edit a previously-queued message that has not dispatched yet. Accepts a subset of `text`, `media_url`, `media_caption`, `send_at` — at least one is required. Returns 400 once the message has advanced past the editable window (status not in `pending`/`sending`).",
+        "description": "Edit a previously-queued message that has not dispatched yet. Accepts a subset of `text`, `mediaUrl`, `mediaCaption`, `sendAt` — at least one is required. Returns 400 once the message has advanced past the editable window (status not in `pending`/`sending`).",
         "security": [
           {
             "BearerAuth": [
@@ -1508,19 +1508,19 @@
                     "maxLength": 4096,
                     "description": "New text body. Replaces the previous text/caption."
                   },
-                  "media_url": {
+                  "mediaUrl": {
                     "type": "string",
                     "format": "uri",
                     "maxLength": 2048,
                     "description": "Replace the attached media URL (https only)."
                   },
-                  "media_caption": {
+                  "mediaCaption": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 1024,
                     "description": "Replace the media's caption. When set alongside `text`, `text` wins."
                   },
-                  "send_at": {
+                  "sendAt": {
                     "type": "string",
                     "format": "date-time",
                     "description": "Reschedule. ISO 8601 datetime (UTC) in the future."
@@ -1577,11 +1577,11 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "media_url": {
+                        "mediaUrl": {
                           "type": "string",
                           "nullable": true
                         },
-                        "media_kind": {
+                        "mediaKind": {
                           "type": "string",
                           "enum": [
                             "image",
@@ -1594,7 +1594,7 @@
                           ],
                           "nullable": true
                         },
-                        "poll_question": {
+                        "pollQuestion": {
                           "type": "string",
                           "nullable": true
                         },
@@ -1609,40 +1609,40 @@
                             "failed"
                           ]
                         },
-                        "send_at": {
+                        "sendAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sent_at": {
+                        "sentAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "delivered_at": {
+                        "deliveredAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "read_at": {
+                        "readAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failed_at": {
+                        "failedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failure_reason": {
+                        "failureReason": {
                           "type": "string",
                           "nullable": true
                         },
-                        "link_preview": {
+                        "linkPreview": {
                           "type": "object",
                           "properties": {
                             "title": {
@@ -1653,7 +1653,7 @@
                               "type": "string",
                               "nullable": true
                             },
-                            "canonical_url": {
+                            "canonicalUrl": {
                               "type": "string",
                               "nullable": true
                             },
@@ -1665,7 +1665,7 @@
                           "required": [
                             "title",
                             "description",
-                            "canonical_url",
+                            "canonicalUrl",
                             "thumbnail"
                           ],
                           "additionalProperties": false,
@@ -1679,17 +1679,17 @@
                         "from",
                         "type",
                         "text",
-                        "media_url",
-                        "media_kind",
-                        "poll_question",
+                        "mediaUrl",
+                        "mediaKind",
+                        "pollQuestion",
                         "status",
-                        "send_at",
-                        "created_at",
-                        "sent_at",
-                        "delivered_at",
-                        "read_at",
-                        "failed_at",
-                        "failure_reason"
+                        "sendAt",
+                        "createdAt",
+                        "sentAt",
+                        "deliveredAt",
+                        "readAt",
+                        "failedAt",
+                        "failureReason"
                       ],
                       "additionalProperties": false
                     }
@@ -7702,13 +7702,364 @@
         "operationId": "campaigns.cancel.create"
       }
     },
+    "/v1/messages": {
+      "get": {
+        "tags": [
+          "Messages"
+        ],
+        "summary": "List messages (all chats)",
+        "description": "Offset-paginated list of messages across the whole account. Pass `chatId` to scope to a single chat, or omit it to search across all chats. Supports free-text search (`searchToken`), date range (`since`/`until`), and message-kind filtering (`messageTypes`). Requires `chats:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "chats:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            },
+            "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "history",
+                "latest"
+              ]
+            },
+            "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
+          },
+          {
+            "name": "searchToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Search token; when set, only items whose name matches are returned."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Max messages to return."
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of messages to skip before the page (default 0)."
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
+          },
+          {
+            "name": "messageTypes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "chat",
+                  "image",
+                  "video",
+                  "document",
+                  "audio",
+                  "ptt",
+                  "sticker",
+                  "gif",
+                  "ptv",
+                  "poll_creation",
+                  "location",
+                  "vcard",
+                  "revoked"
+                ]
+              }
+            },
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here.",
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "loadFromPhoneIfNeeded",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "When the local store is exhausted, fetch older messages from the phone (chrome only)."
+          },
+          {
+            "name": "includeMediaContent",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include inline media payload on rows (heavy; default false — use /messages/{key}/media)."
+          },
+          {
+            "name": "chatId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+(?:-\\d+)?@(?:c\\.us|s\\.whatsapp\\.net|g\\.us|lid|broadcast|newsletter)$"
+            },
+            "description": "Optional WhatsApp JID to scope results to a single chat. Omit to search across all chats."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "chat_id": {
+                            "type": "string"
+                          },
+                          "from": {
+                            "type": "string"
+                          },
+                          "author": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "timestamp": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "text": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "from_me": {
+                            "type": "boolean"
+                          },
+                          "ack": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "media_url": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "caption": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "filename": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "link_preview": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "description": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "canonical_url": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "thumbnail": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "title",
+                              "description",
+                              "canonical_url",
+                              "thumbnail"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "chat_id",
+                          "from",
+                          "timestamp",
+                          "text",
+                          "type",
+                          "from_me",
+                          "ack",
+                          "media_url",
+                          "caption",
+                          "filename"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Page size echoed back from the request."
+                    },
+                    "skip": {
+                      "type": "integer",
+                      "description": "Offset echoed back from the request."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of items matching the query, across all pages."
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "limit",
+                    "skip",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "messages.list"
+      }
+    },
     "/v1/chats/{chat_id}/messages": {
       "get": {
         "tags": [
           "Messages"
         ],
         "summary": "List messages",
-        "description": "Offset-paginated list of messages in a chat. Supports free-text search (`searchToken`), date range (`since`/`until`), and message-kind filtering (`message_types`). Requires `chats:read`.",
+        "description": "Offset-paginated list of messages in a chat. Supports free-text search (`searchToken`), date range (`since`/`until`), and message-kind filtering (`messageTypes`). Requires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -7805,7 +8156,7 @@
             "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
           },
           {
-            "name": "message_types",
+            "name": "messageTypes",
             "in": "query",
             "required": false,
             "schema": {
@@ -7834,7 +8185,7 @@
             "explode": false
           },
           {
-            "name": "load_from_phone_if_needed",
+            "name": "loadFromPhoneIfNeeded",
             "in": "query",
             "required": false,
             "schema": {
@@ -7843,7 +8194,7 @@
             "description": "When the local store is exhausted, fetch older messages from the phone (chrome only)."
           },
           {
-            "name": "include_media_content",
+            "name": "includeMediaContent",
             "in": "query",
             "required": false,
             "schema": {
@@ -8065,7 +8416,7 @@
           "Messages"
         ],
         "summary": "Send message",
-        "description": "Send a message immediately to a specific chat. The body is the same discriminated union as `POST /v1/scheduled-messages` minus `to` (derived from the URL path) and `send_at` (this endpoint is fire-and-forget). Variants: `text`, `media`, `poll`. The dispatch is direct — no DB row is created; the response carries the WhatsApp wire key under `key`. For scheduled or queue-managed sends use `POST /v1/scheduled-messages` instead. Requires `messages:write`.",
+        "description": "Send a message immediately to a specific chat. The body is the same FLAT shape as `POST /v1/scheduled-messages` minus `to` (derived from the URL path) and `sendAt` (this endpoint is fire-and-forget). Set `type` to `text`, `media`, or `poll`. The dispatch is direct — no DB row is created; the response carries the WhatsApp wire key under `key`. For scheduled or queue-managed sends use `POST /v1/scheduled-messages` instead. Requires `messages:write`.",
         "security": [
           {
             "BearerAuth": [
@@ -8088,287 +8439,156 @@
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "type": "string",
-                        "enum": [
-                          "text"
-                        ]
-                      },
-                      "text": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 4096
-                      },
-                      "url": {
-                        "type": "string",
-                        "format": "uri",
-                        "maxLength": 2048,
-                        "description": "Bare URL shortcut. Sends the URL as the body and force-enables link preview."
-                      },
-                      "link_preview": {
-                        "anyOf": [
-                          {
-                            "type": "boolean"
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "title": {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 255
-                              },
-                              "description": {
-                                "type": "string",
-                                "maxLength": 2048
-                              },
-                              "canonical_url": {
-                                "type": "string",
-                                "format": "uri",
-                                "maxLength": 2048
-                              },
-                              "thumbnail": {
-                                "type": "string",
-                                "maxLength": 200000
-                              }
-                            },
-                            "required": [
-                              "title"
-                            ],
-                            "additionalProperties": false
-                          }
-                        ],
-                        "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
-                      },
-                      "from": {
-                        "type": "string",
-                        "pattern": "^\\+[1-9]\\d{6,14}$"
-                      },
-                      "reply_to": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 256,
-                        "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-                      },
-                      "mentions": {
-                        "type": "object",
-                        "properties": {
-                          "ids": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 128
-                            },
-                            "maxItems": 64
-                          },
-                          "displays": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 128
-                            },
-                            "maxItems": 64
-                          }
-                        },
-                        "required": [
-                          "ids"
-                        ],
-                        "additionalProperties": false,
-                        "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-                      }
-                    },
-                    "required": [
-                      "type"
-                    ],
-                    "additionalProperties": false,
-                    "title": "Text"
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "media",
+                      "poll"
+                    ]
                   },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "type": "string",
-                        "enum": [
-                          "media"
-                        ]
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096,
+                    "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "description": "Bare URL shortcut for text sends. Sends the URL as the body and force-enables link preview."
+                  },
+                  "linkPreview": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
                       },
-                      "media": {
+                      {
                         "type": "object",
                         "properties": {
-                          "url": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 2048
+                          },
+                          "canonicalUrl": {
                             "type": "string",
                             "format": "uri",
                             "maxLength": 2048
                           },
-                          "data_base64": {
+                          "thumbnail": {
                             "type": "string",
-                            "minLength": 1,
-                            "maxLength": 15728640,
-                            "description": "Raw media bytes, base64-encoded. Alternative to `url`."
-                          },
-                          "kind": {
-                            "type": "string",
-                            "enum": [
-                              "image",
-                              "video",
-                              "audio",
-                              "document",
-                              "sticker",
-                              "voice",
-                              "gif"
-                            ],
-                            "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
-                          },
-                          "caption": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 1024
-                          },
-                          "filename": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 255
-                          }
-                        },
-                        "additionalProperties": false
-                      },
-                      "from": {
-                        "type": "string",
-                        "pattern": "^\\+[1-9]\\d{6,14}$"
-                      },
-                      "reply_to": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 256,
-                        "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-                      },
-                      "mentions": {
-                        "type": "object",
-                        "properties": {
-                          "ids": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 128
-                            },
-                            "maxItems": 64
-                          },
-                          "displays": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 128
-                            },
-                            "maxItems": 64
+                            "maxLength": 200000
                           }
                         },
                         "required": [
-                          "ids"
+                          "title"
                         ],
-                        "additionalProperties": false,
-                        "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
+                        "additionalProperties": false
                       }
-                    },
-                    "required": [
-                      "type",
-                      "media"
                     ],
-                    "additionalProperties": false,
-                    "title": "Media"
+                    "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
                   },
-                  {
+                  "mediaUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "description": "Media source URL (https only). Exactly one of mediaUrl / mediaDataBase64 is required for media sends."
+                  },
+                  "mediaDataBase64": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 15728640,
+                    "description": "Raw media bytes, base64-encoded. Alternative to `mediaUrl`."
+                  },
+                  "mediaKind": {
+                    "type": "string",
+                    "enum": [
+                      "image",
+                      "video",
+                      "audio",
+                      "document",
+                      "sticker",
+                      "voice",
+                      "gif"
+                    ],
+                    "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
+                  },
+                  "mediaFilename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "description": "Filename to attach to the media (type=media)."
+                  },
+                  "pollQuestion": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "description": "Poll question (type=poll). Required for poll sends."
+                  },
+                  "pollOptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "description": "Poll options (type=poll). 2–12 items."
+                  },
+                  "pollAllowMultiple": {
+                    "type": "boolean",
+                    "description": "Allow selecting multiple poll options (type=poll). Default false."
+                  },
+                  "from": {
+                    "type": "string",
+                    "pattern": "^\\+[1-9]\\d{6,14}$"
+                  },
+                  "replyTo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+                  },
+                  "mentions": {
                     "type": "object",
                     "properties": {
-                      "type": {
-                        "type": "string",
-                        "enum": [
-                          "poll"
-                        ]
-                      },
-                      "poll": {
-                        "type": "object",
-                        "properties": {
-                          "question": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 255
-                          },
-                          "options": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 100
-                            },
-                            "minItems": 2,
-                            "maxItems": 12
-                          },
-                          "allow_multiple": {
-                            "type": "boolean",
-                            "default": false
-                          }
+                      "ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128
                         },
-                        "required": [
-                          "question",
-                          "options"
-                        ],
-                        "additionalProperties": false
+                        "maxItems": 64
                       },
-                      "from": {
-                        "type": "string",
-                        "pattern": "^\\+[1-9]\\d{6,14}$"
-                      },
-                      "reply_to": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 256,
-                        "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-                      },
-                      "mentions": {
-                        "type": "object",
-                        "properties": {
-                          "ids": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 128
-                            },
-                            "maxItems": 64
-                          },
-                          "displays": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 128
-                            },
-                            "maxItems": 64
-                          }
+                      "displays": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128
                         },
-                        "required": [
-                          "ids"
-                        ],
-                        "additionalProperties": false,
-                        "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
+                        "maxItems": 64
                       }
                     },
                     "required": [
-                      "type",
-                      "poll"
+                      "ids"
                     ],
                     "additionalProperties": false,
-                    "title": "Poll"
+                    "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
                   }
-                ]
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -8419,11 +8639,11 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "media_url": {
+                        "mediaUrl": {
                           "type": "string",
                           "nullable": true
                         },
-                        "media_kind": {
+                        "mediaKind": {
                           "type": "string",
                           "enum": [
                             "image",
@@ -8436,7 +8656,7 @@
                           ],
                           "nullable": true
                         },
-                        "poll_question": {
+                        "pollQuestion": {
                           "type": "string",
                           "nullable": true
                         },
@@ -8451,40 +8671,40 @@
                             "failed"
                           ]
                         },
-                        "send_at": {
+                        "sendAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sent_at": {
+                        "sentAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "delivered_at": {
+                        "deliveredAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "read_at": {
+                        "readAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failed_at": {
+                        "failedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "failure_reason": {
+                        "failureReason": {
                           "type": "string",
                           "nullable": true
                         },
-                        "link_preview": {
+                        "linkPreview": {
                           "type": "object",
                           "properties": {
                             "title": {
@@ -8495,7 +8715,7 @@
                               "type": "string",
                               "nullable": true
                             },
-                            "canonical_url": {
+                            "canonicalUrl": {
                               "type": "string",
                               "nullable": true
                             },
@@ -8507,7 +8727,7 @@
                           "required": [
                             "title",
                             "description",
-                            "canonical_url",
+                            "canonicalUrl",
                             "thumbnail"
                           ],
                           "additionalProperties": false,
@@ -8521,17 +8741,17 @@
                         "from",
                         "type",
                         "text",
-                        "media_url",
-                        "media_kind",
-                        "poll_question",
+                        "mediaUrl",
+                        "mediaKind",
+                        "pollQuestion",
                         "status",
-                        "send_at",
-                        "created_at",
-                        "sent_at",
-                        "delivered_at",
-                        "read_at",
-                        "failed_at",
-                        "failure_reason"
+                        "sendAt",
+                        "createdAt",
+                        "sentAt",
+                        "deliveredAt",
+                        "readAt",
+                        "failedAt",
+                        "failureReason"
                       ],
                       "additionalProperties": false
                     }
@@ -12117,7 +12337,7 @@
             "format": "date-time",
             "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
           },
-          "message_types": {
+          "messageTypes": {
             "type": "array",
             "items": {
               "type": "string",
@@ -12139,13 +12359,99 @@
             },
             "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
           },
-          "load_from_phone_if_needed": {
+          "loadFromPhoneIfNeeded": {
             "type": "boolean",
             "description": "When the local store is exhausted, fetch older messages from the phone (chrome only)."
           },
-          "include_media_content": {
+          "includeMediaContent": {
             "type": "boolean",
             "description": "Include inline media payload on rows (heavy; default false — use /messages/{key}/media)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "MessagesQuery": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "history",
+              "latest"
+            ],
+            "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
+          },
+          "searchToken": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Search token; when set, only items whose name matches are returned."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Max messages to return."
+          },
+          "skip": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of messages to skip before the page (default 0)."
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
+          },
+          "messageTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "chat",
+                "image",
+                "video",
+                "document",
+                "audio",
+                "ptt",
+                "sticker",
+                "gif",
+                "ptv",
+                "poll_creation",
+                "location",
+                "vcard",
+                "revoked"
+              ]
+            },
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
+          },
+          "loadFromPhoneIfNeeded": {
+            "type": "boolean",
+            "description": "When the local store is exhausted, fetch older messages from the phone (chrome only)."
+          },
+          "includeMediaContent": {
+            "type": "boolean",
+            "description": "Include inline media payload on rows (heavy; default false — use /messages/{key}/media)."
+          },
+          "chatId": {
+            "type": "string",
+            "pattern": "^\\d+(?:-\\d+)?@(?:c\\.us|s\\.whatsapp\\.net|g\\.us|lid|broadcast|newsletter)$",
+            "description": "Optional WhatsApp JID to scope results to a single chat. Omit to search across all chats."
           }
         },
         "additionalProperties": false
@@ -13340,7 +13646,7 @@
             "default": 0,
             "description": "Number of items to skip before the page (default 0)."
           },
-          "chat_id": {
+          "chatId": {
             "type": "string",
             "pattern": "^[0-9]+(?:-[0-9]+)?@(?:c\\.us|g\\.us|newsletter)$",
             "description": "Filter to messages addressed to this WhatsApp JID. Matches the recipient stored on the queued/scheduled doc — for sends to a phone number, the JID is `<phone>@c.us`."
@@ -13355,7 +13661,7 @@
               "read",
               "failed"
             ],
-            "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `send_at` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
+            "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `sendAt` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
           },
           "searchToken": {
             "type": "string",
@@ -13428,7 +13734,7 @@
             "type": "string",
             "maxLength": 2048
           },
-          "canonical_url": {
+          "canonicalUrl": {
             "type": "string",
             "maxLength": 2048,
             "format": "uri"
@@ -13444,46 +13750,316 @@
         "additionalProperties": false
       },
       "SendMessageRequest": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/SendMessageRequestText"
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "media",
+              "poll"
+            ]
           },
-          {
-            "$ref": "#/components/schemas/SendMessageRequestMedia"
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
           },
-          {
-            "$ref": "#/components/schemas/SendMessageRequestPoll"
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "Bare URL shortcut for text sends. Sends the URL as the body and force-enables link preview."
+          },
+          "linkPreview": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "canonicalUrl": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "maxLength": 200000
+                  }
+                },
+                "required": [
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
+          },
+          "mediaUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "Media source URL (https only). Exactly one of mediaUrl / mediaDataBase64 is required for media sends."
+          },
+          "mediaDataBase64": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15728640,
+            "description": "Raw media bytes, base64-encoded. Alternative to `mediaUrl`."
+          },
+          "mediaKind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "document",
+              "sticker",
+              "voice",
+              "gif"
+            ],
+            "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
+          },
+          "mediaFilename": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Filename to attach to the media (type=media)."
+          },
+          "pollQuestion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Poll question (type=poll). Required for poll sends."
+          },
+          "pollOptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "Poll options (type=poll). 2–12 items."
+          },
+          "pollAllowMultiple": {
+            "type": "boolean",
+            "description": "Allow selecting multiple poll options (type=poll). Default false."
+          },
+          "to": {
+            "type": "string"
+          },
+          "sendAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\+[1-9]\\d{6,14}$"
+          },
+          "replyTo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+          },
+          "mentions": {
+            "type": "object",
+            "properties": {
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "maxItems": 64
+              },
+              "displays": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "maxItems": 64
+              }
+            },
+            "required": [
+              "ids"
+            ],
+            "additionalProperties": false,
+            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
           }
+        },
+        "required": [
+          "type",
+          "to"
         ],
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "text": "#/components/schemas/SendMessageRequestText",
-            "media": "#/components/schemas/SendMessageRequestMedia",
-            "poll": "#/components/schemas/SendMessageRequestPoll"
-          }
-        }
+        "additionalProperties": false
       },
       "SendInChatRequest": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/SendInChatRequestText"
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "media",
+              "poll"
+            ]
           },
-          {
-            "$ref": "#/components/schemas/SendInChatRequestMedia"
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
           },
-          {
-            "$ref": "#/components/schemas/SendInChatRequestPoll"
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "Bare URL shortcut for text sends. Sends the URL as the body and force-enables link preview."
+          },
+          "linkPreview": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "canonicalUrl": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "maxLength": 200000
+                  }
+                },
+                "required": [
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
+          },
+          "mediaUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "Media source URL (https only). Exactly one of mediaUrl / mediaDataBase64 is required for media sends."
+          },
+          "mediaDataBase64": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15728640,
+            "description": "Raw media bytes, base64-encoded. Alternative to `mediaUrl`."
+          },
+          "mediaKind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "document",
+              "sticker",
+              "voice",
+              "gif"
+            ],
+            "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
+          },
+          "mediaFilename": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Filename to attach to the media (type=media)."
+          },
+          "pollQuestion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Poll question (type=poll). Required for poll sends."
+          },
+          "pollOptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "Poll options (type=poll). 2–12 items."
+          },
+          "pollAllowMultiple": {
+            "type": "boolean",
+            "description": "Allow selecting multiple poll options (type=poll). Default false."
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\+[1-9]\\d{6,14}$"
+          },
+          "replyTo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
+          },
+          "mentions": {
+            "type": "object",
+            "properties": {
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "maxItems": 64
+              },
+              "displays": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "maxItems": 64
+              }
+            },
+            "required": [
+              "ids"
+            ],
+            "additionalProperties": false,
+            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
           }
+        },
+        "required": [
+          "type"
         ],
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "text": "#/components/schemas/SendInChatRequestText",
-            "media": "#/components/schemas/SendInChatRequestMedia",
-            "poll": "#/components/schemas/SendInChatRequestPoll"
-          }
-        }
+        "additionalProperties": false
       },
       "PatchMessageRequest": {
         "type": "object",
@@ -13494,19 +14070,19 @@
             "maxLength": 4096,
             "description": "New text body. Replaces the previous text/caption."
           },
-          "media_url": {
+          "mediaUrl": {
             "type": "string",
             "maxLength": 2048,
             "format": "uri",
             "description": "Replace the attached media URL (https only)."
           },
-          "media_caption": {
+          "mediaCaption": {
             "type": "string",
             "minLength": 1,
             "maxLength": 1024,
             "description": "Replace the media's caption. When set alongside `text`, `text` wins."
           },
-          "send_at": {
+          "sendAt": {
             "type": "string",
             "format": "date-time",
             "description": "Reschedule. ISO 8601 datetime (UTC) in the future."
@@ -13525,7 +14101,7 @@
             "type": "string",
             "nullable": true
           },
-          "canonical_url": {
+          "canonicalUrl": {
             "type": "string",
             "nullable": true
           },
@@ -13537,7 +14113,7 @@
         "required": [
           "title",
           "description",
-          "canonical_url",
+          "canonicalUrl",
           "thumbnail"
         ],
         "additionalProperties": false
@@ -13573,11 +14149,11 @@
             "type": "string",
             "nullable": true
           },
-          "media_url": {
+          "mediaUrl": {
             "type": "string",
             "nullable": true
           },
-          "media_kind": {
+          "mediaKind": {
             "type": "string",
             "nullable": true,
             "enum": [
@@ -13590,7 +14166,7 @@
               "gif"
             ]
           },
-          "poll_question": {
+          "pollQuestion": {
             "type": "string",
             "nullable": true
           },
@@ -13605,40 +14181,40 @@
               "failed"
             ]
           },
-          "send_at": {
+          "sendAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "sent_at": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "delivered_at": {
+          "sentAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "read_at": {
+          "deliveredAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "failed_at": {
+          "readAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "failure_reason": {
+          "failedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "failureReason": {
             "type": "string",
             "nullable": true
           },
-          "link_preview": {
+          "linkPreview": {
             "type": "object",
             "nullable": true,
             "properties": {
@@ -13650,7 +14226,7 @@
                 "type": "string",
                 "nullable": true
               },
-              "canonical_url": {
+              "canonicalUrl": {
                 "type": "string",
                 "nullable": true
               },
@@ -13662,7 +14238,7 @@
             "required": [
               "title",
               "description",
-              "canonical_url",
+              "canonicalUrl",
               "thumbnail"
             ],
             "additionalProperties": false
@@ -13675,17 +14251,17 @@
           "from",
           "type",
           "text",
-          "media_url",
-          "media_kind",
-          "poll_question",
+          "mediaUrl",
+          "mediaKind",
+          "pollQuestion",
           "status",
-          "send_at",
-          "created_at",
-          "sent_at",
-          "delivered_at",
-          "read_at",
-          "failed_at",
-          "failure_reason"
+          "sendAt",
+          "createdAt",
+          "sentAt",
+          "deliveredAt",
+          "readAt",
+          "failedAt",
+          "failureReason"
         ],
         "additionalProperties": false
       },
@@ -13888,588 +14464,6 @@
           "secret"
         ],
         "additionalProperties": false
-      },
-      "SendMessageRequestText": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "text"
-            ]
-          },
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4096
-          },
-          "url": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "description": "Bare URL shortcut. Sends the URL as the body and force-enables link preview."
-          },
-          "link_preview": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 2048
-                  },
-                  "canonical_url": {
-                    "type": "string",
-                    "maxLength": 2048,
-                    "format": "uri"
-                  },
-                  "thumbnail": {
-                    "type": "string",
-                    "maxLength": 200000
-                  }
-                },
-                "required": [
-                  "title"
-                ],
-                "additionalProperties": false
-              }
-            ],
-            "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
-          },
-          "to": {
-            "type": "string"
-          },
-          "send_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
-          },
-          "reply_to": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-          },
-          "mentions": {
-            "type": "object",
-            "properties": {
-              "ids": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              },
-              "displays": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              }
-            },
-            "required": [
-              "ids"
-            ],
-            "additionalProperties": false,
-            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-          }
-        },
-        "required": [
-          "type",
-          "to"
-        ],
-        "additionalProperties": false,
-        "title": "Text"
-      },
-      "SendMessageRequestMedia": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "media"
-            ]
-          },
-          "media": {
-            "type": "object",
-            "properties": {
-              "url": {
-                "type": "string",
-                "maxLength": 2048,
-                "format": "uri"
-              },
-              "data_base64": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 15728640,
-                "description": "Raw media bytes, base64-encoded. Alternative to `url`."
-              },
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "image",
-                  "video",
-                  "audio",
-                  "document",
-                  "sticker",
-                  "voice",
-                  "gif"
-                ],
-                "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
-              },
-              "caption": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 1024
-              },
-              "filename": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 255
-              }
-            },
-            "additionalProperties": false
-          },
-          "to": {
-            "type": "string"
-          },
-          "send_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
-          },
-          "reply_to": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-          },
-          "mentions": {
-            "type": "object",
-            "properties": {
-              "ids": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              },
-              "displays": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              }
-            },
-            "required": [
-              "ids"
-            ],
-            "additionalProperties": false,
-            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-          }
-        },
-        "required": [
-          "type",
-          "media",
-          "to"
-        ],
-        "additionalProperties": false,
-        "title": "Media"
-      },
-      "SendMessageRequestPoll": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "poll"
-            ]
-          },
-          "poll": {
-            "type": "object",
-            "properties": {
-              "question": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 255
-              },
-              "options": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 100
-                },
-                "minItems": 2,
-                "maxItems": 12
-              },
-              "allow_multiple": {
-                "type": "boolean",
-                "default": false
-              }
-            },
-            "required": [
-              "question",
-              "options"
-            ],
-            "additionalProperties": false
-          },
-          "to": {
-            "type": "string"
-          },
-          "send_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
-          },
-          "reply_to": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-          },
-          "mentions": {
-            "type": "object",
-            "properties": {
-              "ids": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              },
-              "displays": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              }
-            },
-            "required": [
-              "ids"
-            ],
-            "additionalProperties": false,
-            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-          }
-        },
-        "required": [
-          "type",
-          "poll",
-          "to"
-        ],
-        "additionalProperties": false,
-        "title": "Poll"
-      },
-      "SendInChatRequestText": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "text"
-            ]
-          },
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4096
-          },
-          "url": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "description": "Bare URL shortcut. Sends the URL as the body and force-enables link preview."
-          },
-          "link_preview": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 2048
-                  },
-                  "canonical_url": {
-                    "type": "string",
-                    "maxLength": 2048,
-                    "format": "uri"
-                  },
-                  "thumbnail": {
-                    "type": "string",
-                    "maxLength": 200000
-                  }
-                },
-                "required": [
-                  "title"
-                ],
-                "additionalProperties": false
-              }
-            ],
-            "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
-          },
-          "reply_to": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-          },
-          "mentions": {
-            "type": "object",
-            "properties": {
-              "ids": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              },
-              "displays": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              }
-            },
-            "required": [
-              "ids"
-            ],
-            "additionalProperties": false,
-            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "additionalProperties": false,
-        "title": "Text"
-      },
-      "SendInChatRequestMedia": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "media"
-            ]
-          },
-          "media": {
-            "type": "object",
-            "properties": {
-              "url": {
-                "type": "string",
-                "maxLength": 2048,
-                "format": "uri"
-              },
-              "data_base64": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 15728640,
-                "description": "Raw media bytes, base64-encoded. Alternative to `url`."
-              },
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "image",
-                  "video",
-                  "audio",
-                  "document",
-                  "sticker",
-                  "voice",
-                  "gif"
-                ],
-                "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
-              },
-              "caption": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 1024
-              },
-              "filename": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 255
-              }
-            },
-            "additionalProperties": false
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
-          },
-          "reply_to": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-          },
-          "mentions": {
-            "type": "object",
-            "properties": {
-              "ids": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              },
-              "displays": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              }
-            },
-            "required": [
-              "ids"
-            ],
-            "additionalProperties": false,
-            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-          }
-        },
-        "required": [
-          "type",
-          "media"
-        ],
-        "additionalProperties": false,
-        "title": "Media"
-      },
-      "SendInChatRequestPoll": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "poll"
-            ]
-          },
-          "poll": {
-            "type": "object",
-            "properties": {
-              "question": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 255
-              },
-              "options": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 100
-                },
-                "minItems": 2,
-                "maxItems": 12
-              },
-              "allow_multiple": {
-                "type": "boolean",
-                "default": false
-              }
-            },
-            "required": [
-              "question",
-              "options"
-            ],
-            "additionalProperties": false
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
-          },
-          "reply_to": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-          },
-          "mentions": {
-            "type": "object",
-            "properties": {
-              "ids": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              },
-              "displays": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              }
-            },
-            "required": [
-              "ids"
-            ],
-            "additionalProperties": false,
-            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-          }
-        },
-        "required": [
-          "type",
-          "poll"
-        ],
-        "additionalProperties": false,
-        "title": "Poll"
       }
     }
   }

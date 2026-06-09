@@ -5,6 +5,7 @@
     "send-message",
     "list-messages",
     "get-message",
+    "list-messages-all-chats",
     "get-message-delivery-status",
     "react-to-message",
     "load-older-messages",

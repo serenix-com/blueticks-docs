@@ -28,13 +28,13 @@ _openapi:
             {"type":"media","to":"+15551234567","media":{"url":"https://cdn.example.com/x.pdf","kind":"document","filename":"receipt.pdf"}}
             ```
           - `type: "poll"` — required `poll.question` and `poll.options` (2–12
-          items). Optional `poll.allow_multiple` (default false). Example:
+          items). Optional `poll.allowMultiple` (default false). Example:
             ```json
             {"type":"poll","to":"+15551234567","poll":{"question":"Pizza?","options":["Yes","No"]}}
             ```
 
-          All variants accept optional `send_at` (ISO 8601 ≥10s future, ≤365d),
-          `from` (E.164 sender for multi-session workspaces), and `reply_to`
+          All variants accept optional `sendAt` (ISO 8601 ≥10s future, ≤365d),
+          `from` (E.164 sender for multi-session workspaces), and `replyTo`
           (wire `key` of a prior message to quote).
 
 
@@ -56,12 +56,12 @@ The body is a discriminated union — set the `type` field to one of `text`, `me
   ```json
   {"type":"media","to":"+15551234567","media":{"url":"https://cdn.example.com/x.pdf","kind":"document","filename":"receipt.pdf"}}
   ```
-- `type: "poll"` — required `poll.question` and `poll.options` (2–12 items). Optional `poll.allow_multiple` (default false). Example:
+- `type: "poll"` — required `poll.question` and `poll.options` (2–12 items). Optional `poll.allowMultiple` (default false). Example:
   ```json
   {"type":"poll","to":"+15551234567","poll":{"question":"Pizza?","options":["Yes","No"]}}
   ```
 
-All variants accept optional `send_at` (ISO 8601 ≥10s future, ≤365d), `from` (E.164 sender for multi-session workspaces), and `reply_to` (wire `key` of a prior message to quote).
+All variants accept optional `sendAt` (ISO 8601 ≥10s future, ≤365d), `from` (E.164 sender for multi-session workspaces), and `replyTo` (wire `key` of a prior message to quote).
 
 See [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.
 
