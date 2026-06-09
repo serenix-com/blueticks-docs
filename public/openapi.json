@@ -713,27 +713,6 @@
                     "text": "Hello from Blueticks!"
                   }
                 },
-                "text_with_url_shortcut": {
-                  "summary": "Text with URL (auto link preview)",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "text",
-                    "url": "https://blueticks.co"
-                  }
-                },
-                "text_link_preview_override": {
-                  "summary": "Text with explicit link preview",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "text",
-                    "text": "Check this out: https://blueticks.co",
-                    "linkPreview": {
-                      "title": "Blueticks",
-                      "description": "WhatsApp business automation",
-                      "canonicalUrl": "https://blueticks.co"
-                    }
-                  }
-                },
                 "media_url": {
                   "summary": "Image from URL",
                   "value": {
@@ -8455,47 +8434,6 @@
                     "maxLength": 4096,
                     "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
                   },
-                  "url": {
-                    "type": "string",
-                    "format": "uri",
-                    "maxLength": 2048,
-                    "description": "Bare URL shortcut for text sends. Sends the URL as the body and force-enables link preview."
-                  },
-                  "linkPreview": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "object",
-                        "properties": {
-                          "title": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 255
-                          },
-                          "description": {
-                            "type": "string",
-                            "maxLength": 2048
-                          },
-                          "canonicalUrl": {
-                            "type": "string",
-                            "format": "uri",
-                            "maxLength": 2048
-                          },
-                          "thumbnail": {
-                            "type": "string",
-                            "maxLength": 200000
-                          }
-                        },
-                        "required": [
-                          "title"
-                        ],
-                        "additionalProperties": false
-                      }
-                    ],
-                    "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
-                  },
                   "mediaUrl": {
                     "type": "string",
                     "format": "uri",
@@ -13722,33 +13660,6 @@
           "gif"
         ]
       },
-      "LinkPreviewOverride": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 2048
-          },
-          "canonicalUrl": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri"
-          },
-          "thumbnail": {
-            "type": "string",
-            "maxLength": 200000
-          }
-        },
-        "required": [
-          "title"
-        ],
-        "additionalProperties": false
-      },
       "SendMessageRequest": {
         "type": "object",
         "properties": {
@@ -13765,47 +13676,6 @@
             "minLength": 1,
             "maxLength": 4096,
             "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
-          },
-          "url": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "description": "Bare URL shortcut for text sends. Sends the URL as the body and force-enables link preview."
-          },
-          "linkPreview": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 2048
-                  },
-                  "canonicalUrl": {
-                    "type": "string",
-                    "maxLength": 2048,
-                    "format": "uri"
-                  },
-                  "thumbnail": {
-                    "type": "string",
-                    "maxLength": 200000
-                  }
-                },
-                "required": [
-                  "title"
-                ],
-                "additionalProperties": false
-              }
-            ],
-            "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
           },
           "mediaUrl": {
             "type": "string",
@@ -13925,47 +13795,6 @@
             "minLength": 1,
             "maxLength": 4096,
             "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
-          },
-          "url": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "description": "Bare URL shortcut for text sends. Sends the URL as the body and force-enables link preview."
-          },
-          "linkPreview": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 2048
-                  },
-                  "canonicalUrl": {
-                    "type": "string",
-                    "maxLength": 2048,
-                    "format": "uri"
-                  },
-                  "thumbnail": {
-                    "type": "string",
-                    "maxLength": 200000
-                  }
-                },
-                "required": [
-                  "title"
-                ],
-                "additionalProperties": false
-              }
-            ],
-            "description": "Controls the rich-preview card rendered under a URL in the text. true (default) → auto-fetch when a URL is present. false → never attach a preview. object → use the caller-supplied preview verbatim."
           },
           "mediaUrl": {
             "type": "string",

@@ -22,6 +22,23 @@ pre code,
     'calt' 0;
 }
 
+/* Fumadocs and fumadocs-openapi ship their interactive controls (the Send
+   button, copy/edit icons, the Open / Copy Markdown / variant dropdowns,
+   sidebar nav items, tabs, theme toggle, schema accordions, native selects,
+   etc.) without an explicit cursor, so they render with the default arrow and
+   don't read as clickable. Signal clickability with a pointer cursor on every
+   enabled interactive element. Declared before the "neutralize" blocks below
+   so the intentionally-static triggers (single-server URL pill, Authorization
+   header) keep cursor:default via their later, equal-or-higher specificity. */
+button:not(:disabled),
+a[href],
+[role='button']:not([aria-disabled='true']),
+summary,
+select:not(:disabled),
+[aria-haspopup]:not([aria-disabled='true']) {
+  cursor: pointer;
+}
+
 /* Hide fumadocs-openapi's per-schema "Filter Properties" search bar.
    Our schemas are small enough that the noise isn't worth the affordance,
    and it competes visually with the property list right below it. */
