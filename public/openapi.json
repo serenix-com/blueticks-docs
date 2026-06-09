@@ -8053,7 +8053,7 @@
         "operationId": "messages.list"
       }
     },
-    "/v1/chats/{chat_id}/messages": {
+    "/v1/messages/{chat_id}": {
       "get": {
         "tags": [
           "Messages"
@@ -8409,7 +8409,7 @@
             }
           }
         },
-        "operationId": "chats.messages.list"
+        "operationId": "messages.get"
       },
       "post": {
         "tags": [
@@ -8836,10 +8836,10 @@
             }
           }
         },
-        "operationId": "chats.messages.create"
+        "operationId": "messages.create"
       }
     },
-    "/v1/chats/{chat_id}/messages/{key}": {
+    "/v1/messages/{chat_id}/{key}": {
       "get": {
         "tags": [
           "Messages"
@@ -9059,7 +9059,7 @@
             }
           }
         },
-        "operationId": "chats.messages.get"
+        "operationId": "messages.get"
       }
     },
     "/v1/groups/{id}/members": {
@@ -10737,7 +10737,7 @@
         "operationId": "chats.open.create"
       }
     },
-    "/v1/chats/{chat_id}/messages/{key}/ack": {
+    "/v1/messages/ack/{chat_id}/{key}": {
       "get": {
         "tags": [
           "Messages"
@@ -10879,10 +10879,10 @@
             }
           }
         },
-        "operationId": "chats.messages.ack.get"
+        "operationId": "messages.ack.get"
       }
     },
-    "/v1/chats/{chat_id}/messages/{key}/reactions": {
+    "/v1/messages/reactions/{chat_id}/{key}": {
       "post": {
         "tags": [
           "Messages"
@@ -11046,10 +11046,10 @@
             }
           }
         },
-        "operationId": "chats.messages.reactions.create"
+        "operationId": "messages.reactions.create"
       }
     },
-    "/v1/chats/{chat_id}/messages/load_older": {
+    "/v1/messages/load_older/{chat_id}": {
       "post": {
         "tags": [
           "Messages"
@@ -11191,10 +11191,10 @@
             }
           }
         },
-        "operationId": "chats.messages.loadolder.create"
+        "operationId": "messages.loadolder.create"
       }
     },
-    "/v1/chats/{chat_id}/messages/{key}/media_url": {
+    "/v1/messages/media_url/{chat_id}/{key}": {
       "get": {
         "tags": [
           "Messages"
@@ -11336,10 +11336,10 @@
             }
           }
         },
-        "operationId": "chats.messages.mediaurl.get"
+        "operationId": "messages.mediaurl.get"
       }
     },
-    "/v1/chats/message_acks": {
+    "/v1/messages/acks": {
       "post": {
         "tags": [
           "Messages"
@@ -11504,10 +11504,10 @@
             }
           }
         },
-        "operationId": "chats.messageacks"
+        "operationId": "messages.acks"
       }
     },
-    "/v1/chats/{chat_id}/messages/{key}/media": {
+    "/v1/messages/media/{chat_id}/{key}": {
       "get": {
         "tags": [
           "Messages"
@@ -11682,10 +11682,10 @@
             }
           }
         },
-        "operationId": "chats.messages.media.get"
+        "operationId": "messages.media.get"
       }
     },
-    "/v1/chats/{chat_id}/pinned_messages": {
+    "/v1/messages/pinned/{chat_id}": {
       "get": {
         "tags": [
           "Messages"
@@ -11844,7 +11844,7 @@
             }
           }
         },
-        "operationId": "chats.pinnedmessages.list"
+        "operationId": "messages.pinned.get"
       }
     }
   },

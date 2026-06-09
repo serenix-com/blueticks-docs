@@ -22,4 +22,4 @@ _openapi:
 
 The body is the same FLAT shape as `POST /v1/scheduled-messages` minus `to` (derived from the URL path) and `sendAt` (this endpoint is fire-and-forget). Set `type` to `text`, `media`, or `poll`. The dispatch is direct — no DB row is created; the response carries the WhatsApp wire key under `key`. For scheduled or queue-managed sends use `POST /v1/scheduled-messages` instead. Requires `messages:write`.
 
-<APIPage document={"./openapi.json"} operations={[{"path":"/v1/chats/{chat_id}/messages","method":"post"}]} />
+<APIPage document={"./openapi.json"} operations={[{"path":"/v1/messages/{chat_id}","method":"post"}]} />
