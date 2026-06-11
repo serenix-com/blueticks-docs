@@ -12,6 +12,15 @@ import { ApiAutoExpand } from '@/components/api-auto-expand';
 import { AuthFieldCustomizer } from '@/components/auth-field-customizer';
 import { PrettyResultDisplay } from '@/components/pretty-result-display';
 import { ResponseTabsRelocator } from '@/components/response-tabs-relocator';
+// File-upload support for media operations: a content-type dropdown next to the
+// file picker. application/json → base64 in `mediaBase64`; multipart/form-data
+// → the regular Send uploads the raw file (rewritten by the onRequestInit hook
+// below). Both are pre-bound in the client module so `generate:openapi` never
+// overwrites them and the server doesn't invoke a client factory.
+import {
+  PlaygroundBodyPanel as UploadBodyPanel,
+  playgroundMultipartRewrite as multipartRewrite,
+} from '@/components/playground-body-panel';
 
 // Trim the default code-generator registry to just cURL. Python / Node.js / PHP
 // come in per-operation via `x-codeSamples` injected in lib/openapi.ts.
@@ -37,7 +46,16 @@ const APIPage = createAPIPage(openapi, {
   // see components/pretty-result-display.tsx + the height/scroll CSS.
   client: {
     playground: {
-      components: { ResultDisplay: PrettyResultDisplay },
+      components: {
+        ResultDisplay: PrettyResultDisplay,
+        // Body panel override: adds the "Attach a file" control (content-type
+        // dropdown + file picker) on media operations. Lives in components/ so
+        // `generate:openapi` never overwrites it.
+        CollapsiblePanel: UploadBodyPanel,
+      },
+      // When a file is staged in multipart mode, rewrite the regular Send's
+      // request body to multipart/form-data so the file is uploaded as bytes.
+      fetchOptions: { onRequestInit: multipartRewrite },
     },
   },
   // Drop the per-response "TypeScript Definitions" panels. The dedicated

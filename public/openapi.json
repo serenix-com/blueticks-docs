@@ -463,10 +463,6 @@
                           "to": {
                             "type": "string"
                           },
-                          "from": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "type": {
                             "type": "string",
                             "enum": [
@@ -579,7 +575,6 @@
                           "id",
                           "key",
                           "to",
-                          "from",
                           "type",
                           "text",
                           "mediaUrl",
@@ -690,7 +685,7 @@
           "Scheduled Messages"
         ],
         "summary": "Schedule message",
-        "description": "Send a message via WhatsApp. The body is a discriminated union — set the `type` field to one of `text`, `media`, or `poll`.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). Example body:\n  ```json\n  {\"type\":\"text\",\"to\":\"+15551234567\",\"text\":\"hello\"}\n  ```\n- `type: \"media\"` — required `media.url` (HTTPS). Optional `media.kind` (`image` · `video` · `audio` · `document` · `sticker` · `voice`; auto-detected when omitted), `media.caption`, `media.filename`. Example:\n  ```json\n  {\"type\":\"media\",\"to\":\"+15551234567\",\"media\":{\"url\":\"https://cdn.example.com/x.pdf\",\"kind\":\"document\",\"filename\":\"receipt.pdf\"}}\n  ```\n- `type: \"poll\"` — required `poll.question` and `poll.options` (2–12 items). Optional `poll.allowMultiple` (default false). Example:\n  ```json\n  {\"type\":\"poll\",\"to\":\"+15551234567\",\"poll\":{\"question\":\"Pizza?\",\"options\":[\"Yes\",\"No\"]}}\n  ```\n\nAll variants accept optional `sendAt` (ISO 8601 ≥10s future, ≤365d), `from` (E.164 sender for multi-session workspaces), and `replyTo` (wire `key` of a prior message to quote).\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
+        "description": "Send a message via WhatsApp. The body is a FLAT object — set the `type` field to one of `text`, `media`, or `poll`; `type` selects which top-level fields are relevant.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). A rich link-preview card is attached automatically when the text contains a URL. Example body:\n  ```json\n  {\"type\":\"text\",\"to\":\"+15551234567\",\"text\":\"hello\"}\n  ```\n- `type: \"media\"` — provide the media as `mediaUrl` (HTTPS) **or** `mediaBase64` (base64 / data: URL); `mediaUrl` wins if both are sent. The bytes are uploaded server-side and only a URL is sent on to the engine. Optional `mediaKind` (`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`; auto-detected when omitted), `text` (caption), `mediaFilename`. Example:\n  ```json\n  {\"type\":\"media\",\"to\":\"+15551234567\",\"mediaUrl\":\"https://cdn.example.com/x.pdf\",\"mediaKind\":\"document\",\"mediaFilename\":\"receipt.pdf\"}\n  ```\n- `type: \"poll\"` — required `pollQuestion` and `pollOptions` (2–12 items). Optional `pollAllowMultiple` (default false). Example:\n  ```json\n  {\"type\":\"poll\",\"to\":\"+15551234567\",\"pollQuestion\":\"Pizza?\",\"pollOptions\":[\"Yes\",\"No\"]}\n  ```\n\nAll variants accept optional `sendAt` (ISO 8601 ≥10s future, ≤365d) and `replyTo` (wire `key` of a prior message to quote).\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
         "security": [
           {
             "BearerAuth": [
@@ -713,16 +708,22 @@
                     "text": "Hello from Blueticks!"
                   }
                 },
+                "text_with_link": {
+                  "summary": "Text with a URL (link preview auto-attached)",
+                  "value": {
+                    "to": "+15555550100",
+                    "type": "text",
+                    "text": "Check this out: https://blueticks.co"
+                  }
+                },
                 "media_url": {
                   "summary": "Image from URL",
                   "value": {
                     "to": "+15555550100",
                     "type": "media",
-                    "media": {
-                      "kind": "image",
-                      "url": "https://blueticks.co/favicon.ico",
-                      "caption": "Our logo"
-                    }
+                    "mediaKind": "image",
+                    "mediaUrl": "https://blueticks.co/favicon.ico",
+                    "text": "Our logo"
                   }
                 },
                 "media_document": {
@@ -730,11 +731,9 @@
                   "value": {
                     "to": "+15555550100",
                     "type": "media",
-                    "media": {
-                      "kind": "document",
-                      "url": "https://example.com/invoice.pdf",
-                      "filename": "invoice.pdf"
-                    }
+                    "mediaKind": "document",
+                    "mediaUrl": "https://example.com/invoice.pdf",
+                    "mediaFilename": "invoice.pdf"
                   }
                 },
                 "poll": {
@@ -742,14 +741,12 @@
                   "value": {
                     "to": "+15555550100",
                     "type": "poll",
-                    "poll": {
-                      "question": "Pizza tonight?",
-                      "options": [
-                        "Yes",
-                        "No",
-                        "Maybe"
-                      ]
-                    }
+                    "pollQuestion": "Pizza tonight?",
+                    "pollOptions": [
+                      "Yes",
+                      "No",
+                      "Maybe"
+                    ]
                   }
                 },
                 "scheduled_text": {
@@ -815,10 +812,6 @@
                         "to": {
                           "type": "string"
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -931,7 +924,6 @@
                         "id",
                         "key",
                         "to",
-                        "from",
                         "type",
                         "text",
                         "mediaUrl",
@@ -986,10 +978,6 @@
                         "to": {
                           "type": "string"
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -1102,7 +1090,6 @@
                         "id",
                         "key",
                         "to",
-                        "from",
                         "type",
                         "text",
                         "mediaUrl",
@@ -1236,10 +1223,6 @@
                         "to": {
                           "type": "string"
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -1352,7 +1335,6 @@
                         "id",
                         "key",
                         "to",
-                        "from",
                         "type",
                         "text",
                         "mediaUrl",
@@ -1539,10 +1521,6 @@
                         "to": {
                           "type": "string"
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -1655,7 +1633,6 @@
                         "id",
                         "key",
                         "to",
-                        "from",
                         "type",
                         "text",
                         "mediaUrl",
@@ -8033,369 +8010,12 @@
       }
     },
     "/v1/messages/{chat_id}": {
-      "get": {
-        "tags": [
-          "Messages"
-        ],
-        "summary": "List messages",
-        "description": "Offset-paginated list of messages in a chat. Supports free-text search (`searchToken`), date range (`since`/`until`), and message-kind filtering (`messageTypes`). Requires `chats:read`.",
-        "security": [
-          {
-            "BearerAuth": [
-              "chats:read"
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "name": "chat_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "order",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            },
-            "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
-          },
-          {
-            "name": "mode",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "history",
-                "latest"
-              ]
-            },
-            "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
-          },
-          {
-            "name": "searchToken",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 200
-            },
-            "description": "Search token; when set, only items whose name matches are returned."
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200,
-              "default": 50
-            },
-            "description": "Max messages to return."
-          },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "description": "Number of messages to skip before the page (default 0)."
-          },
-          {
-            "name": "since",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
-          },
-          {
-            "name": "until",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
-          },
-          {
-            "name": "messageTypes",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "chat",
-                  "image",
-                  "video",
-                  "document",
-                  "audio",
-                  "ptt",
-                  "sticker",
-                  "gif",
-                  "ptv",
-                  "poll_creation",
-                  "location",
-                  "vcard",
-                  "revoked"
-                ]
-              }
-            },
-            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here.",
-            "style": "form",
-            "explode": false
-          },
-          {
-            "name": "loadFromPhoneIfNeeded",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "When the local store is exhausted, fetch older messages from the phone (chrome only)."
-          },
-          {
-            "name": "includeMediaContent",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "Include inline media payload on rows (heavy; default false — use /messages/{key}/media)."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "messages",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ],
-                      "description": "Always `true` on success responses."
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "key": {
-                            "type": "string"
-                          },
-                          "chat_id": {
-                            "type": "string"
-                          },
-                          "from": {
-                            "type": "string"
-                          },
-                          "author": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "timestamp": {
-                            "type": "string",
-                            "format": "date-time",
-                            "nullable": true
-                          },
-                          "text": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "type": {
-                            "type": "string"
-                          },
-                          "from_me": {
-                            "type": "boolean"
-                          },
-                          "ack": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "media_url": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "caption": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "filename": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "link_preview": {
-                            "type": "object",
-                            "properties": {
-                              "title": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "description": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "canonical_url": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "thumbnail": {
-                                "type": "string",
-                                "nullable": true
-                              }
-                            },
-                            "required": [
-                              "title",
-                              "description",
-                              "canonical_url",
-                              "thumbnail"
-                            ],
-                            "additionalProperties": false,
-                            "nullable": true
-                          }
-                        },
-                        "required": [
-                          "key",
-                          "chat_id",
-                          "from",
-                          "timestamp",
-                          "text",
-                          "type",
-                          "from_me",
-                          "ack",
-                          "media_url",
-                          "caption",
-                          "filename"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "limit": {
-                      "type": "integer",
-                      "description": "Page size echoed back from the request."
-                    },
-                    "skip": {
-                      "type": "integer",
-                      "description": "Offset echoed back from the request."
-                    },
-                    "total": {
-                      "type": "integer",
-                      "description": "Total number of items matching the query, across all pages."
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data",
-                    "limit",
-                    "skip",
-                    "total"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request — invalid params or body.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid API key.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "API key lacks the required scope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed — see `error.details` for per-field issues.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Rate limit exceeded — back off and retry.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "messages.get"
-      },
       "post": {
         "tags": [
           "Messages"
         ],
         "summary": "Send message",
-        "description": "Send a message immediately to a specific chat. The body is the same FLAT shape as `POST /v1/scheduled-messages` minus `to` (derived from the URL path) and `sendAt` (this endpoint is fire-and-forget). Set `type` to `text`, `media`, or `poll`. The dispatch is direct — no DB row is created; the response carries the WhatsApp wire key under `key`. For scheduled or queue-managed sends use `POST /v1/scheduled-messages` instead. Requires `messages:write`.",
+        "description": "Send a message immediately to a specific chat. The body is the same FLAT shape as `POST /v1/scheduled-messages` minus `to` (derived from the URL path) and `sendAt` (this endpoint is fire-and-forget). Set `type` to `text`, `media`, or `poll`. The dispatch is direct — no DB row is created; the response carries the WhatsApp wire key under `key`. For scheduled or queue-managed sends use `POST /v1/scheduled-messages` instead. Requires `messages:write`.\n\n### Sending media (`type: \"media\"`)\n\nProvide the media **one** of these ways:\n\n- **`mediaUrl`** — a public `https://` URL to the file.\n- **`mediaBase64`** — the file bytes base64-encoded (or a `data:` URL), inline in the JSON body.\n- **Upload a file** — send the request as `multipart/form-data` with the file in a **`mediaFile`** part. See the cURL example below.\n\nIf both `mediaUrl` and `mediaBase64` are present, `mediaUrl` wins. Optional: `mediaFilename` (display name) and `mediaKind` (`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`; auto-detected otherwise).\n\n> In the Body panel, the **Attach a file** control has a content-type dropdown next to it. Pick `application/json` to inline a small file as base64 in `mediaBase64`, or `multipart/form-data` to upload the raw file (no 10 MB JSON-body limit) — then just press **Send**. The cURL below is the multipart equivalent.\n\n```bash\ncurl -X POST \"https://api.blueticks.co/v1/messages/120363000000000000@g.us\" \\\n  -H \"Authorization: Bearer $BLUETICKS_API_KEY\" \\\n  -F \"type=media\" \\\n  -F \"text=Here is the file\" \\\n  -F \"mediaFile=@/path/to/photo.png\"\n```\n\n### Mentioning contacts\n\nMentions are written **inline in `text`** — there is no separate field. Use `@[Display Name](<jid>)`:\n\n```\nHi @[Joni Naor](972544325389@c.us) this is a test\n```",
         "security": [
           {
             "BearerAuth": [
@@ -8430,21 +8050,18 @@
                   },
                   "text": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 4096,
-                    "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
+                    "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
                   },
                   "mediaUrl": {
                     "type": "string",
-                    "format": "uri",
                     "maxLength": 2048,
-                    "description": "Media source URL (https only). Exactly one of mediaUrl / mediaDataBase64 is required for media sends."
+                    "description": "Media source URL (https only). One of mediaUrl or mediaBase64 is required for media sends; mediaUrl wins when both are present."
                   },
-                  "mediaDataBase64": {
+                  "mediaBase64": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 15728640,
-                    "description": "Raw media bytes, base64-encoded. Alternative to `mediaUrl`."
+                    "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
                   },
                   "mediaKind": {
                     "type": "string",
@@ -8457,13 +8074,13 @@
                       "voice",
                       "gif"
                     ],
-                    "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
+                    "description": "Media kind (image · video · audio · document · sticker · voice · gif). Optional — auto-detected from the URL / content-type when omitted."
                   },
                   "mediaFilename": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "description": "Filename to attach to the media (type=media)."
+                    "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
                   },
                   "pollQuestion": {
                     "type": "string",
@@ -8484,43 +8101,16 @@
                     "type": "boolean",
                     "description": "Allow selecting multiple poll options (type=poll). Default false."
                   },
-                  "from": {
-                    "type": "string",
-                    "pattern": "^\\+[1-9]\\d{6,14}$"
-                  },
                   "replyTo": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
+                  },
+                  "secret": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 256,
-                    "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-                  },
-                  "mentions": {
-                    "type": "object",
-                    "properties": {
-                      "ids": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 128
-                        },
-                        "maxItems": 64
-                      },
-                      "displays": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 128
-                        },
-                        "maxItems": 64
-                      }
-                    },
-                    "required": [
-                      "ids"
-                    ],
-                    "additionalProperties": false,
-                    "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
+                    "description": "Opaque caller id stored on the message `secret` and carried into the WhatsApp messageSecret."
                   }
                 },
                 "required": [
@@ -8559,10 +8149,6 @@
                         },
                         "to": {
                           "type": "string"
-                        },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
                         },
                         "type": {
                           "type": "string",
@@ -8676,7 +8262,6 @@
                         "id",
                         "key",
                         "to",
-                        "from",
                         "type",
                         "text",
                         "mediaUrl",
@@ -9986,7 +9571,7 @@
           "Groups"
         ],
         "summary": "Set group picture",
-        "description": "Replace the group picture. Body is a base64 data URL (PNG/JPEG, ≤20 MiB). Requires `groups:write`.",
+        "description": "Replace the group picture. Provide the image as `file_data_url` (base64 data URL, PNG/JPEG, ≤20 MiB) or `url` (https). You can also upload a file as `multipart/form-data` with a `file` part. Requires `groups:write`.\n\n> In the Body panel, the **Attach a file** control has a content-type dropdown: `application/json` inlines the file as base64 in `file_data_url`, or `multipart/form-data` uploads the raw file — then press **Send**.",
         "security": [
           {
             "BearerAuth": [
@@ -11824,6 +11409,67 @@
           "created_at"
         ]
       },
+      "AppendContactsRequest": {
+        "type": "object",
+        "properties": {
+          "contacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "to": {
+                  "type": "string",
+                  "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
+                },
+                "variables": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string",
+                    "maxLength": 1024
+                  },
+                  "description": "Per-contact substitution values used by campaign templates.\nEach key becomes a token usable as `{key}` in a campaign `text`. Lookup is case-insensitive (e.g. `{firstName}` resolves `firstname`).\nBuilt-in tokens always available regardless of variables: `{whatsappname}`, `{displayname}`, `{phone}`, `{mobile}`. Setting a variable with the same name overrides the built-in.\nStorage: keys are persisted as text-cell column titles on the audience board, so values flow back via audiences.get under the same names.\nLimits: at most 32 keys per contact; values up to 1024 chars; keys must match /^[A-Za-z_][A-Za-z0-9_]{0,31}$/."
+                }
+              },
+              "required": [
+                "to"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "contacts"
+        ],
+        "additionalProperties": false
+      },
+      "AudienceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "contact_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "contact_count",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
       "ContactInput": {
         "type": "object",
         "properties": {
@@ -11842,6 +11488,34 @@
         },
         "required": [
           "to"
+        ],
+        "additionalProperties": false
+      },
+      "ContactResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "to",
+          "variables",
+          "added_at"
         ],
         "additionalProperties": false
       },
@@ -11884,41 +11558,6 @@
         ],
         "additionalProperties": false
       },
-      "AppendContactsRequest": {
-        "type": "object",
-        "properties": {
-          "contacts": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "to": {
-                  "type": "string",
-                  "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
-                },
-                "variables": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string",
-                    "maxLength": 1024
-                  },
-                  "description": "Per-contact substitution values used by campaign templates.\nEach key becomes a token usable as `{key}` in a campaign `text`. Lookup is case-insensitive (e.g. `{firstName}` resolves `firstname`).\nBuilt-in tokens always available regardless of variables: `{whatsappname}`, `{displayname}`, `{phone}`, `{mobile}`. Setting a variable with the same name overrides the built-in.\nStorage: keys are persisted as text-cell column titles on the audience board, so values flow back via audiences.get under the same names.\nLimits: at most 32 keys per contact; values up to 1024 chars; keys must match /^[A-Za-z_][A-Za-z0-9_]{0,31}$/."
-                }
-              },
-              "required": [
-                "to"
-              ],
-              "additionalProperties": false
-            },
-            "minItems": 1,
-            "maxItems": 1000
-          }
-        },
-        "required": [
-          "contacts"
-        ],
-        "additionalProperties": false
-      },
       "PatchAudienceRequest": {
         "type": "object",
         "properties": {
@@ -11948,123 +11587,6 @@
             "description": "Per-contact substitution values used by campaign templates.\nEach key becomes a token usable as `{key}` in a campaign `text`. Lookup is case-insensitive (e.g. `{firstName}` resolves `firstname`).\nBuilt-in tokens always available regardless of variables: `{whatsappname}`, `{displayname}`, `{phone}`, `{mobile}`. Setting a variable with the same name overrides the built-in.\nStorage: keys are persisted as text-cell column titles on the audience board, so values flow back via audiences.get under the same names.\nLimits: at most 32 keys per contact; values up to 1024 chars; keys must match /^[A-Za-z_][A-Za-z0-9_]{0,31}$/."
           }
         },
-        "additionalProperties": false
-      },
-      "AudienceResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "contact_count": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "contact_count",
-          "created_at"
-        ],
-        "additionalProperties": false
-      },
-      "ContactResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "to": {
-            "type": "string"
-          },
-          "variables": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "added_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "to",
-          "variables",
-          "added_at"
-        ],
-        "additionalProperties": false
-      },
-      "CampaignStatus": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "running",
-          "paused",
-          "complete_sent",
-          "complete_delivered",
-          "aborted"
-        ]
-      },
-      "CreateCampaignRequest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 120,
-            "description": "Display name for the campaign."
-          },
-          "audience_id": {
-            "type": "string",
-            "minLength": 1,
-            "description": "ID of the audience to target. Each audience contact contributes one outgoing message."
-          },
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4096,
-            "description": "Message body. Supports per-contact substitution using single-brace tokens like `{firstName}` or `{product}`.\nResolution rules (case-insensitive, whitespace stripped):\n  - Built-ins always available: `{whatsappname}` (WA profile name), `{displayname}` (firstname+lastname fallback), `{phone}` / `{mobile}`.\n  - Custom variables: every property attached to a contact via audiences.append_contacts becomes a token of the same name.\n  - Unresolved tokens are left as literal `{token}` in the sent message.\nTemplates use SINGLE braces `{var}` — `{{var}}` is treated as literal text."
-          },
-          "media_url": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "description": "Public https URL of an image/video/document to attach."
-          },
-          "media_caption": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1024,
-            "description": "Caption for the media attachment. Requires media_url."
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$",
-            "description": "Sender phone in +E164. When omitted, the workspace default sender is used."
-          },
-          "on_missing_variable": {
-            "type": "string",
-            "enum": [
-              "fail",
-              "skip"
-            ],
-            "description": "Behavior when a template references a variable that is not present on a contact:\n  - `fail` (default): reject the request at create time; no messages are sent. Returns 400 with `data.examples` listing offending contacts.\n  - `skip`: accept the campaign; contacts missing variables receive the message with literal `{token}` left in place."
-          }
-        },
-        "required": [
-          "name",
-          "audience_id"
-        ],
         "additionalProperties": false
       },
       "CampaignResponse": {
@@ -12152,14 +11674,257 @@
         ],
         "additionalProperties": false
       },
+      "CampaignStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "paused",
+          "complete_sent",
+          "complete_delivered",
+          "aborted"
+        ]
+      },
+      "CreateCampaignRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Display name for the campaign."
+          },
+          "audience_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ID of the audience to target. Each audience contact contributes one outgoing message."
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "Message body. Supports per-contact substitution using single-brace tokens like `{firstName}` or `{product}`.\nResolution rules (case-insensitive, whitespace stripped):\n  - Built-ins always available: `{whatsappname}` (WA profile name), `{displayname}` (firstname+lastname fallback), `{phone}` / `{mobile}`.\n  - Custom variables: every property attached to a contact via audiences.append_contacts becomes a token of the same name.\n  - Unresolved tokens are left as literal `{token}` in the sent message.\nTemplates use SINGLE braces `{var}` — `{{var}}` is treated as literal text."
+          },
+          "media_url": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "Public https URL of an image/video/document to attach."
+          },
+          "media_caption": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "description": "Caption for the media attachment. Requires media_url."
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\+[1-9]\\d{6,14}$",
+            "description": "Sender phone in +E164. When omitted, the workspace default sender is used."
+          },
+          "on_missing_variable": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "skip"
+            ],
+            "description": "Behavior when a template references a variable that is not present on a contact:\n  - `fail` (default): reject the request at create time; no messages are sent. Returns 400 with `data.examples` listing offending contacts.\n  - `skip`: accept the campaign; contacts missing variables receive the message with literal `{token}` left in place."
+          }
+        },
+        "required": [
+          "name",
+          "audience_id"
+        ],
+        "additionalProperties": false
+      },
+      "BatchMessageAckEntry": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "ack": {
+            "type": "integer",
+            "nullable": true,
+            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when the engine could not determine."
+          }
+        },
+        "required": [
+          "key",
+          "ack"
+        ],
+        "additionalProperties": false
+      },
+      "BatchMessageAcksRequest": {
+        "type": "object",
+        "properties": {
+          "message_keys": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 200
+          },
+          "chat_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "message_keys"
+        ],
+        "additionalProperties": false
+      },
+      "ChangeLabelsRequest": {
+        "type": "object",
+        "properties": {
+          "label_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "maxItems": 50,
+            "description": "Full replacement set of label ids for this chat."
+          }
+        },
+        "required": [
+          "label_ids"
+        ],
+        "additionalProperties": false
+      },
+      "Chat": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_group": {
+            "type": "boolean"
+          },
+          "is_newsletter": {
+            "type": "boolean"
+          },
+          "last_message_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "unread_count": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
+          },
+          "marked_unread": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "is_group",
+          "is_newsletter",
+          "last_message_at",
+          "unread_count",
+          "marked_unread"
+        ],
+        "additionalProperties": false
+      },
       "ChatId": {
         "type": "string",
         "pattern": "^\\d+(?:-\\d+)?@(?:c\\.us|s\\.whatsapp\\.net|g\\.us|lid|broadcast|newsletter)$"
       },
-      "MessageKey": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 512
+      "ChatLabel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
+        "additionalProperties": false
+      },
+      "ChatMutationResult": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean",
+            "description": "`true` when WAWeb accepted the mutation; `false` when WAWeb refused or the feature is unavailable on this account."
+          },
+          "error": {
+            "type": "string",
+            "description": "Set when `result === false`. The literal `wa_business_required` signals the connected account is not a WhatsApp Business account; any other value is the underlying engine diagnostic."
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "additionalProperties": false
+      },
+      "ChatNoteRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Free-text note. Empty string clears the note."
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "additionalProperties": false
+      },
+      "ChatRef": {
+        "type": "object",
+        "properties": {
+          "chat_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "chat_id"
+        ],
+        "additionalProperties": false
+      },
+      "GetChatParticipantsQuery": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 100,
+            "description": "Max participants to return."
+          },
+          "skip": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of participants to skip before the page (default 0)."
+          }
+        },
+        "additionalProperties": false
       },
       "ListChatsQuery": {
         "type": "object",
@@ -12207,106 +11972,107 @@
         },
         "additionalProperties": false
       },
-      "GetChatParticipantsQuery": {
+      "LoadOlderResult": {
         "type": "object",
         "properties": {
-          "limit": {
+          "total_messages": {
             "type": "integer",
-            "minimum": 1,
-            "maximum": 500,
-            "default": 100,
-            "description": "Max participants to return."
+            "nullable": true
           },
-          "skip": {
+          "added": {
             "type": "integer",
-            "nullable": true,
-            "minimum": 0,
-            "default": 0,
-            "description": "Number of participants to skip before the page (default 0)."
+            "nullable": true
+          },
+          "can_load_more": {
+            "type": "boolean"
           }
         },
+        "required": [
+          "total_messages",
+          "added",
+          "can_load_more"
+        ],
         "additionalProperties": false
       },
-      "QueryMessagesQuery": {
+      "Media": {
         "type": "object",
         "properties": {
-          "order": {
+          "url": {
             "type": "string",
-            "enum": [
-              "asc",
-              "desc"
-            ],
-            "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
+            "nullable": true
           },
-          "mode": {
+          "mimetype": {
             "type": "string",
-            "enum": [
-              "history",
-              "latest"
-            ],
-            "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
+            "nullable": true
           },
-          "searchToken": {
+          "filename": {
             "type": "string",
-            "maxLength": 200,
-            "description": "Search token; when set, only items whose name matches are returned."
+            "nullable": true
           },
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 200,
-            "default": 50,
-            "description": "Max messages to return."
+          "data_base64": {
+            "type": "string",
+            "nullable": true
           },
-          "skip": {
-            "type": "integer",
+          "original_quality": {
+            "type": "boolean",
             "nullable": true,
-            "minimum": 0,
-            "default": 0,
-            "description": "Number of messages to skip before the page (default 0)."
+            "description": "Set to false when the bytes returned are NOT the original sender uploaded — i.e. WA released the original from memory and we synthesized from a smaller WA-generated preview (#113). Currently only happens for own-sent newsletter media (messages you sent to a @newsletter chat). When absent or true, the bytes are the genuine original. Consumers can use this to warn users / decide whether to retry from a different source."
           },
-          "since": {
+          "media_unavailable": {
             "type": "string",
-            "format": "date-time",
-            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
-          },
-          "until": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
-          },
-          "messageTypes": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "chat",
-                "image",
-                "video",
-                "document",
-                "audio",
-                "ptt",
-                "sticker",
-                "gif",
-                "ptv",
-                "poll_creation",
-                "location",
-                "vcard",
-                "revoked"
-              ]
-            },
-            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
-          },
-          "loadFromPhoneIfNeeded": {
-            "type": "boolean",
-            "description": "When the local store is exhausted, fetch older messages from the phone (chrome only)."
-          },
-          "includeMediaContent": {
-            "type": "boolean",
-            "description": "Include inline media payload on rows (heavy; default false — use /messages/{key}/media)."
+            "nullable": true,
+            "enum": [
+              "expired",
+              "fetching",
+              "awaiting_sender",
+              "error",
+              "no_media"
+            ],
+            "description": "Set when the bytes could not be downloaded or never existed. \"expired\" = WA aged the file out of CDN retention (typically older than ~30 days for documents) and there is nothing to retry. \"fetching\" = WA is mid-download from its CDN — transient, the server already retried for ~10s; calling again in a few seconds usually resolves to bytes. \"awaiting_sender\" = WA's CDN does not have the file but has asked the sender's device to reupload it. The reupload only completes when the sender's WhatsApp client is open and online; closed/backgrounded apps block it indefinitely. Tell the user to ask the sender to open WhatsApp; do not poll. \"error\" = unexpected failure; \"no_media\" = the message is text-only / revoked / location / vcard, i.e. it never carried media — caller should not have invoked this tool on this messageKey. Absent when bytes were not needed or when the fetch succeeded."
           }
         },
+        "required": [
+          "url",
+          "mimetype",
+          "filename",
+          "data_base64",
+          "original_quality",
+          "media_unavailable"
+        ],
         "additionalProperties": false
+      },
+      "MediaUrl": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hosted URL for the media bytes, or null if the engine could not produce one."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "MessageAck": {
+        "type": "object",
+        "properties": {
+          "ack": {
+            "type": "integer",
+            "nullable": true,
+            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when no engine response."
+          }
+        },
+        "required": [
+          "ack"
+        ],
+        "additionalProperties": false
+      },
+      "MessageKey": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
       },
       "MessagesQuery": {
         "type": "object",
@@ -12394,43 +12160,6 @@
         },
         "additionalProperties": false
       },
-      "ReactRequest": {
-        "type": "object",
-        "properties": {
-          "emoji": {
-            "type": "string",
-            "minLength": 0,
-            "maxLength": 32
-          }
-        },
-        "required": [
-          "emoji"
-        ],
-        "additionalProperties": false
-      },
-      "UnifiedSearchQuery": {
-        "type": "object",
-        "properties": {
-          "searchToken": {
-            "type": "string",
-            "maxLength": 200,
-            "description": "Search token matched against contact and chat names."
-          },
-          "types": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "contacts",
-                "chats",
-                "newsletters"
-              ]
-            },
-            "description": "Restrict results to these kinds. Comma-separated or repeated. Default: all."
-          }
-        },
-        "additionalProperties": false
-      },
       "MuteChatRequest": {
         "type": "object",
         "properties": {
@@ -12442,116 +12171,36 @@
         },
         "additionalProperties": false
       },
-      "ChangeLabelsRequest": {
+      "MuteState": {
         "type": "object",
         "properties": {
-          "label_ids": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
-            },
-            "maxItems": 50,
-            "description": "Full replacement set of label ids for this chat."
-          }
-        },
-        "required": [
-          "label_ids"
-        ],
-        "additionalProperties": false
-      },
-      "ChatNoteRequest": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "type": "string",
-            "maxLength": 4096,
-            "description": "Free-text note. Empty string clears the note."
-          }
-        },
-        "required": [
-          "note"
-        ],
-        "additionalProperties": false
-      },
-      "ChatMutationResult": {
-        "type": "object",
-        "properties": {
-          "result": {
-            "type": "boolean",
-            "description": "`true` when WAWeb accepted the mutation; `false` when WAWeb refused or the feature is unavailable on this account."
-          },
-          "error": {
-            "type": "string",
-            "description": "Set when `result === false`. The literal `wa_business_required` signals the connected account is not a WhatsApp Business account; any other value is the underlying engine diagnostic."
-          }
-        },
-        "required": [
-          "result"
-        ],
-        "additionalProperties": false
-      },
-      "BatchMessageAcksRequest": {
-        "type": "object",
-        "properties": {
-          "message_keys": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            },
-            "minItems": 1,
-            "maxItems": 200
-          },
-          "chat_id": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "message_keys"
-        ],
-        "additionalProperties": false
-      },
-      "Chat": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "is_group": {
+          "is_muted": {
             "type": "boolean"
           },
-          "is_newsletter": {
-            "type": "boolean"
-          },
-          "last_message_at": {
+          "mute_expiration_at": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
-          },
-          "unread_count": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0
-          },
-          "marked_unread": {
-            "type": "boolean"
           }
         },
         "required": [
-          "id",
-          "name",
-          "is_group",
-          "is_newsletter",
-          "last_message_at",
-          "unread_count",
-          "marked_unread"
+          "is_muted",
+          "mute_expiration_at"
+        ],
+        "additionalProperties": false
+      },
+      "OkResult": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "ok"
         ],
         "additionalProperties": false
       },
@@ -12571,6 +12220,27 @@
         "required": [
           "chat_id",
           "is_admin"
+        ],
+        "additionalProperties": false
+      },
+      "PinnedMessage": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "chat_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "key",
+          "chat_id",
+          "text"
         ],
         "additionalProperties": false
       },
@@ -12665,238 +12335,122 @@
         ],
         "additionalProperties": false
       },
-      "Media": {
+      "QueryMessagesQuery": {
         "type": "object",
         "properties": {
-          "url": {
+          "order": {
             "type": "string",
-            "nullable": true
-          },
-          "mimetype": {
-            "type": "string",
-            "nullable": true
-          },
-          "filename": {
-            "type": "string",
-            "nullable": true
-          },
-          "data_base64": {
-            "type": "string",
-            "nullable": true
-          },
-          "original_quality": {
-            "type": "boolean",
-            "nullable": true,
-            "description": "Set to false when the bytes returned are NOT the original sender uploaded — i.e. WA released the original from memory and we synthesized from a smaller WA-generated preview (#113). Currently only happens for own-sent newsletter media (messages you sent to a @newsletter chat). When absent or true, the bytes are the genuine original. Consumers can use this to warn users / decide whether to retry from a different source."
-          },
-          "media_unavailable": {
-            "type": "string",
-            "nullable": true,
             "enum": [
-              "expired",
-              "fetching",
-              "awaiting_sender",
-              "error",
-              "no_media"
+              "asc",
+              "desc"
             ],
-            "description": "Set when the bytes could not be downloaded or never existed. \"expired\" = WA aged the file out of CDN retention (typically older than ~30 days for documents) and there is nothing to retry. \"fetching\" = WA is mid-download from its CDN — transient, the server already retried for ~10s; calling again in a few seconds usually resolves to bytes. \"awaiting_sender\" = WA's CDN does not have the file but has asked the sender's device to reupload it. The reupload only completes when the sender's WhatsApp client is open and online; closed/backgrounded apps block it indefinitely. Tell the user to ask the sender to open WhatsApp; do not poll. \"error\" = unexpected failure; \"no_media\" = the message is text-only / revoked / location / vcard, i.e. it never carried media — caller should not have invoked this tool on this messageKey. Absent when bytes were not needed or when the fetch succeeded."
-          }
-        },
-        "required": [
-          "url",
-          "mimetype",
-          "filename",
-          "data_base64",
-          "original_quality",
-          "media_unavailable"
-        ],
-        "additionalProperties": false
-      },
-      "ChatLabel": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
+            "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
           },
-          "name": {
+          "mode": {
             "type": "string",
-            "nullable": true
-          },
-          "color": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "color"
-        ],
-        "additionalProperties": false
-      },
-      "MuteState": {
-        "type": "object",
-        "properties": {
-          "is_muted": {
-            "type": "boolean"
-          },
-          "mute_expiration_at": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "is_muted",
-          "mute_expiration_at"
-        ],
-        "additionalProperties": false
-      },
-      "OkResult": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean",
             "enum": [
-              true
-            ]
-          }
-        },
-        "required": [
-          "ok"
-        ],
-        "additionalProperties": false
-      },
-      "ChatRef": {
-        "type": "object",
-        "properties": {
-          "chat_id": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "chat_id"
-        ],
-        "additionalProperties": false
-      },
-      "MessageAck": {
-        "type": "object",
-        "properties": {
-          "ack": {
-            "type": "integer",
-            "nullable": true,
-            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when no engine response."
-          }
-        },
-        "required": [
-          "ack"
-        ],
-        "additionalProperties": false
-      },
-      "LoadOlderResult": {
-        "type": "object",
-        "properties": {
-          "total_messages": {
-            "type": "integer",
-            "nullable": true
+              "history",
+              "latest"
+            ],
+            "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
           },
-          "added": {
-            "type": "integer",
-            "nullable": true
-          },
-          "can_load_more": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "total_messages",
-          "added",
-          "can_load_more"
-        ],
-        "additionalProperties": false
-      },
-      "MediaUrl": {
-        "type": "object",
-        "properties": {
-          "url": {
+          "searchToken": {
             "type": "string",
-            "nullable": true,
-            "description": "Hosted URL for the media bytes, or null if the engine could not produce one."
-          }
-        },
-        "required": [
-          "url"
-        ],
-        "additionalProperties": false
-      },
-      "PinnedMessage": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
+            "maxLength": 200,
+            "description": "Search token; when set, only items whose name matches are returned."
           },
-          "chat_id": {
-            "type": "string"
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Max messages to return."
           },
-          "text": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "key",
-          "chat_id",
-          "text"
-        ],
-        "additionalProperties": false
-      },
-      "BatchMessageAckEntry": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "ack": {
+          "skip": {
             "type": "integer",
             "nullable": true,
-            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when the engine could not determine."
-          }
-        },
-        "required": [
-          "key",
-          "ack"
-        ],
-        "additionalProperties": false
-      },
-      "EngineStatus": {
-        "type": "object",
-        "properties": {
-          "connected": {
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of messages to skip before the page (default 0)."
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
+          },
+          "messageTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "chat",
+                "image",
+                "video",
+                "document",
+                "audio",
+                "ptt",
+                "sticker",
+                "gif",
+                "ptv",
+                "poll_creation",
+                "location",
+                "vcard",
+                "revoked"
+              ]
+            },
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
+          },
+          "loadFromPhoneIfNeeded": {
             "type": "boolean",
-            "description": "Whether this engine is currently online and serving requests."
+            "description": "When the local store is exhausted, fetch older messages from the phone (chrome only)."
           },
-          "state": {
-            "type": "string",
-            "nullable": true,
-            "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
-          },
-          "stream": {
-            "type": "string",
-            "nullable": true,
-            "description": "Underlying WA stream state. Null when unknown."
-          },
-          "has_synced": {
+          "includeMediaContent": {
             "type": "boolean",
-            "nullable": true,
-            "description": "Whether the engine has completed its initial history sync."
+            "description": "Include inline media payload on rows (heavy; default false — use /messages/{key}/media)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReactRequest": {
+        "type": "object",
+        "properties": {
+          "emoji": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 32
           }
         },
         "required": [
-          "connected",
-          "state",
-          "stream",
-          "has_synced"
+          "emoji"
         ],
+        "additionalProperties": false
+      },
+      "UnifiedSearchQuery": {
+        "type": "object",
+        "properties": {
+          "searchToken": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Search token matched against contact and chat names."
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts",
+                "chats",
+                "newsletters"
+              ]
+            },
+            "description": "Restrict results to these kinds. Comma-separated or repeated. Default: all."
+          }
+        },
         "additionalProperties": false
       },
       "EngineListResponse": {
@@ -12947,12 +12501,53 @@
         ],
         "additionalProperties": false
       },
-      "GroupId": {
-        "type": "string",
-        "pattern": "^\\d+(?:-\\d+)?@g\\.us$"
+      "EngineStatus": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "description": "Whether this engine is currently online and serving requests."
+          },
+          "state": {
+            "type": "string",
+            "nullable": true,
+            "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
+          },
+          "stream": {
+            "type": "string",
+            "nullable": true,
+            "description": "Underlying WA stream state. Null when unknown."
+          },
+          "has_synced": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the engine has completed its initial history sync."
+          }
+        },
+        "required": [
+          "connected",
+          "state",
+          "stream",
+          "has_synced"
+        ],
+        "additionalProperties": false
       },
-      "MemberChatId": {
-        "type": "string"
+      "AddMemberRequest": {
+        "type": "object",
+        "properties": {
+          "chat_id": {
+            "type": "string"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 256
+          }
+        },
+        "additionalProperties": false
       },
       "CreateGroupRequest": {
         "type": "object",
@@ -12974,124 +12569,6 @@
         "required": [
           "name",
           "participants"
-        ],
-        "additionalProperties": false
-      },
-      "UpdateGroupRequest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "settings": {
-            "type": "object",
-            "properties": {
-              "announce": {
-                "type": "boolean"
-              },
-              "restrict": {
-                "type": "boolean"
-              },
-              "edit_info_admins_only": {
-                "type": "boolean"
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      },
-      "AddMemberRequest": {
-        "type": "object",
-        "properties": {
-          "chat_id": {
-            "type": "string"
-          },
-          "participants": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "minItems": 1,
-            "maxItems": 256
-          }
-        },
-        "additionalProperties": false
-      },
-      "SetPictureRequest": {
-        "type": "object",
-        "properties": {
-          "file_data_url": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 20971520
-          },
-          "url": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri"
-          },
-          "file_name": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "file_mime_type": {
-            "type": "string",
-            "maxLength": 127
-          }
-        },
-        "additionalProperties": false
-      },
-      "ListGroupsQuery": {
-        "type": "object",
-        "properties": {
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 200,
-            "default": 50,
-            "description": "Page size (1-200, default 50)."
-          },
-          "skip": {
-            "type": "integer",
-            "nullable": true,
-            "minimum": 0,
-            "default": 0,
-            "description": "Number of items to skip before the page (default 0)."
-          },
-          "searchToken": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128,
-            "description": "Search token; when set, only items whose name matches are returned."
-          }
-        },
-        "additionalProperties": false
-      },
-      "GroupParticipant": {
-        "type": "object",
-        "properties": {
-          "chat_id": {
-            "type": "string"
-          },
-          "is_admin": {
-            "type": "boolean"
-          },
-          "is_super_admin": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "chat_id",
-          "is_admin",
-          "is_super_admin",
-          "name"
         ],
         "additionalProperties": false
       },
@@ -13180,97 +12657,113 @@
         ],
         "additionalProperties": false
       },
-      "ValidationDetail": {
+      "GroupId": {
+        "type": "string",
+        "pattern": "^\\d+(?:-\\d+)?@g\\.us$"
+      },
+      "GroupParticipant": {
         "type": "object",
         "properties": {
-          "path": {
-            "type": "string",
-            "description": "Dotted path to the offending field within the request body."
+          "chat_id": {
+            "type": "string"
           },
-          "code": {
-            "type": "string",
-            "description": "Zod-derived issue code (e.g. `invalid_type`, `too_small`)."
+          "is_admin": {
+            "type": "boolean"
           },
-          "message": {
+          "is_super_admin": {
+            "type": "boolean"
+          },
+          "name": {
             "type": "string",
-            "description": "Human-readable validation message."
+            "nullable": true
           }
         },
         "required": [
-          "path",
-          "code",
-          "message"
+          "chat_id",
+          "is_admin",
+          "is_super_admin",
+          "name"
         ],
         "additionalProperties": false
       },
-      "ErrorEnvelope": {
+      "ListGroupsQuery": {
         "type": "object",
         "properties": {
-          "success": {
-            "type": "boolean",
-            "enum": [
-              false
-            ],
-            "description": "Always `false` on error responses."
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Page size (1-200, default 50)."
           },
-          "error": {
+          "skip": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          "searchToken": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Search token; when set, only items whose name matches are returned."
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemberChatId": {
+        "type": "string"
+      },
+      "SetPictureRequest": {
+        "type": "object",
+        "properties": {
+          "file_data_url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20971520
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri"
+          },
+          "file_name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "file_mime_type": {
+            "type": "string",
+            "maxLength": 127
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateGroupRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "settings": {
             "type": "object",
             "properties": {
-              "code": {
-                "type": "string",
-                "description": "Stable machine-readable error code (e.g. `invalid_request`, `authentication_required`, `not_found`, `rate_limited`, `internal_error`)."
+              "announce": {
+                "type": "boolean"
               },
-              "message": {
-                "type": "string",
-                "description": "Human-readable description of what went wrong."
+              "restrict": {
+                "type": "boolean"
               },
-              "request_id": {
-                "type": "string",
-                "nullable": true,
-                "description": "Server-assigned request id; pass this when filing support tickets so engineering can trace the failure."
-              },
-              "details": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "path": {
-                      "type": "string",
-                      "description": "Dotted path to the offending field within the request body."
-                    },
-                    "code": {
-                      "type": "string",
-                      "description": "Zod-derived issue code (e.g. `invalid_type`, `too_small`)."
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Human-readable validation message."
-                    }
-                  },
-                  "required": [
-                    "path",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                },
-                "description": "Per-field validation issues. Present on 400/422 when the request body failed Zod parsing."
+              "edit_info_admins_only": {
+                "type": "boolean"
               }
             },
-            "required": [
-              "code",
-              "message",
-              "request_id"
-            ],
             "additionalProperties": false
           }
         },
-        "required": [
-          "success",
-          "error"
-        ],
-        "additionalProperties": false,
-        "description": "Standard error response envelope. Every 4xx/5xx response from the v1 API carries this exact shape."
+        "additionalProperties": false
       },
       "Error": {
         "type": "object",
@@ -13341,6 +12834,98 @@
         "additionalProperties": false,
         "description": "Standard error response envelope. Every 4xx/5xx response from the v1 API carries this exact shape."
       },
+      "ErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Always `false` on error responses."
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Stable machine-readable error code (e.g. `invalid_request`, `authentication_required`, `not_found`, `rate_limited`, `internal_error`)."
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable description of what went wrong."
+              },
+              "request_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "Server-assigned request id; pass this when filing support tickets so engineering can trace the failure."
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Dotted path to the offending field within the request body."
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Zod-derived issue code (e.g. `invalid_type`, `too_small`)."
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Human-readable validation message."
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "code",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "Per-field validation issues. Present on 400/422 when the request body failed Zod parsing."
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "request_id"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ],
+        "additionalProperties": false,
+        "description": "Standard error response envelope. Every 4xx/5xx response from the v1 API carries this exact shape."
+      },
+      "ValidationDetail": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Dotted path to the offending field within the request body."
+          },
+          "code": {
+            "type": "string",
+            "description": "Zod-derived issue code (e.g. `invalid_type`, `too_small`)."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable validation message."
+          }
+        },
+        "required": [
+          "path",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
       "PaginatedResponse": {
         "type": "object",
         "properties": {
@@ -13374,10 +12959,23 @@
         "additionalProperties": false,
         "description": "Offset-paginated response envelope. Every v1 list endpoint returns this shape (inside the `success`/`data` wrapper)."
       },
-      "NewsletterId": {
-        "type": "string",
-        "pattern": "^\\d+@newsletter$",
-        "description": "Newsletter JID, e.g. 12345@newsletter."
+      "CreateNewsletterRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
       },
       "ListNewslettersQuery": {
         "type": "object",
@@ -13398,23 +12996,10 @@
           }
         }
       },
-      "CreateNewsletterRequest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 2048
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "additionalProperties": false
+      "NewsletterId": {
+        "type": "string",
+        "pattern": "^\\d+@newsletter$",
+        "description": "Newsletter JID, e.g. 12345@newsletter."
       },
       "NewsletterResponse": {
         "type": "object",
@@ -13563,9 +13148,33 @@
         ],
         "additionalProperties": false
       },
-      "MessageId": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
+      "LinkPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "canonicalUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "thumbnail": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "canonicalUrl",
+          "thumbnail"
+        ],
+        "additionalProperties": false
       },
       "ListMessagesQuery": {
         "type": "object",
@@ -13610,44 +13219,6 @@
         },
         "additionalProperties": false
       },
-      "MessageStatus": {
-        "type": "string",
-        "enum": [
-          "scheduled",
-          "queued",
-          "sending",
-          "delivered",
-          "read",
-          "failed"
-        ]
-      },
-      "MentionsField": {
-        "type": "object",
-        "properties": {
-          "ids": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128
-            },
-            "maxItems": 64
-          },
-          "displays": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128
-            },
-            "maxItems": 64
-          }
-        },
-        "required": [
-          "ids"
-        ],
-        "additionalProperties": false
-      },
       "MediaKind": {
         "type": "string",
         "enum": [
@@ -13660,292 +13231,9 @@
           "gif"
         ]
       },
-      "SendMessageRequest": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "text",
-              "media",
-              "poll"
-            ]
-          },
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4096,
-            "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
-          },
-          "mediaUrl": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "description": "Media source URL (https only). Exactly one of mediaUrl / mediaDataBase64 is required for media sends."
-          },
-          "mediaDataBase64": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 15728640,
-            "description": "Raw media bytes, base64-encoded. Alternative to `mediaUrl`."
-          },
-          "mediaKind": {
-            "type": "string",
-            "enum": [
-              "image",
-              "video",
-              "audio",
-              "document",
-              "sticker",
-              "voice",
-              "gif"
-            ],
-            "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
-          },
-          "mediaFilename": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Filename to attach to the media (type=media)."
-          },
-          "pollQuestion": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Poll question (type=poll). Required for poll sends."
-          },
-          "pollOptions": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            },
-            "description": "Poll options (type=poll). 2–12 items."
-          },
-          "pollAllowMultiple": {
-            "type": "boolean",
-            "description": "Allow selecting multiple poll options (type=poll). Default false."
-          },
-          "to": {
-            "type": "string"
-          },
-          "sendAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
-          },
-          "replyTo": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-          },
-          "mentions": {
-            "type": "object",
-            "properties": {
-              "ids": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              },
-              "displays": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              }
-            },
-            "required": [
-              "ids"
-            ],
-            "additionalProperties": false,
-            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-          }
-        },
-        "required": [
-          "type",
-          "to"
-        ],
-        "additionalProperties": false
-      },
-      "SendInChatRequest": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "text",
-              "media",
-              "poll"
-            ]
-          },
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4096,
-            "description": "Text body (type=text) or media caption (type=media). 1–4096 chars."
-          },
-          "mediaUrl": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "description": "Media source URL (https only). Exactly one of mediaUrl / mediaDataBase64 is required for media sends."
-          },
-          "mediaDataBase64": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 15728640,
-            "description": "Raw media bytes, base64-encoded. Alternative to `mediaUrl`."
-          },
-          "mediaKind": {
-            "type": "string",
-            "enum": [
-              "image",
-              "video",
-              "audio",
-              "document",
-              "sticker",
-              "voice",
-              "gif"
-            ],
-            "description": "Media kind. Optional — falls back to engine auto-detection from URL/Content-Type."
-          },
-          "mediaFilename": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Filename to attach to the media (type=media)."
-          },
-          "pollQuestion": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Poll question (type=poll). Required for poll sends."
-          },
-          "pollOptions": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            },
-            "description": "Poll options (type=poll). 2–12 items."
-          },
-          "pollAllowMultiple": {
-            "type": "boolean",
-            "description": "Allow selecting multiple poll options (type=poll). Default false."
-          },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$"
-          },
-          "replyTo": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key)."
-          },
-          "mentions": {
-            "type": "object",
-            "properties": {
-              "ids": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              },
-              "displays": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
-                },
-                "maxItems": 64
-              }
-            },
-            "required": [
-              "ids"
-            ],
-            "additionalProperties": false,
-            "description": "JIDs to mention. Highlights/notifies the listed users; `displays` is the rendered name list."
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "additionalProperties": false
-      },
-      "PatchMessageRequest": {
-        "type": "object",
-        "properties": {
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4096,
-            "description": "New text body. Replaces the previous text/caption."
-          },
-          "mediaUrl": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "description": "Replace the attached media URL (https only)."
-          },
-          "mediaCaption": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1024,
-            "description": "Replace the media's caption. When set alongside `text`, `text` wins."
-          },
-          "sendAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Reschedule. ISO 8601 datetime (UTC) in the future."
-          }
-        },
-        "additionalProperties": false
-      },
-      "LinkPreviewResponse": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "canonicalUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "thumbnail": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "title",
-          "description",
-          "canonicalUrl",
-          "thumbnail"
-        ],
-        "additionalProperties": false
+      "MessageId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
       },
       "MessageResponse": {
         "type": "object",
@@ -13960,10 +13248,6 @@
           },
           "to": {
             "type": "string"
-          },
-          "from": {
-            "type": "string",
-            "nullable": true
           },
           "type": {
             "type": "string",
@@ -14077,7 +13361,6 @@
           "id",
           "key",
           "to",
-          "from",
           "type",
           "text",
           "mediaUrl",
@@ -14091,6 +13374,216 @@
           "readAt",
           "failedAt",
           "failureReason"
+        ],
+        "additionalProperties": false
+      },
+      "MessageStatus": {
+        "type": "string",
+        "enum": [
+          "scheduled",
+          "queued",
+          "sending",
+          "delivered",
+          "read",
+          "failed"
+        ]
+      },
+      "PatchMessageRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "New text body. Replaces the previous text/caption."
+          },
+          "mediaUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "Replace the attached media URL (https only)."
+          },
+          "mediaCaption": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "description": "Replace the media's caption. When set alongside `text`, `text` wins."
+          },
+          "sendAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Reschedule. ISO 8601 datetime (UTC) in the future."
+          }
+        },
+        "additionalProperties": false
+      },
+      "SendInChatRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "media",
+              "poll"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
+          },
+          "mediaUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Media source URL (https only). One of mediaUrl or mediaBase64 is required for media sends; mediaUrl wins when both are present."
+          },
+          "mediaBase64": {
+            "type": "string",
+            "maxLength": 15728640,
+            "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
+          },
+          "mediaKind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "document",
+              "sticker",
+              "voice",
+              "gif"
+            ],
+            "description": "Media kind (image · video · audio · document · sticker · voice · gif). Optional — auto-detected from the URL / content-type when omitted."
+          },
+          "mediaFilename": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
+          },
+          "pollQuestion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Poll question (type=poll). Required for poll sends."
+          },
+          "pollOptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "Poll options (type=poll). 2–12 items."
+          },
+          "pollAllowMultiple": {
+            "type": "boolean",
+            "description": "Allow selecting multiple poll options (type=poll). Default false."
+          },
+          "replyTo": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
+          },
+          "secret": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Opaque caller id stored on the message `secret` and carried into the WhatsApp messageSecret."
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "SendMessageRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "media",
+              "poll"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
+          },
+          "mediaUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "Media source URL (https only). One of mediaUrl or mediaBase64 is required for media sends; mediaUrl wins when both are present."
+          },
+          "mediaBase64": {
+            "type": "string",
+            "maxLength": 15728640,
+            "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
+          },
+          "mediaKind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "document",
+              "sticker",
+              "voice",
+              "gif"
+            ],
+            "description": "Media kind (image · video · audio · document · sticker · voice · gif). Optional — auto-detected from the URL / content-type when omitted."
+          },
+          "mediaFilename": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
+          },
+          "pollQuestion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Poll question (type=poll). Required for poll sends."
+          },
+          "pollOptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "Poll options (type=poll). 2–12 items."
+          },
+          "pollAllowMultiple": {
+            "type": "boolean",
+            "description": "Allow selecting multiple poll options (type=poll). Default false."
+          },
+          "to": {
+            "type": "string"
+          },
+          "sendAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "replyTo": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
+          },
+          "secret": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Opaque caller id stored on the message `secret` and carried into the WhatsApp messageSecret."
+          }
+        },
+        "required": [
+          "type",
+          "to"
         ],
         "additionalProperties": false
       },
@@ -14208,47 +13701,6 @@
         },
         "additionalProperties": false
       },
-      "WebhookResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          },
-          "events": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "enabled",
-              "disabled"
-            ]
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "url",
-          "events",
-          "description",
-          "status",
-          "created_at"
-        ],
-        "additionalProperties": false
-      },
       "WebhookCreateResponse": {
         "type": "object",
         "properties": {
@@ -14291,6 +13743,47 @@
           "status",
           "created_at",
           "secret"
+        ],
+        "additionalProperties": false
+      },
+      "WebhookResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "enabled",
+              "disabled"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "events",
+          "description",
+          "status",
+          "created_at"
         ],
         "additionalProperties": false
       }

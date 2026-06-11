@@ -3,7 +3,6 @@
   "description": "Send, list, search, react to, and fetch media for individual WhatsApp messages on the connected engine.",
   "pages": [
     "send-message",
-    "list-messages",
     "get-message",
     "list-messages-all-chats",
     "get-message-delivery-status",
