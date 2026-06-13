@@ -7,9 +7,8 @@ import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
 `@blueticks/mcp` is a local stdio Model Context Protocol server that
 wraps the Blueticks Node SDK and exposes every Blueticks resource as
-an MCP tool: `whatsapp_messages`, `whatsapp_chats`, `whatsapp_groups`,
-`whatsapp_audiences`, `whatsapp_campaigns`, `whatsapp_contacts`,
-`whatsapp_engine`, `whatsapp_webhooks`, `whatsapp_utils`.
+an MCP tool: `scheduled_messages`, `chats`, `groups`, `audiences`,
+`campaigns`, `contacts`, `engine`, `webhooks`, `utils`.
 
 LLM hosts that speak MCP can call those tools directly — your agent
 sends WhatsApp messages, manages campaigns, or queries chat history
@@ -49,7 +48,7 @@ Add to `~/.claude.json` (or your project's `.mcp.json`):
 }
 ```
 
-Restart Claude Code. The 9 `whatsapp_*` tools become available
+Restart Claude Code. The 9 Blueticks tools become available
 automatically.
 
   </Tab>
@@ -89,19 +88,19 @@ See [Authentication](/docs/authentication) for how to get an API key.
 
 Once wired, the LLM can act on your WhatsApp account:
 
-- **Send messages**: `whatsapp_messages` action `send` (text or media,
-  schedule for later via `send_at`).
-- **Read chats**: `whatsapp_chats` action `list` / `search` /
-  `list_messages` (with `mode=history` to paginate older messages).
-- **Manage groups**: `whatsapp_groups` action `create` / `update` /
-  `get`.
-- **Run campaigns**: `whatsapp_campaigns` action `create` / `pause` /
-  `resume` / `cancel`. Campaign templates support `{firstName}` /
-  `{displayName}` / `{phone}` substitution plus any custom variables
-  attached to audience contacts.
-- **Maintain audiences**: `whatsapp_audiences` action `append_contacts`
+- **Send messages**: `scheduled_messages` action `send` (text, media,
+  or poll — schedule for later via `send_at`), plus `list` / `get` /
+  `update` / `cancel` for queue management.
+- **Read chats**: `chats` action `list` / `search` / `list_messages`
+  (with `load_more_history` to pull older messages from the phone).
+- **Manage groups**: `groups` action `create` / `update` / `get`.
+- **Run campaigns**: `campaigns` action `create` / `pause` /
+  `resume` / `cancel`. Campaign templates support the built-in
+  `{whatsappname}` / `{displayname}` / `{phone}` tokens plus any custom
+  variables attached to audience contacts.
+- **Maintain audiences**: `audiences` action `append_contacts`
   with `variables` for per-contact substitution values.
-- **Subscribe to events**: `whatsapp_webhooks` action `create` to
+- **Subscribe to events**: `webhooks` action `create` to
   register signed HTTPS callbacks for `message.queued` / `delivered` /
   `read` / `failed`, `session.connected` / `disconnected`,
   `campaign.started` / `paused` / `resumed` / `completed` / `aborted`.

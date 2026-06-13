@@ -5,12 +5,12 @@ description: Install the Blueticks SDK for your language, authenticate, and make
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
-Pick your language below. All three SDKs expose the same resources and
-follow the same naming conventions.
+Pick your language below. All five SDKs expose the same resources and
+follow each language's idiomatic naming conventions.
 
 ## 1. Install
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go']}>
   <Tab value="Python">
 
 ```bash
@@ -35,6 +35,20 @@ PHP uses PSR-18 HTTP clients. Install any concrete client (Guzzle shown);
 the SDK discovers it at runtime.
 
   </Tab>
+  <Tab value="Ruby">
+
+```bash
+gem install blueticks
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```bash
+go get github.com/serenix-com/blueticks-go
+```
+
+  </Tab>
 </Tabs>
 
 ## 2. Set your API key
@@ -43,14 +57,14 @@ Export your key as an environment variable so the SDK picks it up
 automatically:
 
 ```bash
-export BLUETICKS_API_KEY=BLUETICKS_API_KEY
+export BLUETICKS_API_KEY="bt_live_..."
 ```
 
 See [Authentication](/docs/authentication) for how to obtain a key.
 
 ## 3. Ping the API
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go']}>
   <Tab value="Python">
 
 ```python
@@ -58,7 +72,7 @@ from blueticks import Blueticks
 
 client = Blueticks()
 ping = client.ping()
-print(ping.account_id, ping.scopes)
+print(ping.account_id, ping.whatsapp_connections)
 ```
 
   </Tab>
@@ -69,7 +83,7 @@ import { Blueticks } from "blueticks";
 
 const client = new Blueticks();
 const ping = await client.ping();
-console.log(ping.account_id, ping.scopes);
+console.log(ping.account_id, ping.whatsapp_connections);
 ```
 
   </Tab>
@@ -83,7 +97,45 @@ use Blueticks\Blueticks;
 
 $client = new Blueticks();
 $ping = $client->ping();
-echo $ping->account_id, ' ', implode(',', $ping->scopes), "\n";
+echo $ping->account_id, ' ', count($ping->whatsapp_connections), " connection(s)\n";
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+require "blueticks"
+
+client = Blueticks::Client.new # reads BLUETICKS_API_KEY
+ping = client.ping.retrieve
+puts ping.account_id
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	blueticks "github.com/serenix-com/blueticks-go"
+)
+
+func main() {
+	c, err := blueticks.NewClient() // reads BLUETICKS_API_KEY
+	if err != nil {
+		log.Fatal(err)
+	}
+	ping, err := c.Ping.Retrieve(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(ping.AccountID)
+}
 ```
 
   </Tab>
@@ -93,15 +145,22 @@ A successful response looks like:
 
 ```json
 {
+  "api": "ok",
   "account_id": "acct_abc123",
-  "key_prefix": "bt_live_xy",
-  "scopes": ["messages:read", "messages:write"]
+  "whatsapp_connections": [
+    { "id": "engine_01h7...", "type": "gateway", "connected": true }
+  ]
 }
 ```
 
+`api: "ok"` confirms your key works. `whatsapp_connections` lists the
+WhatsApp engines currently connected for your account — an empty array
+means no WhatsApp is connected yet (not an error; the `message` field
+explains it).
+
 ## 4. Retrieve your account
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go']}>
   <Tab value="Python">
 
 ```python
@@ -123,6 +182,22 @@ console.log(account.name, account.timezone);
 ```php
 $account = $client->account->retrieve();
 echo $account->name, ' ', $account->timezone, "\n";
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+account = client.account.retrieve
+puts account.name, account.timezone
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+account, _ := c.Account.Retrieve(context.Background())
+fmt.Println(account.Name)
 ```
 
   </Tab>

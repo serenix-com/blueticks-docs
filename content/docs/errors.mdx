@@ -27,6 +27,7 @@ or status code. `success` is always `false`, and the details live under `error`:
 | `401` | Authentication required — missing / invalid key | No |
 | `403` | Permission denied — key lacks required scope | No |
 | `404` | Not found — resource doesn't exist or isn't visible | No |
+| `409` | Conflict — e.g. an `Idempotency-Key` reused with a different body | No |
 | `422` | Unprocessable entity — semantically invalid | No |
 | `429` | Rate limited — honor `Retry-After` header | Yes |
 | `5xx` | Server error | Yes, with exponential backoff |
@@ -45,6 +46,25 @@ Current error codes (locked as of v1.0.0):
 The SDK maps each code to a typed exception class so you can
 `catch (RateLimitError)` vs `catch (AuthenticationError)` without
 string-matching.
+
+### Validation details
+
+When a request body fails validation (`400`/`422`), the envelope carries
+an additional `error.details` array with one entry per offending field:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "invalid_request",
+    "message": "Request body failed validation.",
+    "request_id": "req_1a2b3c4d5e",
+    "details": [
+      { "path": "pollOptions", "code": "too_small", "message": "Array must contain at least 2 element(s)" }
+    ]
+  }
+}
+```
 
 ## Retry guidance
 
@@ -72,7 +92,7 @@ request IDs in any support inquiry.
 
 ## Example: handle 429 manually
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go']}>
   <Tab value="Python">
 
 ```python
@@ -113,6 +133,40 @@ try {
     $account = $client->account->retrieve();
 } catch (RateLimitError $e) {
     echo "throttled, retry after {$e->retryAfter}s\n";
+}
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+require "blueticks"
+
+client = Blueticks::Client.new
+begin
+  account = client.account.retrieve
+rescue Blueticks::Errors::RateLimitError => e
+  puts "throttled, retry after #{e.retry_after}s"
+end
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	blueticks "github.com/serenix-com/blueticks-go"
+)
+
+c, _ := blueticks.NewClient()
+_, err := c.Account.Retrieve(context.Background())
+var apiErr *blueticks.APIError
+if errors.Is(err, blueticks.ErrRateLimit) && errors.As(err, &apiErr) {
+	fmt.Printf("throttled, retry after %.0fs\n", apiErr.RetryAfter)
 }
 ```
 

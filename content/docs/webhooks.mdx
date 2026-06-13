@@ -8,15 +8,25 @@ import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 Webhooks push Blueticks events to your server in near real time. Each
 POST is HMAC-SHA256 signed with a secret you see once at creation.
 
+This guide assumes you have an API key ([Authentication](/docs/authentication))
+and an SDK client set up ([Quickstart](/docs/quickstart)).
+
 ## Event types
 
 - `message.queued`, `message.sending`, `message.delivered`, `message.failed`, `message.read`
 - `session.connected`, `session.disconnected`
 - `campaign.started`, `campaign.paused`, `campaign.resumed`, `campaign.completed`, `campaign.aborted`
 
+The enum also accepts legacy `*_webhook` event names for inbound and group
+activity — e.g. `new_message_received_webhook`, `message_reaction_webhook`,
+`ack_changed_webhook`, `poll_vote_webhook`, `reply_to_my_message_webhook`,
+and the `participant_*` / `group_*` membership events. See the
+[Create webhook reference](/docs/api/webhooks/create-webhook) for the full
+enum.
+
 ## Register a webhook
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -50,11 +60,36 @@ echo $created->secret; // shown once
 ```
 
   </Tab>
+  <Tab value="Ruby">
+
+```ruby
+created = client.webhooks.create(
+  url: "https://api.your-server.com/bt-webhooks",
+  events: ["message.delivered", "message.failed"],
+  description: "prod",
+)
+puts created.secret # shown exactly once — store it
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+created, _ := c.Webhooks.Create(context.Background(), blueticks.CreateWebhookParams{
+	URL:         "https://api.your-server.com/bt-webhooks",
+	Events:      []string{"message.delivered", "message.failed"},
+	Description: "prod",
+})
+fmt.Println(created.Secret) // shown exactly once — store it
+```
+
+  </Tab>
   <Tab value="cURL">
 
 ```bash
 curl -X POST https://api.blueticks.co/v1/webhooks \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "url":"https://api.your-server.com/bt-webhooks",
     "events":["message.delivered","message.failed"]
@@ -95,7 +130,7 @@ Blueticks-Webhook-Signature: v1=<64-hex-sha256>
 Three checks, all done by the SDK helper: reject if the timestamp is
 more than 5 minutes old, recompute HMAC, constant-time compare.
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go']}>
   <Tab value="Python">
 
 ```python
@@ -157,6 +192,43 @@ try {
 ```
 
   </Tab>
+  <Tab value="Ruby">
+
+```ruby
+require "blueticks"
+
+begin
+  event = Blueticks::Webhooks.verify(
+    payload: request.raw_post,           # raw bytes
+    headers: request.headers,
+    secret: ENV.fetch("BT_WEBHOOK_SECRET"),
+  )
+rescue Blueticks::Errors::WebhookVerificationError
+  return [400, {}, []]
+end
+# handle event.type
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import (
+	"errors"
+	"net/http"
+
+	blueticks "github.com/serenix-com/blueticks-go"
+)
+
+event, err := blueticks.VerifyWebhook(rawBody, r.Header, secret)
+if errors.Is(err, blueticks.ErrWebhookVerification) {
+	http.Error(w, "bad signature", http.StatusBadRequest)
+	return
+}
+// handle event.Type
+```
+
+  </Tab>
 </Tabs>
 
 ## Retries
@@ -187,7 +259,7 @@ once your server is healthy again.
 If your secret leaks, rotate it. The old secret is invalidated
 immediately; all pending retries sign with the new one.
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -209,6 +281,22 @@ console.log(result.secret); // store immediately — shown only once
 ```php
 $result = $bt->webhooks->rotateSecret('wh_123');
 echo $result->secret; // store immediately — shown only once
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+result = client.webhooks.rotate_secret("wh_123")
+puts result.secret # store immediately — shown only once
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+result, _ := c.Webhooks.RotateSecret(context.Background(), "wh_123")
+fmt.Println(result.Secret) // store immediately — shown only once
 ```
 
   </Tab>

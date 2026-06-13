@@ -31,22 +31,43 @@ Latest published versions:
 
 | SDK | Latest | Registry |
 |---|---|---|
-| Python — `blueticks` | **v3.0.0** | [PyPI](https://pypi.org/project/blueticks) |
-| Node.js — `blueticks` | **v3.1.0** | [npm](https://www.npmjs.com/package/blueticks) |
-| PHP — `blueticks/blueticks` | **v3.0.0** | [Packagist](https://packagist.org/packages/blueticks/blueticks) |
-| MCP server — `@blueticks/mcp` | **v0.1.0** | [npm](https://www.npmjs.com/package/@blueticks/mcp) |
+| Python — `blueticks` | **v4.1.0** | [PyPI](https://pypi.org/project/blueticks) |
+| Node.js — `blueticks` | **v4.1.0** | [npm](https://www.npmjs.com/package/blueticks) |
+| PHP — `blueticks/blueticks` | **v5.1.0** | [Packagist](https://packagist.org/packages/blueticks/blueticks) |
+| Ruby — `blueticks` | **v2.1.0** | [RubyGems](https://rubygems.org/gems/blueticks) |
+| Go — `github.com/serenix-com/blueticks-go` | **v2.1.0** | [pkg.go.dev](https://pkg.go.dev/github.com/serenix-com/blueticks-go) |
+| MCP server — `@blueticks/mcp` | **v1.1.0** | [npm](https://www.npmjs.com/package/@blueticks/mcp) |
 
-### v3.0.0 — 2026-04-25 (Python · Node · PHP)
+### v4.0.0 (Python · Node) / v5.0.0 (PHP) / v2.0.0 (Ruby · Go) — 2026-05-27 (breaking)
 
-- WhatsApp tools: `chats`, `groups`, `contacts`, `engines`, `utils`
-  resources land alongside the existing `messages` / `audiences` /
-  `campaigns` / `webhooks` set.
+- **Pagination switched from cursor to offset**, matching **API v2.0.0**:
+  list calls now take `limit` + `skip` and return
+  `{ data[], limit, skip, total }`. Replace any loop that read `has_more` /
+  `next_cursor`.
+- **`delete()` now returns a typed `{ id, deleted: true }` resource** instead
+  of `void`.
+
+### Ruby & Go SDKs — 2026-05-01
+
+- **Two new official SDKs joined the family:** Ruby (`gem install blueticks`)
+  and Go (`go get github.com/serenix-com/blueticks-go`). Both expose the same
+  resources as the other clients, in each language's idiomatic style — Ruby with
+  keyword args (`client.scheduled_messages.create(...)`), Go with `context.Context`
+  and typed param structs (`client.Chats.SendMessage(ctx, ...)`). See the
+  [Quickstart](/docs/quickstart) and any [API Reference](/docs/api) page for
+  per-endpoint examples in all five languages.
 
 ### v3.1.0 — 2026-04-25 (Node.js only)
 
 - `BluetickError.details` field surfaces backend Zod validation issues
   with per-issue `{path, code, message}`. Existing `try/catch` code
   keeps working; the new field is additive.
+
+### v3.0.0 — 2026-04-25 (Python · Node · PHP)
+
+- WhatsApp tools: `chats`, `groups`, `contacts`, `engines`, `utils`
+  resources land alongside the existing `messages` / `audiences` /
+  `campaigns` / `webhooks` set.
 
 ### v2.0.0 — 2026-04-24 (Python · Node · PHP)
 
@@ -63,10 +84,10 @@ Latest published versions:
 ### v0.1.0 — 2026-04-25
 
 - Initial release of `@blueticks/mcp` — local stdio MCP server wrapping
-  the Node SDK. Exposes 9 tools (`whatsapp_messages`, `whatsapp_chats`,
-  `whatsapp_groups`, `whatsapp_audiences`, `whatsapp_campaigns`,
-  `whatsapp_contacts`, `whatsapp_engine`, `whatsapp_webhooks`,
-  `whatsapp_utils`). See [MCP server](/docs/mcp) for setup.
+  the Node SDK. Exposes 9 tools, one per Blueticks resource
+  (`scheduled_messages`, `chats`, `groups`, `audiences`, `campaigns`,
+  `contacts`, `engine`, `webhooks`, `utils`). See [MCP server](/docs/mcp)
+  for setup and the authoritative tool list.
 
 Source on GitHub:
 

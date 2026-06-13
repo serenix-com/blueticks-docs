@@ -1,11 +1,6 @@
 import { promises as fs } from 'node:fs';
 import { createOpenAPI } from 'fumadocs-openapi/server';
-import {
-  forwardResource as pyResource,
-  forwardJsResource as jsResource,
-  forwardMethod as pyMethod,
-  forwardJsMethod as jsMethod,
-} from '../scripts/lib/sdk-mapping';
+import { resolveSampleCall, type SdkLang } from '../scripts/lib/sdk-mapping';
 
 const SPEC_KEY = './openapi.json';
 
@@ -43,11 +38,8 @@ export function getResolvedServerCount(): number {
 
 const VERBS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 
-function pyPathArgs(path: string): string[] {
-  return [...path.matchAll(/\{([^}]+)\}/g)].map((m) => `"${m[1]}_01H7..."`);
-}
-function phpPathArgs(path: string): string[] {
-  return [...path.matchAll(/\{([^}]+)\}/g)].map((m) => `'${m[1]}_01H7...'`);
+function pathParams(path: string): string[] {
+  return [...path.matchAll(/\{([^}]+)\}/g)].map((m) => m[1]);
 }
 
 interface CodeSample {
@@ -55,48 +47,108 @@ interface CodeSample {
   label: string;
   source: string;
 }
+
+// Render one SDK call snippet for a language. Path params become positional
+// placeholder args; a request body becomes a trailing placeholder. Resolution
+// (resource/method/callable, including per-language divergence) comes from
+// scripts/lib/sdk-mapping.ts so the snippet matches the real SDK surface.
+function renderSample(
+  lang: SdkLang,
+  verb: string,
+  path: string,
+  hasBody: boolean,
+): CodeSample | null {
+  const call = resolveSampleCall(lang, verb, path);
+  if (!call) return null;
+  const params = pathParams(path);
+
+  if (lang === 'python') {
+    const args = params.map((p) => `"${p}_01H7..."`).concat(hasBody ? ['# request body fields…'] : []);
+    const target = call.callable ? `bt.${call.resource}` : `bt.${call.resource}.${call.method}`;
+    return {
+      lang: 'python',
+      label: 'Python',
+      source: [
+        'import blueticks',
+        '',
+        'bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")',
+        `result = ${target}(${args.length ? '\n    ' + args.join(',\n    ') + ',\n' : ''})`,
+      ].join('\n'),
+    };
+  }
+
+  if (lang === 'node') {
+    const args = params.map((p) => `'${p}_01H7...'`).concat(hasBody ? ['{ /* … */ }'] : []);
+    const target = call.callable ? `bt.${call.resource}` : `bt.${call.resource}.${call.method}`;
+    return {
+      lang: 'ts',
+      label: 'Node.js',
+      source: [
+        "import { Blueticks } from 'blueticks';",
+        '',
+        "const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });",
+        `const result = await ${target}(${args.join(', ')});`,
+      ].join('\n'),
+    };
+  }
+
+  if (lang === 'php') {
+    const args = params.map((p) => `'${p}_01H7...'`).concat(hasBody ? ['/* opts */'] : []);
+    const target = call.callable ? `$bt->${call.resource}` : `$bt->${call.resource}->${call.method}`;
+    return {
+      lang: 'php',
+      label: 'PHP',
+      source: [
+        'use Blueticks\\Blueticks;',
+        '',
+        "$bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);",
+        `$result = ${target}(${args.join(', ')});`,
+      ].join('\n'),
+    };
+  }
+
+  if (lang === 'ruby') {
+    const args = params.map((p) => `"${p}_01H7..."`).concat(hasBody ? ['# request body fields…'] : []);
+    const target = call.callable ? `client.${call.resource}` : `client.${call.resource}.${call.method}`;
+    return {
+      lang: 'ruby',
+      label: 'Ruby',
+      source: [
+        'require "blueticks"',
+        '',
+        'client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")',
+        `result = ${target}(${args.length ? '\n  ' + args.join(',\n  ') + ',\n' : ''})`,
+      ].join('\n'),
+    };
+  }
+
+  // Go — PascalCase resources/methods, ctx first, typed params struct.
+  const args = ['context.Background()']
+    .concat(params.map((p) => `"${p}_01H7..."`))
+    .concat(hasBody ? ['params'] : []);
+  const target = call.callable ? `client.${call.resource}` : `client.${call.resource}.${call.method}`;
+  return {
+    lang: 'go',
+    label: 'Go',
+    source: [
+      'import (',
+      '\t"context"',
+      '',
+      '\tblueticks "github.com/serenix-com/blueticks-go"',
+      ')',
+      '',
+      'client, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))',
+      `result, _ := ${target}(${args.join(', ')})`,
+    ].join('\n'),
+  };
+}
+
 export function buildCodeSamples(verb: string, path: string, op: { requestBody?: unknown }): CodeSample[] {
-  const out: CodeSample[] = [];
-  const py = pyResource(path);
-  const js = jsResource(path);
-  const mPy = pyMethod(verb, path);
-  const mJs = jsMethod(verb, path);
-  if (!py || !js || !mPy || !mJs) return out;
   const hasBody = !!op.requestBody;
-  const pyArgs = pyPathArgs(path).concat(hasBody ? ['# request body fields…'] : []);
-  const phpArgs = phpPathArgs(path).concat(hasBody ? ['/* opts */'] : []);
-  const jsArgs = phpPathArgs(path).concat(hasBody ? ['{ /* … */ }'] : []);
-  out.push({
-    lang: 'python',
-    label: 'Python',
-    source: [
-      'import blueticks',
-      '',
-      'bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")',
-      `result = bt.${py}.${mPy}(${pyArgs.length ? '\n    ' + pyArgs.join(',\n    ') + ',\n' : ''})`,
-    ].join('\n'),
-  });
-  out.push({
-    lang: 'ts',
-    label: 'Node.js',
-    source: [
-      "import { Blueticks } from 'blueticks';",
-      '',
-      "const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });",
-      `const result = await bt.${js}.${mJs}(${jsArgs.join(', ')});`,
-    ].join('\n'),
-  });
-  out.push({
-    lang: 'php',
-    label: 'PHP',
-    source: [
-      'use Blueticks\\Blueticks;',
-      '',
-      "$bt = new Blueticks('BLUETICKS_API_KEY');",
-      `$result = $bt->${py}->${mJs}(${phpArgs.join(', ')});`,
-    ].join('\n'),
-  });
-  return out;
+  const langs: SdkLang[] = ['python', 'node', 'php', 'ruby', 'go'];
+  return langs
+    .map((lang) => renderSample(lang, verb, path, hasBody))
+    .filter((s): s is CodeSample => s !== null);
 }
 
 // Walk the spec's operations and attach `x-codeSamples` per operation.

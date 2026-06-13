@@ -2006,7 +2006,8 @@
                   "value": {
                     "url": "https://example.com/webhooks/blueticks",
                     "events": [
-                      "message.sent",
+                      "message.queued",
+                      "message.sending",
                       "message.delivered",
                       "message.read",
                       "message.failed"
@@ -2019,7 +2020,7 @@
                   "value": {
                     "url": "https://example.com/webhooks/inbound",
                     "events": [
-                      "message.received"
+                      "new_message_received_webhook"
                     ],
                     "description": "Inbound message stream"
                   }
@@ -2862,7 +2863,8 @@
             }
           }
         },
-        "operationId": "audiences.list"
+        "operationId": "audiences.list",
+        "description": "List the audiences in your workspace, newest first. Offset-paginated via limit + skip. Requires \u0007udiences:read."
       },
       "post": {
         "tags": [
@@ -3213,7 +3215,8 @@
             }
           }
         ],
-        "operationId": "audiences.get"
+        "operationId": "audiences.get",
+        "description": "Retrieve a single audience by id, including its contact_count and variable schema. Requires \u0007udiences:read."
       },
       "patch": {
         "tags": [
@@ -3751,7 +3754,8 @@
             }
           }
         },
-        "operationId": "campaigns.list"
+        "operationId": "campaigns.list",
+        "description": "List the campaigns in your workspace, newest first, each with its live counters (sent_count, delivered_count, ead_count, \failed_count). Offset-paginated via limit + skip. Requires campaigns:read."
       },
       "post": {
         "tags": [
@@ -4203,7 +4207,8 @@
             }
           }
         ],
-        "operationId": "campaigns.get"
+        "operationId": "campaigns.get",
+        "description": "Retrieve a single campaign by id, including its status and live delivery counters. Poll this to track progress. Requires campaigns:read."
       }
     },
     "/v1/chats": {
@@ -4389,7 +4394,8 @@
             }
           }
         },
-        "operationId": "chats.list"
+        "operationId": "chats.list",
+        "description": "List the chats (conversations) the connected WhatsApp engine sees, most-recent first. Offset-paginated via limit + skip. Requires chats:read."
       }
     },
     "/v1/chats/{id}": {
@@ -4552,7 +4558,8 @@
             }
           }
         ],
-        "operationId": "chats.get"
+        "operationId": "chats.get",
+        "description": "Retrieve a single chat by its id — an E.164 phone or a WhatsApp JID (@c.us, @g.us, or @newsletter). Requires chats:read."
       }
     },
     "/v1/groups": {
@@ -5229,7 +5236,8 @@
             }
           }
         ],
-        "operationId": "groups.get"
+        "operationId": "groups.get",
+        "description": "Retrieve a single group by its @g.us id, including its subject, description, and participant list. Requires groups:read."
       },
       "patch": {
         "tags": [
@@ -6205,7 +6213,8 @@
             }
           }
         },
-        "operationId": "contacts.list"
+        "operationId": "contacts.list",
+        "description": "List your workspace contact book — everyone the connected WhatsApp account has messaged. Offset-paginated via limit + skip. Requires contacts:read."
       }
     },
     "/v1/engines": {

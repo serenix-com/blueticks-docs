@@ -4,7 +4,7 @@ import openapiSpec from '@/openapi.json';
 import { buildRequestExample, buildResponseExample, resolveOp } from '@/lib/example-engine';
 import { buildCodeSamples } from '@/lib/openapi';
 
-type Lang = 'curl' | 'python' | 'node' | 'json';
+type Lang = 'curl' | 'python' | 'node' | 'php' | 'ruby' | 'go' | 'json';
 
 interface ApiExampleProps {
   op: string; // "POST /v1/messages"
@@ -17,7 +17,19 @@ const LABELS: Record<string, string> = {
   curl: 'cURL',
   python: 'Python',
   node: 'Node.js',
+  php: 'PHP',
+  ruby: 'Ruby',
+  go: 'Go',
   json: 'JSON',
+};
+
+// fumadocs code-sample `lang` value → (our tab key, syntax-highlight lang).
+const SDK_LANGS: Record<string, { key: Lang; codeLang: string }> = {
+  python: { key: 'python', codeLang: 'python' },
+  ts: { key: 'node', codeLang: 'typescript' },
+  php: { key: 'php', codeLang: 'php' },
+  ruby: { key: 'ruby', codeLang: 'ruby' },
+  go: { key: 'go', codeLang: 'go' },
 };
 
 export function ApiExample({ op, kind = 'request', status, lang }: ApiExampleProps) {
@@ -35,10 +47,8 @@ export function ApiExample({ op, kind = 'request', status, lang }: ApiExamplePro
     const ex = buildRequestExample(spec, op)!;
     if (ex.perLang.curl) samples.push({ key: 'curl', label: LABELS.curl, code: ex.perLang.curl, codeLang: 'bash' });
     for (const s of buildCodeSamples(resolved.verb.toUpperCase(), resolved.path, resolved.op)) {
-      const key = (s.lang === 'ts' ? 'node' : s.lang) as Lang;
-      if (key === 'python' || key === 'node') {
-        samples.push({ key, label: LABELS[key], code: s.source, codeLang: s.lang === 'ts' ? 'typescript' : 'python' });
-      }
+      const m = SDK_LANGS[s.lang];
+      if (m) samples.push({ key: m.key, label: LABELS[m.key], code: s.source, codeLang: m.codeLang });
     }
     if (ex.perLang.json) samples.push({ key: 'json', label: LABELS.json, code: ex.perLang.json, codeLang: 'json' });
   }

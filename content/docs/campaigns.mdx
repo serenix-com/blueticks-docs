@@ -8,9 +8,14 @@ import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 A **campaign** sends one message template to every contact in an
 **audience**, with `{variable}` placeholders swapped in per contact.
 
+This guide assumes you have an API key ([Authentication](/docs/authentication))
+and an SDK client set up ([Quickstart](/docs/quickstart)). Full endpoint
+details live in the [Campaigns](/docs/api/campaigns/create-campaign) and
+[Audiences](/docs/api/audiences/create-audience) reference.
+
 ## 1. Create an audience
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -51,11 +56,39 @@ $aud = $bt->audiences->create(
 ```
 
   </Tab>
+  <Tab value="Ruby">
+
+```ruby
+aud = client.audiences.create(
+  name: "Summer 2026 launch",
+  contacts: [
+    { "to" => "+972501234567", "variables" => { "first_name" => "Rachel" } },
+    { "to" => "+15551234567",  "variables" => { "first_name" => "Alex" } },
+  ],
+)
+puts aud.id, aud.contact_count
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+aud, _ := c.Audiences.Create(context.Background(), blueticks.CreateAudienceParams{
+	Name: "Summer 2026 launch",
+	Contacts: []blueticks.AudienceContactInput{
+		{To: "+972501234567", Variables: map[string]string{"first_name": "Rachel"}},
+		{To: "+15551234567", Variables: map[string]string{"first_name": "Alex"}},
+	},
+})
+```
+
+  </Tab>
   <Tab value="cURL">
 
 ```bash
 curl -X POST https://api.blueticks.co/v1/audiences \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{
     "name": "Summer 2026 launch",
     "contacts": [
@@ -100,12 +133,19 @@ Your workspace-wide contact book (everyone you've ever messaged) is at
 
 ## 2. Launch a campaign
 
-Use `{var_name}` in `text`; each contact's `variables` fill in. If
-any contact is missing a referenced variable, `on_missing_variable`
+Use `{var_name}` in `text`; each contact's `variables` fill in. Token
+lookup is case-insensitive, and four built-ins are always available
+without setting any variables: `{whatsappname}` (WhatsApp profile name),
+`{displayname}`, `{phone}`, and `{mobile}`. If any contact is missing a
+referenced variable, `on_missing_variable`
 decides: `"fail"` (default — 400 request rejected before the campaign starts,
 no messages sent) or `"skip"` (the campaign is accepted and contacts missing
 the variable still receive the message with the literal `{token}` left in
 place).
+
+Two more optional fields: `media_url` (plus `media_caption`) attaches an
+image/video/document to every message, and `from` (an `+E164` phone)
+picks the sending number when the workspace default isn't what you want.
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
   <Tab value="Python">
@@ -144,6 +184,31 @@ $cmp = $bt->campaigns->create(
 ```
 
   </Tab>
+  <Tab value="Ruby">
+
+```ruby
+cmp = client.campaigns.create(
+  name: "Launch blast",
+  audience_id: "aud_01h7...",
+  text: "Hey {first_name}! Your order ships today.",
+  on_missing_variable: "fail",
+)
+puts cmp.id, cmp.status
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+cmp, _ := c.Campaigns.Create(context.Background(), blueticks.CreateCampaignParams{
+	Name:              "Launch blast",
+	AudienceID:        "aud_01h7...",
+	Text:              "Hey {first_name}! Your order ships today.",
+	OnMissingVariable: "fail",
+})
+```
+
+  </Tab>
   <Tab value="cURL">
 
 ```bash
@@ -166,7 +231,7 @@ Response includes live counters (`sent_count`, `delivered_count`,
 
 ## 3. Track progress
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -188,6 +253,22 @@ console.log(cmp.status, cmp.sent_count, cmp.delivered_count);
 ```php
 $cmp = $bt->campaigns->retrieve('cmp_01h7...');
 echo $cmp->status, ' ', $cmp->sent_count, '/', $cmp->delivered_count, "\n";
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+cmp = client.campaigns.get("cmp_01h7...")
+puts cmp.status, cmp.sent_count, cmp.delivered_count
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+cmp, _ := c.Campaigns.Get(context.Background(), "cmp_01h7...")
+fmt.Println(cmp.Status, cmp.SentCount, cmp.DeliveredCount)
 ```
 
   </Tab>
@@ -214,7 +295,7 @@ For push updates, register a [webhook](/docs/webhooks) subscribed to
 
 ## 4. Pause, resume, or cancel
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -254,6 +335,34 @@ $bt->campaigns->resume('cmp_01h7...');
 
 // Cancel permanently — no un-do
 $bt->campaigns->cancel('cmp_01h7...');
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+# Pause a running campaign
+client.campaigns.pause("cmp_01h7...")
+
+# Resume a paused campaign
+client.campaigns.resume("cmp_01h7...")
+
+# Cancel permanently — no un-do
+client.campaigns.cancel("cmp_01h7...")
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+// Pause a running campaign
+c.Campaigns.Pause(context.Background(), "cmp_01h7...")
+
+// Resume a paused campaign
+c.Campaigns.Resume(context.Background(), "cmp_01h7...")
+
+// Cancel permanently — no un-do
+c.Campaigns.Cancel(context.Background(), "cmp_01h7...")
 ```
 
   </Tab>

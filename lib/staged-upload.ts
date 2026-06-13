@@ -48,6 +48,17 @@ export const stagedUpload = {
  */
 export function createMultipartRewrite() {
   return async (init: RequestInit): Promise<RequestInit> => {
+    // Method normalization: fetch only auto-uppercases the six registered
+    // methods (GET/HEAD/POST/PUT/DELETE/OPTIONS) — anything else, notably the
+    // OpenAPI spec's lowercase "patch", is sent on the wire verbatim. Express
+    // routes methods case-sensitively (`app.patch()` matches only `PATCH`),
+    // so a literal `patch` request falls through and the server answers with
+    // a bare 400. Uppercase every outgoing method so PATCH playground
+    // requests reach the router.
+    if (typeof init.method === 'string') {
+      init = { ...init, method: init.method.toUpperCase() };
+    }
+
     const current = stagedUpload.get();
     if (!current) return init;
 

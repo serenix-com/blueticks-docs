@@ -6,28 +6,31 @@ description: Send text, media, or poll messages immediately or schedule them for
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Callout } from 'fumadocs-ui/components/callout';
 
+This guide assumes you have an API key ([Authentication](/docs/authentication))
+and an SDK client set up ([Quickstart](/docs/quickstart)).
+
 There are two ways to send a WhatsApp message. Pick based on whether you want a
 tracked record:
 
 | Endpoint | When to use it | Tracked? |
 | --- | --- | --- |
-| `POST /v1/scheduled-messages` | **The default for almost everything.** Send right now *or* schedule for later. | **Yes** — returns a record you can list, poll for status, edit, and cancel. |
-| `POST /v1/chats/{chat_id}/messages` | A lightweight, fire-and-forget send into one chat. | No — dispatched directly, no record kept. |
+| [`POST /v1/scheduled-messages`](/docs/api/scheduled-messages/schedule-message) | **The default for almost everything.** Send right now *or* schedule for later. | **Yes** — returns a record you can list, poll for status, and edit. |
+| [`POST /v1/messages/{chat_id}`](/docs/api/messages/send-message) | A lightweight, fire-and-forget send into one chat. | No — dispatched directly, no record kept. |
 
 <Callout type="info">
 Despite the name, **`POST /v1/scheduled-messages` is the main "send a message"
-endpoint** — not just for scheduling. Omit `send_at` and the message goes out
-immediately; add `send_at` and it's scheduled for later. This guide uses it for
+endpoint** — not just for scheduling. Omit `sendAt` and the message goes out
+immediately; add `sendAt` and it's scheduled for later. This guide uses it for
 every example below.
 </Callout>
 
-The body is a discriminated union — set `type` to one of `text`, `media`, or
-`poll`. The optional fields `send_at` (schedule), `from` (pick the sending
-number), and `reply_to` (quote a message) work on every variant.
+The body is a flat object — set `type` to one of `text`, `media`, or `poll`;
+`type` selects which fields are required. The optional fields `sendAt`
+(schedule) and `replyTo` (quote a message) work on every variant.
 
 ## Send a text message
 
-Omit `send_at` to send it right now:
+Omit `sendAt` to send it right now:
 
 
 
@@ -35,7 +38,7 @@ Omit `send_at` to send it right now:
 
 ### Response
 
-<ApiExample op="POST /v1/scheduled-messages" kind="response" status="200" />
+<ApiExample op="POST /v1/scheduled-messages" kind="response" status="201" />
 
 ## Send to a group or channel
 
@@ -47,7 +50,7 @@ The `to` field accepts an E.164 phone number OR a WhatsApp JID. JIDs come in thr
 
 The send call is identical — just swap the `to`:
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -96,7 +99,7 @@ const channelMsg = await bt.scheduledMessages.create({
 
 ```php
 use Blueticks\Blueticks;
-$bt = new Blueticks('BLUETICKS_API_KEY');
+$bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 // Send to a group
 $groupMsg = $bt->scheduled_messages->create([
@@ -111,6 +114,55 @@ $channelMsg = $bt->scheduled_messages->create([
     'type' => 'text',
     'text' => 'New announcement for all subscribers.',
 ]);
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+require "blueticks"
+client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
+
+# Send to a group
+client.scheduled_messages.create(
+  to: "120363427920657250@g.us",
+  type: "text",
+  text: "Team standup in 10 minutes!",
+)
+
+# Send to a channel
+client.scheduled_messages.create(
+  to: "12345@newsletter",
+  type: "text",
+  text: "New announcement for all subscribers.",
+)
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import (
+	"context"
+
+	blueticks "github.com/serenix-com/blueticks-go"
+)
+
+c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
+
+// Send to a group
+c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
+	To:   "120363427920657250@g.us",
+	Type: "text",
+	Text: "Team standup in 10 minutes!",
+})
+
+// Send to a channel
+c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
+	To:   "12345@newsletter",
+	Type: "text",
+	Text: "New announcement for all subscribers.",
+})
 ```
 
   </Tab>
@@ -145,13 +197,15 @@ The validator accepts an E.164 phone (`+<digits>`) or any of the three JID suffi
 
 ## Send media
 
-`type: "media"` accepts an HTTPS URL plus an optional `kind`
-(`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`).
-When `kind` is omitted, the engine auto-detects from the URL or the
-`Content-Type` of the fetched asset. `caption` shows under image/video
-in WhatsApp; `filename` is shown for documents.
+`type: "media"` takes the file as `mediaUrl` (an HTTPS URL) or `mediaBase64`
+(the raw bytes base64-encoded, or a `data:` URL); `mediaUrl` wins if both are
+present. The optional `mediaKind`
+(`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`)
+is auto-detected from the URL or the `Content-Type` of the fetched asset
+when omitted. `text` doubles as the caption under image/video in WhatsApp;
+`mediaFilename` is shown for documents.
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -161,12 +215,10 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 msg = bt.scheduled_messages.create(
     to="+972501234567",
     type="media",
-    media={
-        "url": "https://cdn.example.com/receipt.pdf",
-        "kind": "document",
-        "filename": "receipt-A42.pdf",
-        "caption": "Order #A-42",
-    },
+    media_url="https://cdn.example.com/receipt.pdf",
+    media_kind="document",
+    media_filename="receipt-A42.pdf",
+    text="Order #A-42",  # caption
 )
 print(msg.id, msg.status)
 ```
@@ -181,12 +233,10 @@ const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 const msg = await bt.scheduledMessages.create({
   to: '+972501234567',
   type: 'media',
-  media: {
-    url: 'https://cdn.example.com/receipt.pdf',
-    kind: 'document',
-    filename: 'receipt-A42.pdf',
-    caption: 'Order #A-42',
-  },
+  mediaUrl: 'https://cdn.example.com/receipt.pdf',
+  mediaKind: 'document',
+  mediaFilename: 'receipt-A42.pdf',
+  text: 'Order #A-42', // caption
 });
 ```
 
@@ -195,18 +245,62 @@ const msg = await bt.scheduledMessages.create({
 
 ```php
 use Blueticks\Blueticks;
-$bt = new Blueticks('BLUETICKS_API_KEY');
+$bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 $msg = $bt->scheduled_messages->create([
-    'to'    => '+972501234567',
-    'type'  => 'media',
-    'media' => [
-        'url'      => 'https://cdn.example.com/receipt.pdf',
-        'kind'     => 'document',
-        'filename' => 'receipt-A42.pdf',
-        'caption'  => 'Order #A-42',
-    ],
+    'to'            => '+972501234567',
+    'type'          => 'media',
+    'mediaUrl'      => 'https://cdn.example.com/receipt.pdf',
+    'mediaKind'     => 'document',
+    'mediaFilename' => 'receipt-A42.pdf',
+    'text'          => 'Order #A-42', // caption
 ]);
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+Ruby and Go nest the file details under a `media` object (`caption` lives there):
+
+```ruby
+require "blueticks"
+client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
+
+msg = client.scheduled_messages.create(
+  to: "+972501234567",
+  type: "media",
+  media: {
+    "url" => "https://cdn.example.com/receipt.pdf",
+    "kind" => "document",
+    "filename" => "receipt-A42.pdf",
+    "caption" => "Order #A-42",
+  },
+)
+puts msg.id, msg.status
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import (
+	"context"
+
+	blueticks "github.com/serenix-com/blueticks-go"
+)
+
+c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
+
+msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
+	To:   "+972501234567",
+	Type: "media",
+	Media: &blueticks.SendMediaObject{
+		URL:      "https://cdn.example.com/receipt.pdf",
+		Kind:     "document",
+		Filename: "receipt-A42.pdf",
+		Caption:  "Order #A-42",
+	},
+})
 ```
 
   </Tab>
@@ -219,33 +313,32 @@ curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   -d '{
     "to": "+972501234567",
     "type": "media",
-    "media": {
-      "url": "https://cdn.example.com/receipt.pdf",
-      "kind": "document",
-      "filename": "receipt-A42.pdf",
-      "caption": "Order #A-42"
-    }
+    "mediaUrl": "https://cdn.example.com/receipt.pdf",
+    "mediaKind": "document",
+    "mediaFilename": "receipt-A42.pdf",
+    "text": "Order #A-42"
   }'
 ```
 
   </Tab>
 </Tabs>
 
-Voice notes are media with `kind: "voice"`:
+Voice notes are media with `mediaKind: "voice"`:
 
 ```json
-{ "to": "+972...", "type": "media", "media": { "url": "https://.../note.ogg", "kind": "voice" } }
+{ "to": "+972...", "type": "media", "mediaUrl": "https://.../note.ogg", "mediaKind": "voice" }
 ```
 
-`media.url` must be `https://` and resolve to a non-private host. We
-fetch and forward it on your behalf.
+`mediaUrl` must be `https://` and resolve to a non-private host — we fetch
+and forward it on your behalf. If the file has no public URL, send the bytes
+inline as `mediaBase64` instead.
 
 ## Send a poll
 
-`options` must contain 2–12 entries. `allow_multiple` lets recipients
+`pollOptions` must contain 2–12 entries. `pollAllowMultiple` lets recipients
 pick more than one (default `false`).
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -255,11 +348,9 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 msg = bt.scheduled_messages.create(
     to="+972501234567",
     type="poll",
-    poll={
-        "question": "Pizza tonight?",
-        "options": ["Yes", "No", "Maybe"],
-        "allow_multiple": False,
-    },
+    poll_question="Pizza tonight?",
+    poll_options=["Yes", "No", "Maybe"],
+    poll_allow_multiple=False,
 )
 print(msg.id, msg.status)
 ```
@@ -274,11 +365,9 @@ const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 const msg = await bt.scheduledMessages.create({
   to: '+972501234567',
   type: 'poll',
-  poll: {
-    question: 'Pizza tonight?',
-    options: ['Yes', 'No', 'Maybe'],
-    allow_multiple: false,
-  },
+  pollQuestion: 'Pizza tonight?',
+  pollOptions: ['Yes', 'No', 'Maybe'],
+  pollAllowMultiple: false,
 });
 ```
 
@@ -287,17 +376,57 @@ const msg = await bt.scheduledMessages.create({
 
 ```php
 use Blueticks\Blueticks;
-$bt = new Blueticks('BLUETICKS_API_KEY');
+$bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 $msg = $bt->scheduled_messages->create([
-    'to'   => '+972501234567',
-    'type' => 'poll',
-    'poll' => [
-        'question'       => 'Pizza tonight?',
-        'options'        => ['Yes', 'No', 'Maybe'],
-        'allow_multiple' => false,
-    ],
+    'to'                => '+972501234567',
+    'type'              => 'poll',
+    'pollQuestion'      => 'Pizza tonight?',
+    'pollOptions'       => ['Yes', 'No', 'Maybe'],
+    'pollAllowMultiple' => false,
 ]);
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+require "blueticks"
+client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
+
+msg = client.scheduled_messages.create(
+  to: "+972501234567",
+  type: "poll",
+  poll: {
+    "question" => "Pizza tonight?",
+    "options" => ["Yes", "No", "Maybe"],
+    "allow_multiple" => false,
+  },
+)
+puts msg.id, msg.status
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import (
+	"context"
+
+	blueticks "github.com/serenix-com/blueticks-go"
+)
+
+c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
+
+msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
+	To:   "+972501234567",
+	Type: "poll",
+	Poll: &blueticks.SendPollObject{
+		Question:      "Pizza tonight?",
+		Options:       []string{"Yes", "No", "Maybe"},
+		AllowMultiple: false,
+	},
+})
 ```
 
   </Tab>
@@ -310,48 +439,42 @@ curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   -d '{
     "to": "+972501234567",
     "type": "poll",
-    "poll": {
-      "question": "Pizza tonight?",
-      "options": ["Yes", "No", "Maybe"],
-      "allow_multiple": false
-    }
+    "pollQuestion": "Pizza tonight?",
+    "pollOptions": ["Yes", "No", "Maybe"],
+    "pollAllowMultiple": false
   }'
 ```
 
   </Tab>
 </Tabs>
 
-<Callout type="info">
-Typed `poll` parameters land in the next SDK release (tracked alongside the spec sync from BE #49). The call above works at runtime today — the SDKs forward the body to the API.
-</Callout>
-
 ## Schedule for later
 
-`send_at` (ISO 8601 with offset, ≥ 10 s in the future, ≤ 365 d out)
+`sendAt` (ISO 8601 with offset, ≥ 10 s in the future, ≤ 365 d out)
 works on every type. The response status is `scheduled` instead of
 `queued`.
 
 ```json
-{ "to": "+972...", "type": "text", "text": "Reminder", "send_at": "2026-12-01T09:00:00Z" }
+{ "to": "+972...", "type": "text", "text": "Reminder", "sendAt": "2026-12-01T09:00:00Z" }
 ```
 
 ## Quote-reply to a prior message
 
-Set `reply_to` to the wire `key` of a message in the same chat
+Set `replyTo` to the wire `key` of a message in the same chat
 (returned in `MessageResponse.key` once the original has been sent).
 Works with `text`, `media`, and `poll`.
 
 ```json
-{ "to": "+972...", "type": "text", "text": "Got it 👍", "reply_to": "false_972...@c.us_3EB0..." }
+{ "to": "+972...", "type": "text", "text": "Got it 👍", "replyTo": "false_972...@c.us_3EB0..." }
 ```
 
 ## React to a message
 
-Reactions are a separate endpoint — `POST /v1/chats/{chat_id}/messages/{key}/reactions`
+Reactions are a separate endpoint — `POST /v1/messages/reactions/{chat_id}/{key}`
 with body `{ "emoji": "❤️" }`. Pass an empty string to remove a reaction.
 Use the `key` from `MessageResponse`, not the `id`.
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -372,7 +495,7 @@ bt.chats.react(
 import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
-await bt.chats.react(
+await bt.messages.react(
   '972501234567@c.us',
   'false_972501234567@c.us_3EB0ABCDEF',
   { emoji: '❤️' },
@@ -384,7 +507,7 @@ await bt.chats.react(
 
 ```php
 use Blueticks\Blueticks;
-$bt = new Blueticks('BLUETICKS_API_KEY');
+$bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 $bt->chats->react(
     '972501234567@c.us',
@@ -394,10 +517,44 @@ $bt->chats->react(
 ```
 
   </Tab>
+  <Tab value="Ruby">
+
+```ruby
+require "blueticks"
+client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
+
+client.chats.react(
+  "972501234567@c.us",
+  "false_972501234567@c.us_3EB0ABCDEF",
+  emoji: "❤️",
+)
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import (
+	"context"
+
+	blueticks "github.com/serenix-com/blueticks-go"
+)
+
+c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
+
+c.Chats.React(
+	context.Background(),
+	"972501234567@c.us",
+	"false_972501234567@c.us_3EB0ABCDEF",
+	"❤️",
+)
+```
+
+  </Tab>
   <Tab value="cURL">
 
 ```bash
-curl -X POST "https://api.blueticks.co/v1/chats/972501234567@c.us/messages/false_972501234567@c.us_3EB0ABCDEF/reactions" \
+curl -X POST "https://api.blueticks.co/v1/messages/reactions/972501234567@c.us/false_972501234567@c.us_3EB0ABCDEF" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"emoji":"❤️"}'
@@ -409,10 +566,10 @@ curl -X POST "https://api.blueticks.co/v1/chats/972501234567@c.us/messages/false
 ## Idempotency
 
 Safe retries via the `Idempotency-Key` header. Same key + same body
-within 24 h returns the original response. Different body with the
-same key returns `409 idempotency_key_conflict`.
+within 24 h returns the original response (as a `200` replay instead of
+`201`). Different body with the same key returns `409`.
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
 ```python
@@ -447,7 +604,7 @@ const msg = await bt.scheduledMessages.create({
 
 ```php
 use Blueticks\Blueticks;
-$bt = new Blueticks('BLUETICKS_API_KEY');
+$bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 $msg = $bt->scheduled_messages->create([
     'to'              => '+972501234567',
@@ -455,6 +612,41 @@ $msg = $bt->scheduled_messages->create([
     'text'            => 'Your order is confirmed.',
     'idempotency_key' => 'order-42-reminder',
 ]);
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+require "blueticks"
+client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
+
+msg = client.scheduled_messages.create(
+  to: "+972501234567",
+  type: "text",
+  text: "Your order is confirmed.",
+  idempotency_key: "order-42-reminder",
+)
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import (
+	"context"
+
+	blueticks "github.com/serenix-com/blueticks-go"
+)
+
+c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
+
+msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
+	To:             "+972501234567",
+	Type:           "text",
+	Text:           "Your order is confirmed.",
+	IdempotencyKey: "order-42-reminder",
+})
 ```
 
   </Tab>
@@ -475,19 +667,6 @@ curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   </Tab>
 </Tabs>
 
-## Picking the sending number
-
-If your workspace has **exactly one** connected WhatsApp session,
-messages are sent from it automatically. With two or more active
-sessions, include `from`:
-
-```json
-{ "to": "+1...", "type": "text", "text": "hi", "from": "+15551234567" }
-```
-
-Return codes: `409 no_active_session`, `409 ambiguous_session`,
-`422 from_not_linked`.
-
 ## Status lifecycle
 
 ```
@@ -495,15 +674,15 @@ scheduled ──▶ queued ──▶ sending ──┬──▶ delivered ──
                                    └──▶ failed
 ```
 
-- **`scheduled`** — set when `send_at` is in the future; transitions to `queued` at the scheduled time.
+- **`scheduled`** — set when `sendAt` is in the future; transitions to `queued` at the scheduled time.
 - **`queued`** — accepted by the API, waiting for an active WhatsApp session to dispatch.
 - **`sending`** — dispatched to the engine; on the wire.
 - **`delivered`** — the recipient's WhatsApp acknowledged delivery. May further transition to `read`.
 - **`read`** — terminal. The recipient opened the message (read receipt received).
-- **`failed`** — terminal. See the `failure_reason` field on the message for the cause.
+- **`failed`** — terminal. See the `failureReason` field on the message for the cause.
 
 Poll the current state with `GET /v1/scheduled-messages/{id}`. Read receipts
-(`read_at` populated, `message.read` webhook fires) are delivered via
+(`readAt` populated, `message.read` webhook fires) are delivered via
 webhooks — see the [Webhooks guide](/docs/webhooks).
 
 ## Manage scheduled messages
@@ -516,103 +695,80 @@ Fetch one by id to read its current status:
 
 <ApiExample op="GET /v1/scheduled-messages/{id}" kind="request" />
 
-Before a message leaves the queue you can still edit it — reschedule it, change
-the recipient, or rewrite the body — with `PATCH /v1/scheduled-messages/{id}`:
+Before a message leaves the queue you can still edit it with
+`PATCH /v1/scheduled-messages/{id}` — reschedule (`sendAt`), rewrite the body
+(`text`), or swap the attachment (`mediaUrl`, `mediaCaption`). At least one
+field is required; once the message has dispatched, the edit returns `400`:
 
 <ApiExample op="PATCH /v1/scheduled-messages/{id}" kind="request" />
 
 ## Immediate send into an open chat
 
-The second send path from the top of this guide. `POST /v1/chats/{chat_id}/messages`
+The second send path from the top of this guide. `POST /v1/messages/{chat_id}`
 posts straight into one conversation and returns the WhatsApp wire `key`. It's
-fire-and-forget — no record is created, so there's nothing to list, poll, edit,
-or cancel afterwards. Reach for it only when you don't need tracking; otherwise
-use `POST /v1/scheduled-messages` (above). The body is the same `text` / `media` /
-`poll` union, minus `to` (it's in the URL) and `send_at`:
+fire-and-forget — no record is created, so there's nothing to list, poll, or
+edit afterwards. Reach for it only when you don't need tracking; otherwise
+use `POST /v1/scheduled-messages` (above). The body is the same flat `text` /
+`media` / `poll` shape, minus `to` (it's in the URL) and `sendAt`. It also
+accepts `multipart/form-data` with the file in a `mediaFile` part, for media
+sends without a public URL:
 
-<ApiExample op="POST /v1/chats/{chat_id}/messages" kind="request" />
+<ApiExample op="POST /v1/messages/{chat_id}" kind="request" />
 
 ### Response
 
-<ApiExample op="POST /v1/chats/{chat_id}/messages" kind="response" status="201" />
+A successful send returns `200 OK`; the wire `key` is under `data.key`:
 
-## Read a conversation
+```json
+{
+  "success": true,
+  "data": {
+    "id": null,
+    "key": "false_972501234567@c.us_3EB0ABCDEF",
+    "to": "972501234567@c.us",
+    "type": "text",
+    "text": "Got it 👍",
+    "mediaUrl": null,
+    "mediaKind": null,
+    "pollQuestion": null,
+    "status": "sending",
+    "sendAt": null,
+    "createdAt": "2026-06-12T09:00:00.000Z",
+    "sentAt": null,
+    "deliveredAt": null,
+    "readAt": null,
+    "failedAt": null,
+    "failureReason": null
+  }
+}
+```
 
-List your chats, drill into one, page its history, and inspect a single message:
+## Beyond sending: read, groups & channels
 
-<ApiExample op="GET /v1/chats" kind="request" />
+Sending is one half of the API. The flows below each have a full, interactive
+**reference** page — here are the common entry points:
 
-<ApiExample op="GET /v1/chats/{id}" kind="request" />
-
-<ApiExample op="GET /v1/chats/{chat_id}/messages" kind="request" />
-
-<ApiExample op="GET /v1/chats/{chat_id}/messages/{key}" kind="request" />
-
-The participants of a group or channel chat:
-
-<ApiExample op="GET /v1/chats/{chat_id}/participants" kind="request" />
-
-## Acknowledgements & read state
-
-Check delivery/read ticks for a single message with
-`GET /v1/chats/{chat_id}/messages/{key}/ack`, and mark a whole chat as read:
-
-<ApiExample op="GET /v1/chats/{chat_id}/messages/{key}/ack" kind="request" />
-
-<ApiExample op="POST /v1/chats/{chat_id}/mark_read" kind="request" />
-
-## Fetch inbound media
-
-When an incoming message carries media, resolve a temporary download URL (or pull
-the bytes directly) keyed off the message `key`:
-
-<ApiExample op="GET /v1/chats/{chat_id}/messages/{key}/media_url" kind="request" />
-
-<ApiExample op="GET /v1/chats/{chat_id}/messages/{key}/media" kind="request" />
-
-## Manage groups
-
-Beyond sending into a group by its `@g.us` JID, you can create and administer
-groups directly. List them, create one, fetch its metadata, or rename it /
-change its description:
-
-<ApiExample op="GET /v1/groups" kind="request" />
-
-<ApiExample op="POST /v1/groups" kind="request" />
-
-<ApiExample op="GET /v1/groups/{id}" kind="request" />
-
-<ApiExample op="PATCH /v1/groups/{id}" kind="request" />
-
-Add or remove members, grant or revoke admin, leave a group yourself, or set its
-picture:
-
-<ApiExample op="POST /v1/groups/{id}/members" kind="request" />
-
-<ApiExample op="DELETE /v1/groups/{id}/members/{chatId}" kind="request" />
-
-<ApiExample op="DELETE /v1/groups/{id}/members/me" kind="request" />
-
-<ApiExample op="POST /v1/groups/{id}/members/{chatId}/admin" kind="request" />
-
-<ApiExample op="DELETE /v1/groups/{id}/members/{chatId}/admin" kind="request" />
-
-<ApiExample op="PUT /v1/groups/{id}/picture" kind="request" />
-
-## Manage channels (newsletters)
-
-WhatsApp channels are exposed as **newsletters**. List the ones you own, create a
-new channel, or fetch one by id:
-
-<ApiExample op="GET /v1/newsletters" kind="request" />
-
-<ApiExample op="POST /v1/newsletters" kind="request" />
-
-<ApiExample op="GET /v1/newsletters/{id}" kind="request" />
+- **Read chats & messages** — list chats, page through a conversation (scope with
+  `?chatId=`, or search across all chats), and inspect a single message:
+  [List chats](/docs/api/chats/list-chats) ·
+  [List messages](/docs/api/messages/list-messages-all-chats) ·
+  [Get message](/docs/api/messages/get-message) ·
+  [List participants](/docs/api/chats/list-chat-participants)
+- **Delivery & read state** — check ticks for one message, or mark a chat read:
+  [Delivery status](/docs/api/messages/get-message-delivery-status) ·
+  [Mark chat as read](/docs/api/chats/mark-chat-as-read)
+- **Inbound media** — resolve a temporary download URL or pull the bytes for media
+  on an incoming message:
+  [Get media URL](/docs/api/messages/get-message-media-url) ·
+  [Get media](/docs/api/messages/get-message-media)
+- **Groups** — create and administer groups (members, admins, picture), beyond
+  just sending to a `@g.us` JID: [Groups reference](/docs/api/groups/list-groups)
+- **Channels** — WhatsApp channels are exposed as newsletters:
+  [Newsletters reference](/docs/api/newsletters/list-newsletters)
 
 ## Not yet supported
 
-These message types are on the roadmap but not yet exposed in v1.0.
+These message types are on the roadmap but not yet exposed in the v1 API.
 Use [the MCP server](/docs/mcp) or watch the [changelog](/docs/changelog) for ship dates:
 
 - **Location** — share a coordinate with optional name/address.

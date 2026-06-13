@@ -31,10 +31,10 @@ works and to read back the workspace it belongs to:
 
 ### SDKs
 
-All three official SDKs read `BLUETICKS_API_KEY` from the environment as
+All five official SDKs read `BLUETICKS_API_KEY` from the environment as
 a default. You can also pass a key explicitly at construction time:
 
-<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP']}>
+<Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go']}>
   <Tab value="Python">
 
 ```python
@@ -59,6 +59,23 @@ $client = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 ```
 
   </Tab>
+  <Tab value="Ruby">
+
+```ruby
+require "blueticks"
+client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import blueticks "github.com/serenix-com/blueticks-go"
+
+client, err := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
+```
+
+  </Tab>
 </Tabs>
 
 ## Rotating keys
@@ -79,7 +96,12 @@ Revoked keys return **401 authentication_required** on every request.
 
 Both are honored by every official SDK.
 
-## Key prefixes
+## Key format
 
-Keys expose only their first 8 characters in API responses (see the
-`key_prefix` field on `/v1/ping`). Safe to log.
+Keys are bearer tokens that look like `bt_live_...`. Treat the full key
+as a secret — never commit it or expose it client-side. If you need to
+identify a key in logs, log only its first few characters.
+
+To verify a key works, call `GET /v1/ping` — it requires a valid key and
+returns the `account_id` it belongs to plus the WhatsApp engines
+currently connected.
