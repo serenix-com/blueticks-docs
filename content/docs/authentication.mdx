@@ -87,15 +87,6 @@ client, err := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
 Revoked keys return **401 authentication_required** on every request.
 
-## Environment conventions
-
-- `BLUETICKS_API_KEY` — the key itself.
-- `BLUETICKS_BASE_URL` — override the API base URL (default:
-  `https://api.blueticks.co`). Useful for staging or self-hosted
-  environments.
-
-Both are honored by every official SDK.
-
 ## Key format
 
 Keys are bearer tokens that look like `bt_live_...`. Treat the full key

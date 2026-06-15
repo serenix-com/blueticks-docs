@@ -262,6 +262,11 @@
                           "type": "string",
                           "description": "Account display name."
                         },
+                        "user_email": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Email address of the user the API key belongs to, or null if unavailable."
+                        },
                         "timezone": {
                           "type": "string",
                           "nullable": true,
@@ -276,6 +281,7 @@
                       "required": [
                         "id",
                         "name",
+                        "user_email",
                         "timezone",
                         "created_at"
                       ],
@@ -371,16 +377,42 @@
         ],
         "parameters": [
           {
-            "name": "limit",
+            "name": "chatId",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200,
-              "default": 50
+              "type": "string",
+              "pattern": "^[0-9]+(?:-[0-9]+)?@(?:c\\.us|g\\.us|newsletter)$"
             },
-            "description": "Page size (1-200, default 50)."
+            "description": "Filter to messages addressed to this WhatsApp JID. Matches the recipient stored on the queued/scheduled doc — for sends to a phone number, the JID is `<phone>@c.us`."
+          },
+          {
+            "name": "searchToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Search token; when set, only items whose name matches are returned."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed",
+                "received",
+                "read",
+                "played",
+                "failed"
+              ]
+            },
+            "description": "Filter by lifecycle status: `pending` (accepted, waiting), `confirmed` (WhatsApp accepted — has waMessageKey), `received` (double grey tick), `read` (double blue tick), `played` (voice played), `failed`."
           },
           {
             "name": "skip",
@@ -394,42 +426,16 @@
             "description": "Number of items to skip before the page (default 0)."
           },
           {
-            "name": "chatId",
+            "name": "limit",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "pattern": "^[0-9]+(?:-[0-9]+)?@(?:c\\.us|g\\.us|newsletter)$"
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
             },
-            "description": "Filter to messages addressed to this WhatsApp JID. Matches the recipient stored on the queued/scheduled doc — for sends to a phone number, the JID is `<phone>@c.us`."
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "scheduled",
-                "queued",
-                "sending",
-                "delivered",
-                "read",
-                "failed"
-              ]
-            },
-            "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `sendAt` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
-          },
-          {
-            "name": "searchToken",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 200
-            },
-            "description": "Search token; when set, only items whose name matches are returned."
+            "description": "Page size (1-200, default 50)."
           }
         ],
         "responses": {
@@ -500,11 +506,11 @@
                           "status": {
                             "type": "string",
                             "enum": [
-                              "scheduled",
-                              "queued",
-                              "sending",
-                              "delivered",
+                              "pending",
+                              "confirmed",
+                              "received",
                               "read",
+                              "played",
                               "failed"
                             ]
                           },
@@ -517,17 +523,22 @@
                             "type": "string",
                             "format": "date-time"
                           },
-                          "sentAt": {
+                          "confirmedAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "deliveredAt": {
+                          "receivedAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
                           "readAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "playedAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
@@ -583,9 +594,10 @@
                           "status",
                           "sendAt",
                           "createdAt",
-                          "sentAt",
-                          "deliveredAt",
+                          "confirmedAt",
+                          "receivedAt",
                           "readAt",
+                          "playedAt",
                           "failedAt",
                           "failureReason"
                         ],
@@ -849,11 +861,11 @@
                         "status": {
                           "type": "string",
                           "enum": [
-                            "scheduled",
-                            "queued",
-                            "sending",
-                            "delivered",
+                            "pending",
+                            "confirmed",
+                            "received",
                             "read",
+                            "played",
                             "failed"
                           ]
                         },
@@ -866,17 +878,22 @@
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sentAt": {
+                        "confirmedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "deliveredAt": {
+                        "receivedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
                         "readAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "playedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -932,9 +949,10 @@
                         "status",
                         "sendAt",
                         "createdAt",
-                        "sentAt",
-                        "deliveredAt",
+                        "confirmedAt",
+                        "receivedAt",
                         "readAt",
+                        "playedAt",
                         "failedAt",
                         "failureReason"
                       ],
@@ -1015,11 +1033,11 @@
                         "status": {
                           "type": "string",
                           "enum": [
-                            "scheduled",
-                            "queued",
-                            "sending",
-                            "delivered",
+                            "pending",
+                            "confirmed",
+                            "received",
                             "read",
+                            "played",
                             "failed"
                           ]
                         },
@@ -1032,17 +1050,22 @@
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sentAt": {
+                        "confirmedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "deliveredAt": {
+                        "receivedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
                         "readAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "playedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -1098,9 +1121,10 @@
                         "status",
                         "sendAt",
                         "createdAt",
-                        "sentAt",
-                        "deliveredAt",
+                        "confirmedAt",
+                        "receivedAt",
                         "readAt",
+                        "playedAt",
                         "failedAt",
                         "failureReason"
                       ],
@@ -1260,11 +1284,11 @@
                         "status": {
                           "type": "string",
                           "enum": [
-                            "scheduled",
-                            "queued",
-                            "sending",
-                            "delivered",
+                            "pending",
+                            "confirmed",
+                            "received",
                             "read",
+                            "played",
                             "failed"
                           ]
                         },
@@ -1277,17 +1301,22 @@
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sentAt": {
+                        "confirmedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "deliveredAt": {
+                        "receivedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
                         "readAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "playedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -1343,9 +1372,10 @@
                         "status",
                         "sendAt",
                         "createdAt",
-                        "sentAt",
-                        "deliveredAt",
+                        "confirmedAt",
+                        "receivedAt",
                         "readAt",
+                        "playedAt",
                         "failedAt",
                         "failureReason"
                       ],
@@ -1558,11 +1588,11 @@
                         "status": {
                           "type": "string",
                           "enum": [
-                            "scheduled",
-                            "queued",
-                            "sending",
-                            "delivered",
+                            "pending",
+                            "confirmed",
+                            "received",
                             "read",
+                            "played",
                             "failed"
                           ]
                         },
@@ -1575,17 +1605,22 @@
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sentAt": {
+                        "confirmedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "deliveredAt": {
+                        "receivedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
                         "readAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "playedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -1641,9 +1676,10 @@
                         "status",
                         "sendAt",
                         "createdAt",
-                        "sentAt",
-                        "deliveredAt",
+                        "confirmedAt",
+                        "receivedAt",
                         "readAt",
+                        "playedAt",
                         "failedAt",
                         "failureReason"
                       ],
@@ -1759,6 +1795,17 @@
         ],
         "parameters": [
           {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -1769,17 +1816,6 @@
               "default": 50
             },
             "description": "Page size (default 50, max 200)."
-          },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "description": "Number of items to skip before the page (default 0)."
           }
         ],
         "responses": {
@@ -2701,6 +2737,7 @@
           "Audiences"
         ],
         "summary": "List audiences",
+        "description": "List the audiences in your workspace, newest first. Offset-paginated via `limit` + `skip`. Requires `audiences:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -2709,6 +2746,17 @@
           }
         ],
         "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of items to skip before the page (default 0)."
+          },
           {
             "name": "limit",
             "in": "query",
@@ -2720,17 +2768,6 @@
               "default": 50
             },
             "description": "Page size (default 50, max 200)."
-          },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "description": "Number of items to skip before the page (default 0)."
           }
         ],
         "responses": {
@@ -2863,8 +2900,7 @@
             }
           }
         },
-        "operationId": "audiences.list",
-        "description": "List the audiences in your workspace, newest first. Offset-paginated via limit + skip. Requires \u0007udiences:read."
+        "operationId": "audiences.list"
       },
       "post": {
         "tags": [
@@ -2898,7 +2934,7 @@
                       "properties": {
                         "to": {
                           "type": "string",
-                          "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
+                          "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
                         },
                         "variables": {
                           "type": "object",
@@ -3076,6 +3112,7 @@
           "Audiences"
         ],
         "summary": "Get audience",
+        "description": "Retrieve a single audience by id, including its `contact_count` and variable schema. Requires `audiences:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -3215,8 +3252,7 @@
             }
           }
         ],
-        "operationId": "audiences.get",
-        "description": "Retrieve a single audience by id, including its contact_count and variable schema. Requires \u0007udiences:read."
+        "operationId": "audiences.get"
       },
       "patch": {
         "tags": [
@@ -3533,6 +3569,7 @@
           "Campaigns"
         ],
         "summary": "List campaigns",
+        "description": "List the campaigns in your workspace, newest first, each with its live counters (`sent_count`, `delivered_count`, `read_count`, `failed_count`). Offset-paginated via `limit` + `skip`. Requires `campaigns:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -3541,6 +3578,17 @@
           }
         ],
         "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of items to skip before the page (default 0)."
+          },
           {
             "name": "limit",
             "in": "query",
@@ -3552,17 +3600,6 @@
               "default": 50
             },
             "description": "Page size (default 50, max 200)."
-          },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "description": "Number of items to skip before the page (default 0)."
           }
         ],
         "responses": {
@@ -3754,8 +3791,7 @@
             }
           }
         },
-        "operationId": "campaigns.list",
-        "description": "List the campaigns in your workspace, newest first, each with its live counters (sent_count, delivered_count, ead_count, \failed_count). Offset-paginated via limit + skip. Requires campaigns:read."
+        "operationId": "campaigns.list"
       },
       "post": {
         "tags": [
@@ -3809,7 +3845,7 @@
                   "from": {
                     "type": "string",
                     "pattern": "^\\+[1-9]\\d{6,14}$",
-                    "description": "Sender phone in +E164. When omitted, the workspace default sender is used."
+                    "description": "Sender phone in international format (e.g. +14155551234). When omitted, the workspace default sender is used."
                   },
                   "on_missing_variable": {
                     "type": "string",
@@ -4009,6 +4045,7 @@
           "Campaigns"
         ],
         "summary": "Get campaign",
+        "description": "Retrieve a single campaign by id, including its status and live delivery counters. Poll this to track progress. Requires `campaigns:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -4207,8 +4244,7 @@
             }
           }
         ],
-        "operationId": "campaigns.get",
-        "description": "Retrieve a single campaign by id, including its status and live delivery counters. Poll this to track progress. Requires campaigns:read."
+        "operationId": "campaigns.get"
       }
     },
     "/v1/chats": {
@@ -4217,6 +4253,7 @@
           "Chats"
         ],
         "summary": "List chats",
+        "description": "List the chats (conversations) the connected WhatsApp engine sees, most-recent first. Offset-paginated via `limit` + `skip`, with an optional case-insensitive substring search on the chat name via `searchToken` and a `filter` to restrict to one chat kind. Requires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -4226,16 +4263,55 @@
         ],
         "parameters": [
           {
-            "name": "limit",
+            "name": "searchToken",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200,
-              "default": 50
+              "type": "string",
+              "maxLength": 200
             },
-            "description": "Page size (default 50, max 200)."
+            "description": "Search token; when set, only items whose name matches are returned."
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "groups",
+                "contacts",
+                "newsletters"
+              ]
+            },
+            "description": "Restrict to one chat kind."
+          },
+          {
+            "name": "include_last_message",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include the last message snippet on each chat row."
+          },
+          {
+            "name": "include_extended_info",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include extended chat metadata (engine-side opt-in)."
+          },
+          {
+            "name": "include_without_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include chats with no resolved name (default: skipped)."
           },
           {
             "name": "skip",
@@ -4247,6 +4323,18 @@
               "default": 0
             },
             "description": "Number of items to skip before the page (default 0)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Page size (1-200, default 50)."
           }
         ],
         "responses": {
@@ -4394,8 +4482,7 @@
             }
           }
         },
-        "operationId": "chats.list",
-        "description": "List the chats (conversations) the connected WhatsApp engine sees, most-recent first. Offset-paginated via limit + skip. Requires chats:read."
+        "operationId": "chats.list"
       }
     },
     "/v1/chats/{id}": {
@@ -4404,6 +4491,7 @@
           "Chats"
         ],
         "summary": "Get chat",
+        "description": "Retrieve a single chat by its id — a phone number in international format (e.g. +14155551234) or a WhatsApp JID (`@c.us`, `@g.us`, or `@newsletter`). Requires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -4558,8 +4646,7 @@
             }
           }
         ],
-        "operationId": "chats.get",
-        "description": "Retrieve a single chat by its id — an E.164 phone or a WhatsApp JID (@c.us, @g.us, or @newsletter). Requires chats:read."
+        "operationId": "chats.get"
       }
     },
     "/v1/groups": {
@@ -4578,16 +4665,15 @@
         ],
         "parameters": [
           {
-            "name": "limit",
+            "name": "searchToken",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200,
-              "default": 50
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
             },
-            "description": "Page size (1-200, default 50)."
+            "description": "Search token; when set, only items whose name matches are returned."
           },
           {
             "name": "skip",
@@ -4601,15 +4687,16 @@
             "description": "Number of items to skip before the page (default 0)."
           },
           {
-            "name": "searchToken",
+            "name": "limit",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
             },
-            "description": "Search token; when set, only items whose name matches are returned."
+            "description": "Page size (1-200, default 50)."
           }
         ],
         "responses": {
@@ -5038,6 +5125,7 @@
           "Groups"
         ],
         "summary": "Get group",
+        "description": "Retrieve a single group by its `@g.us` id, including its subject, description, and participant list. Requires `groups:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -5236,8 +5324,7 @@
             }
           }
         ],
-        "operationId": "groups.get",
-        "description": "Retrieve a single group by its @g.us id, including its subject, description, and participant list. Requires groups:read."
+        "operationId": "groups.get"
       },
       "patch": {
         "tags": [
@@ -5495,16 +5582,14 @@
         ],
         "parameters": [
           {
-            "name": "limit",
+            "name": "searchToken",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200,
-              "default": 50
+              "type": "string",
+              "maxLength": 200
             },
-            "description": "Page size (1-200, default 50)."
+            "description": "Search token; when set, only newsletters whose name matches (case-insensitive substring) are returned, and `total` reflects the matched count."
           },
           {
             "name": "skip",
@@ -5516,6 +5601,18 @@
               "default": 0
             },
             "description": "Number of items to skip before the page (default 0)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Page size (1-200, default 50)."
           }
         ],
         "responses": {
@@ -6053,6 +6150,7 @@
           "Contacts"
         ],
         "summary": "List contacts",
+        "description": "List your workspace contact book — everyone the connected WhatsApp account has messaged. Offset-paginated via `limit` + `skip`. Requires `contacts:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -6072,15 +6170,6 @@
             "description": "Search token; when set, only items whose name matches are returned."
           },
           {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Page size (default 10, max 200). Pass `-1` to return every contact in a single page."
-          },
-          {
             "name": "skip",
             "in": "query",
             "required": false,
@@ -6088,6 +6177,15 @@
               "type": "integer"
             },
             "description": "Number of contacts to skip before the page (default 0)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page size (default 10, max 200). Pass `-1` to return every contact in a single page."
           }
         ],
         "responses": {
@@ -6213,8 +6311,7 @@
             }
           }
         },
-        "operationId": "contacts.list",
-        "description": "List your workspace contact book — everyone the connected WhatsApp account has messaged. Offset-paginated via limit + skip. Requires contacts:read."
+        "operationId": "contacts.list"
       }
     },
     "/v1/engines": {
@@ -6574,7 +6671,7 @@
                       "properties": {
                         "to": {
                           "type": "string",
-                          "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
+                          "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
                         },
                         "variables": {
                           "type": "object",
@@ -7683,30 +7780,14 @@
         ],
         "parameters": [
           {
-            "name": "order",
+            "name": "chatId",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "pattern": "^\\d+(?:-\\d+)?@(?:c\\.us|s\\.whatsapp\\.net|g\\.us|lid|broadcast|newsletter)$"
             },
-            "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
-          },
-          {
-            "name": "mode",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "history",
-                "latest"
-              ]
-            },
-            "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
+            "description": "Optional WhatsApp JID to scope results to a single chat. Omit to search across all chats."
           },
           {
             "name": "searchToken",
@@ -7719,27 +7800,17 @@
             "description": "Search token; when set, only items whose name matches are returned."
           },
           {
-            "name": "limit",
+            "name": "order",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200,
-              "default": 50
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             },
-            "description": "Max messages to return."
-          },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "description": "Number of messages to skip before the page (default 0)."
+            "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
           },
           {
             "name": "since",
@@ -7809,14 +7880,27 @@
             "description": "Include inline media payload on rows (heavy; default false — use /messages/{key}/media)."
           },
           {
-            "name": "chatId",
+            "name": "skip",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "pattern": "^\\d+(?:-\\d+)?@(?:c\\.us|s\\.whatsapp\\.net|g\\.us|lid|broadcast|newsletter)$"
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
             },
-            "description": "Optional WhatsApp JID to scope results to a single chat. Omit to search across all chats."
+            "description": "Number of messages to skip before the page (default 0)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Max messages to return."
           }
         ],
         "responses": {
@@ -8196,11 +8280,11 @@
                         "status": {
                           "type": "string",
                           "enum": [
-                            "scheduled",
-                            "queued",
-                            "sending",
-                            "delivered",
+                            "pending",
+                            "confirmed",
+                            "received",
                             "read",
+                            "played",
                             "failed"
                           ]
                         },
@@ -8213,17 +8297,22 @@
                           "type": "string",
                           "format": "date-time"
                         },
-                        "sentAt": {
+                        "confirmedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "deliveredAt": {
+                        "receivedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
                         "readAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "playedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -8279,9 +8368,10 @@
                         "status",
                         "sendAt",
                         "createdAt",
-                        "sentAt",
-                        "deliveredAt",
+                        "confirmedAt",
+                        "receivedAt",
                         "readAt",
+                        "playedAt",
                         "failedAt",
                         "failureReason"
                       ],
@@ -8371,13 +8461,13 @@
         "operationId": "messages.create"
       }
     },
-    "/v1/messages/{chat_id}/{key}": {
+    "/v1/messages/{waMessageKey}": {
       "get": {
         "tags": [
           "Messages"
         ],
         "summary": "Get message",
-        "description": "Fetch a single message by its WhatsApp message key. Requires `chats:read`.",
+        "description": "Fetch a single message by its complete WhatsApp message key. Requires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -8387,17 +8477,19 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "waMessageKey",
             "in": "path",
             "required": true,
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "key",
-            "in": "path",
-            "required": true,
+            "name": "chatId",
+            "in": "query",
+            "required": false,
+            "description": "Optional. Only used to find the message faster — when you pass a bare message id instead of the complete key, `chatId` lets the server rebuild the full key. If you pass the complete `waMessageKey` you can omit it.",
             "schema": {
               "type": "string"
             }
@@ -8600,7 +8692,7 @@
           "Groups"
         ],
         "summary": "Add member to group",
-        "description": "Add a participant to the group by chat_id (JID) or +E.164 phone. Requires `groups:write`.",
+        "description": "Add a participant to the group by chat_id (JID) or phone number in international format (e.g. +14155551234). Requires `groups:write`.",
         "security": [
           {
             "BearerAuth": [
@@ -9837,16 +9929,14 @@
             }
           },
           {
-            "name": "limit",
+            "name": "searchToken",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 500,
-              "default": 100
+              "type": "string",
+              "maxLength": 200
             },
-            "description": "Max participants to return."
+            "description": "Search token; when set, only participants whose resolved name or phone/JID matches (case-insensitive substring) are returned, and `total` reflects the matched count."
           },
           {
             "name": "skip",
@@ -9858,6 +9948,18 @@
               "default": 0
             },
             "description": "Number of participants to skip before the page (default 0)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            },
+            "description": "Max participants to return."
           }
         ],
         "responses": {
@@ -10269,7 +10371,7 @@
         "operationId": "chats.open.create"
       }
     },
-    "/v1/messages/ack/{chat_id}/{key}": {
+    "/v1/messages/ack/{waMessageKey}": {
       "get": {
         "tags": [
           "Messages"
@@ -10285,17 +10387,19 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "waMessageKey",
             "in": "path",
             "required": true,
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "key",
-            "in": "path",
-            "required": true,
+            "name": "chatId",
+            "in": "query",
+            "required": false,
+            "description": "Optional. Only used to find the message faster — when you pass a bare message id instead of the complete key, `chatId` lets the server rebuild the full key. If you pass the complete `waMessageKey` you can omit it.",
             "schema": {
               "type": "string"
             }
@@ -10414,7 +10518,7 @@
         "operationId": "messages.ack.get"
       }
     },
-    "/v1/messages/reactions/{chat_id}/{key}": {
+    "/v1/messages/reactions/{waMessageKey}": {
       "post": {
         "tags": [
           "Messages"
@@ -10430,17 +10534,19 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "waMessageKey",
             "in": "path",
             "required": true,
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "key",
-            "in": "path",
-            "required": true,
+            "name": "chatId",
+            "in": "query",
+            "required": false,
+            "description": "Optional. Only used to find the message faster — when you pass a bare message id instead of the complete key, `chatId` lets the server rebuild the full key. If you pass the complete `waMessageKey` you can omit it.",
             "schema": {
               "type": "string"
             }
@@ -10726,7 +10832,7 @@
         "operationId": "messages.loadolder.create"
       }
     },
-    "/v1/messages/media_url/{chat_id}/{key}": {
+    "/v1/messages/media_url/{waMessageKey}": {
       "get": {
         "tags": [
           "Messages"
@@ -10742,17 +10848,19 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "waMessageKey",
             "in": "path",
             "required": true,
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "key",
-            "in": "path",
-            "required": true,
+            "name": "chatId",
+            "in": "query",
+            "required": false,
+            "description": "Optional. Only used to find the message faster — when you pass a bare message id instead of the complete key, `chatId` lets the server rebuild the full key. If you pass the complete `waMessageKey` you can omit it.",
             "schema": {
               "type": "string"
             }
@@ -11039,7 +11147,7 @@
         "operationId": "messages.acks"
       }
     },
-    "/v1/messages/media/{chat_id}/{key}": {
+    "/v1/messages/media/{waMessageKey}": {
       "get": {
         "tags": [
           "Messages"
@@ -11055,17 +11163,19 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "waMessageKey",
             "in": "path",
             "required": true,
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "key",
-            "in": "path",
-            "required": true,
+            "name": "chatId",
+            "in": "query",
+            "required": false,
+            "description": "Optional. Only used to find the message faster — when you pass a bare message id instead of the complete key, `chatId` lets the server rebuild the full key. If you pass the complete `waMessageKey` you can omit it.",
             "schema": {
               "type": "string"
             }
@@ -11400,6 +11510,11 @@
             "type": "string",
             "description": "Account display name."
           },
+          "user_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Email address of the user the API key belongs to, or null if unavailable."
+          },
           "timezone": {
             "type": "string",
             "nullable": true,
@@ -11414,6 +11529,7 @@
         "required": [
           "id",
           "name",
+          "user_email",
           "timezone",
           "created_at"
         ]
@@ -11428,7 +11544,7 @@
               "properties": {
                 "to": {
                   "type": "string",
-                  "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
+                  "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
                 },
                 "variables": {
                   "type": "object",
@@ -11484,7 +11600,7 @@
         "properties": {
           "to": {
             "type": "string",
-            "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
+            "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
           },
           "variables": {
             "type": "object",
@@ -11543,7 +11659,7 @@
               "properties": {
                 "to": {
                   "type": "string",
-                  "description": "Recipient. Either +E164 phone (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored as +E164."
+                  "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
                 },
                 "variables": {
                   "type": "object",
@@ -11729,7 +11845,7 @@
           "from": {
             "type": "string",
             "pattern": "^\\+[1-9]\\d{6,14}$",
-            "description": "Sender phone in +E164. When omitted, the workspace default sender is used."
+            "description": "Sender phone in international format (e.g. +14155551234). When omitted, the workspace default sender is used."
           },
           "on_missing_variable": {
             "type": "string",
@@ -11918,6 +12034,11 @@
       "GetChatParticipantsQuery": {
         "type": "object",
         "properties": {
+          "searchToken": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Search token; when set, only participants whose resolved name or phone/JID matches (case-insensitive substring) are returned, and `total` reflects the matched count."
+          },
           "limit": {
             "type": "integer",
             "minimum": 1,
@@ -12093,14 +12214,6 @@
               "desc"
             ],
             "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "history",
-              "latest"
-            ],
-            "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
           },
           "searchToken": {
             "type": "string",
@@ -12354,14 +12467,6 @@
               "desc"
             ],
             "description": "Result ordering. asc = oldest-first; desc = newest-first (default)."
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "history",
-              "latest"
-            ],
-            "description": "Deprecated alias — prefer `order` (asc/desc). history=asc, latest=desc."
           },
           "searchToken": {
             "type": "string",
@@ -12989,6 +13094,11 @@
       "ListNewslettersQuery": {
         "type": "object",
         "properties": {
+          "searchToken": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Search token; when set, only newsletters whose name matches (case-insensitive substring) are returned, and `total` reflects the matched count."
+          },
           "limit": {
             "type": "integer",
             "minimum": 1,
@@ -13210,14 +13320,14 @@
           "status": {
             "type": "string",
             "enum": [
-              "scheduled",
-              "queued",
-              "sending",
-              "delivered",
+              "pending",
+              "confirmed",
+              "received",
               "read",
+              "played",
               "failed"
             ],
-            "description": "Filter by lifecycle status. `scheduled` returns pending messages whose `sendAt` is in the future; `queued` returns pending messages ready for immediate dispatch; `sending`/`delivered`/`read`/`failed` reflect post-dispatch states. Omit to return all statuses."
+            "description": "Filter by lifecycle status: `pending` (accepted, waiting), `confirmed` (WhatsApp accepted — has waMessageKey), `received` (double grey tick), `read` (double blue tick), `played` (voice played), `failed`."
           },
           "searchToken": {
             "type": "string",
@@ -13295,11 +13405,11 @@
           "status": {
             "type": "string",
             "enum": [
-              "scheduled",
-              "queued",
-              "sending",
-              "delivered",
+              "pending",
+              "confirmed",
+              "received",
               "read",
+              "played",
               "failed"
             ]
           },
@@ -13312,17 +13422,22 @@
             "type": "string",
             "format": "date-time"
           },
-          "sentAt": {
+          "confirmedAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "deliveredAt": {
+          "receivedAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
           "readAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "playedAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
@@ -13378,9 +13493,10 @@
           "status",
           "sendAt",
           "createdAt",
-          "sentAt",
-          "deliveredAt",
+          "confirmedAt",
+          "receivedAt",
           "readAt",
+          "playedAt",
           "failedAt",
           "failureReason"
         ],
@@ -13389,11 +13505,11 @@
       "MessageStatus": {
         "type": "string",
         "enum": [
-          "scheduled",
-          "queued",
-          "sending",
-          "delivered",
+          "pending",
+          "confirmed",
+          "received",
           "read",
+          "played",
           "failed"
         ]
       },

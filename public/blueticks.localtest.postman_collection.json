@@ -7774,7 +7774,7 @@
           "request": {
             "name": "Get chat",
             "description": {
-              "content": "Retrieve a single chat by its id — an E.164 phone or a WhatsApp JID (@c.us, @g.us, or @newsletter). Requires chats:read.",
+              "content": "Retrieve a single chat by its id — a phone number in international format (e.g. +14155551234) or a WhatsApp JID (@c.us, @g.us, or @newsletter). Requires chats:read.",
               "type": "text/plain"
             },
             "url": {
@@ -12555,7 +12555,7 @@
           "request": {
             "name": "Add member to group",
             "description": {
-              "content": "Add a participant to the group by chat_id (JID) or +E.164 phone. Requires `groups:write`.",
+              "content": "Add a participant to the group by chat_id (JID) or phone number in international format (e.g. +14155551234). Requires `groups:write`.",
               "type": "text/plain"
             },
             "url": {

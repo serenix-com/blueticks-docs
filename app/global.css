@@ -76,12 +76,13 @@ select:not(:disabled),
 }
 
 /* Playground response viewer (PrettyResultDisplay marks its panel with
-   data-bt-result). The shiki code block holding the response body grows with
-   its content but is capped at 500px and scrolls vertically, so a large
-   payload stays readable without pushing the rest of the page down. */
-[data-bt-result] figure {
+   data-bt-result). fumadocs' CodeBlock already renders a single scrolling
+   viewport (.fd-scroll-container, default max-height 600px) inside the figure.
+   Cap THAT inner viewport at 500px so a large payload stays readable without
+   pushing the rest of the page down. Don't also put overflow on the outer
+   <figure> — that stacks a second scrollbar on top of the inner one. */
+[data-bt-result] figure .fd-scroll-container {
   max-height: 500px;
-  overflow: auto;
 }
 
 /* Brand primary: Blueticks blue (was teal). */

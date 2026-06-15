@@ -101,7 +101,7 @@ curl -X POST https://api.blueticks.co/v1/audiences \
   </Tab>
 </Tabs>
 
-Each contact's `to` accepts an E.164 phone OR a WhatsApp JID (`@g.us` for groups,
+Each contact's `to` accepts a phone number in international format OR a WhatsApp JID (`@g.us` for groups,
 `@newsletter` for channels) — same rules as direct `POST /v1/scheduled-messages`.
 
 Append more contacts to an existing audience later via
@@ -144,7 +144,7 @@ the variable still receive the message with the literal `{token}` left in
 place).
 
 Two more optional fields: `media_url` (plus `media_caption`) attaches an
-image/video/document to every message, and `from` (an `+E164` phone)
+image/video/document to every message, and `from` (a phone number in international format)
 picks the sending number when the workspace default isn't what you want.
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'cURL']}>

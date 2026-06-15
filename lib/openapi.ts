@@ -228,6 +228,49 @@ function declutterErrorSchema(spec: {
   }
 }
 
+// Render query parameters in a consistent order on every endpoint: filters
+// first (most useful first), pagination (skip/limit) always last. Params not
+// named here keep their original relative order in the middle. This mirrors the
+// same normalization the backend applies when it builds openapi.json
+// (backend/src/services/api/v1/lib/openapi-emit.ts → reorderQueryParameters),
+// so the committed spec and the rendered docs agree; doing it here too means
+// the docs stay consistent even if a spec is regenerated without that pass.
+const QUERY_PARAM_ORDER: Record<string, number> = {
+  // Filters — most important first
+  chatId: 10,
+  searchToken: 20,
+  status: 30,
+  // Pagination — always last
+  skip: 900,
+  limit: 910,
+};
+const DEFAULT_QUERY_PARAM_RANK = 500;
+
+function reorderQueryParameters(spec: {
+  paths?: Record<string, Record<string, { parameters?: Array<{ in?: string; name?: string }> }>>;
+}): void {
+  const rankOf = (p: { name?: string }) =>
+    QUERY_PARAM_ORDER[p.name ?? ''] ?? DEFAULT_QUERY_PARAM_RANK;
+  for (const pathItem of Object.values(spec.paths ?? {})) {
+    if (!pathItem || typeof pathItem !== 'object') continue;
+    for (const op of Object.values(pathItem)) {
+      const params = op?.parameters;
+      if (!Array.isArray(params) || params.length < 2) continue;
+      if (!params.some((p) => p.in === 'query')) continue;
+      // Stable sort of the query entries only; path/header params stay put.
+      const sortedQuery = params
+        .map((param, idx) => ({ param, idx }))
+        .filter((e) => e.param.in === 'query')
+        .sort((a, b) => rankOf(a.param) - rankOf(b.param) || a.idx - b.idx)
+        .map((e) => e.param);
+      let qi = 0;
+      for (let i = 0; i < params.length; i++) {
+        if (params[i].in === 'query') params[i] = sortedQuery[qi++];
+      }
+    }
+  }
+}
+
 export const openapi = createOpenAPI({
   input: async () => {
     const raw = JSON.parse(await fs.readFile(SPEC_KEY, 'utf8'));
@@ -235,6 +278,7 @@ export const openapi = createOpenAPI({
     injectCodeSamples(raw);
     collapseErrorResponses(raw);
     declutterErrorSchema(raw);
+    reorderQueryParameters(raw);
     return { [SPEC_KEY]: raw };
   },
 });

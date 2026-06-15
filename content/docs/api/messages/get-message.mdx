@@ -1,6 +1,6 @@
 ---
 title: Get message
-description: Fetch a single message by its WhatsApp message key.
+description: Fetch a single message by its complete WhatsApp message key.
 full: true
 _openapi:
   method: GET
@@ -9,7 +9,7 @@ _openapi:
     headings: []
     contents:
       - content: >-
-          Fetch a single message by its WhatsApp message key. Requires
+          Fetch a single message by its complete WhatsApp message key. Requires
           `chats:read`.
 ---
 
@@ -17,4 +17,4 @@ _openapi:
 
 Requires `chats:read`.
 
-<APIPage document={"./openapi.json"} operations={[{"path":"/v1/messages/{chat_id}/{key}","method":"get"}]} />
+<APIPage document={"./openapi.json"} operations={[{"path":"/v1/messages/{waMessageKey}","method":"get"}]} />

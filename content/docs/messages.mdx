@@ -42,9 +42,9 @@ Omit `sendAt` to send it right now:
 
 ## Send to a group or channel
 
-The `to` field accepts an E.164 phone number OR a WhatsApp JID. JIDs come in three flavors:
+The `to` field accepts a phone number in international format OR a WhatsApp JID. JIDs come in three flavors:
 
-- `<digits>@c.us` — individual chat (digits-only equivalent of an E.164 phone with `+` stripped).
+- `<digits>@c.us` — individual chat (digits-only equivalent of an international-format phone number with `+` stripped).
 - `<id>@g.us` — group chat (e.g. `120363427920657250@g.us`). Find a group's id with `GET /v1/groups` or by inspecting the URL in WhatsApp Web.
 - `<id>@newsletter` — channel (e.g. `12345@newsletter`).
 
@@ -193,7 +193,7 @@ curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   </Tab>
 </Tabs>
 
-The validator accepts an E.164 phone (`+<digits>`) or any of the three JID suffixes (`@c.us`, `@g.us`, `@newsletter`).
+The validator accepts a phone number in international format (`+<digits>`) or any of the three JID suffixes (`@c.us`, `@g.us`, `@newsletter`).
 
 ## Send media
 
@@ -451,8 +451,8 @@ curl -X POST https://api.blueticks.co/v1/scheduled-messages \
 ## Schedule for later
 
 `sendAt` (ISO 8601 with offset, ≥ 10 s in the future, ≤ 365 d out)
-works on every type. The response status is `scheduled` instead of
-`queued`.
+works on every type. The response status is `pending` — the message waits
+until the `sendAt` time before dispatching.
 
 ```json
 { "to": "+972...", "type": "text", "text": "Reminder", "sendAt": "2026-12-01T09:00:00Z" }
@@ -670,15 +670,15 @@ curl -X POST https://api.blueticks.co/v1/scheduled-messages \
 ## Status lifecycle
 
 ```
-scheduled ──▶ queued ──▶ sending ──┬──▶ delivered ──▶ read
-                                   └──▶ failed
+pending ──▶ confirmed ──▶ received ──▶ read ──▶ played
+                     └──▶ failed
 ```
 
-- **`scheduled`** — set when `sendAt` is in the future; transitions to `queued` at the scheduled time.
-- **`queued`** — accepted by the API, waiting for an active WhatsApp session to dispatch.
-- **`sending`** — dispatched to the engine; on the wire.
-- **`delivered`** — the recipient's WhatsApp acknowledged delivery. May further transition to `read`.
-- **`read`** — terminal. The recipient opened the message (read receipt received).
+- **`pending`** — accepted by the API; waiting to dispatch (either immediately or at `sendAt`).
+- **`confirmed`** — WhatsApp accepted the message (wire key received). `confirmedAt` is populated.
+- **`received`** — double grey tick: the recipient's device has it. `receivedAt` is populated.
+- **`read`** — double blue tick: the recipient opened the message. `readAt` is populated.
+- **`played`** — voice note played by the recipient. `playedAt` is populated.
 - **`failed`** — terminal. See the `failureReason` field on the message for the cause.
 
 Poll the current state with `GET /v1/scheduled-messages/{id}`. Read receipts
@@ -687,7 +687,7 @@ webhooks — see the [Webhooks guide](/docs/webhooks).
 
 ## Manage scheduled messages
 
-List everything you've queued or scheduled with `GET /v1/scheduled-messages`:
+List all your messages (pending, in-flight, or delivered) with `GET /v1/scheduled-messages`:
 
 <ApiExample op="GET /v1/scheduled-messages" kind="request" />
 
@@ -695,7 +695,7 @@ Fetch one by id to read its current status:
 
 <ApiExample op="GET /v1/scheduled-messages/{id}" kind="request" />
 
-Before a message leaves the queue you can still edit it with
+Before a message dispatches (while still `pending`) you can edit it with
 `PATCH /v1/scheduled-messages/{id}` — reschedule (`sendAt`), rewrite the body
 (`text`), or swap the attachment (`mediaUrl`, `mediaCaption`). At least one
 field is required; once the message has dispatched, the edit returns `400`:
@@ -731,12 +731,13 @@ A successful send returns `200 OK`; the wire `key` is under `data.key`:
     "mediaUrl": null,
     "mediaKind": null,
     "pollQuestion": null,
-    "status": "sending",
+    "status": "confirmed",
     "sendAt": null,
     "createdAt": "2026-06-12T09:00:00.000Z",
-    "sentAt": null,
-    "deliveredAt": null,
+    "confirmedAt": "2026-06-12T09:00:01.000Z",
+    "receivedAt": null,
     "readAt": null,
+    "playedAt": null,
     "failedAt": null,
     "failureReason": null
   }

@@ -135,6 +135,12 @@ function UploadControls({ config }: { config: UploadFieldConfig }) {
 export function createUploadBodyPanel(configs: UploadFieldConfig[]) {
   return function UploadBodyPanel(props: CollapsiblePanelProps) {
     const isBody = props['data-type'] === 'body';
+    // Path parameters are always required to address the resource, so open
+    // that panel on mount. We set Radix's `defaultOpen` rather than relying on
+    // <ApiAutoExpand>'s synthetic click — the click races hydration on the
+    // playground triggers, so it's not reliable for the panels. The panel
+    // stays collapsible (chevron intact); this only changes the initial state.
+    const isPath = props['data-type'] === 'path';
     const [active, setActive] = useState<UploadFieldConfig | null>(null);
 
     // The interactive panel mounts/unmounts with the collapsible, but the
@@ -163,7 +169,7 @@ export function createUploadBodyPanel(configs: UploadFieldConfig[]) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const Default = DefaultCollapsiblePanel as any;
     return (
-      <Default {...props}>
+      <Default {...props} defaultOpen={props.defaultOpen ?? isPath}>
         {props.children}
         {isBody && active ? <UploadControls config={active} /> : null}
       </Default>
