@@ -67,7 +67,7 @@
           "Ping"
         ],
         "summary": "Ping",
-        "description": "Health and connectivity probe. Confirms the Blueticks API server is live (`api: \"ok\"`) and lists the WhatsApp engines currently connected to this account in `whatsapp_connections`. Each connection is labelled `gateway` (a remote, server-side engine — the Blueticks 24/7 gateway / baileys pod) or `regular` (the user's own WhatsApp Web browser extension). An empty `whatsapp_connections` array means no WhatsApp is connected — this is not an error, and `message` explains it. Requires a valid API key; no scope required.",
+        "description": "Health and connectivity probe. Confirms the Blueticks API server is live (`api: \"ok\"`) and lists the WhatsApp engines currently connected to this account in `whatsappConnections`. Each connection is labelled `gateway` (a remote, server-side engine — the Blueticks 24/7 gateway / baileys pod) or `regular` (the user's own WhatsApp Web browser extension). An empty `whatsappConnections` array means no WhatsApp is connected — this is not an error, and `message` explains it. Requires a valid API key; no scope required.",
         "security": [
           {
             "BearerAuth": []
@@ -98,11 +98,11 @@
                           ],
                           "description": "Blueticks API server liveness. \"ok\" means the API server is up and served this request."
                         },
-                        "account_id": {
+                        "accountId": {
                           "type": "string",
                           "description": "The account (workspace) the API key belongs to."
                         },
-                        "whatsapp_connections": {
+                        "whatsappConnections": {
                           "type": "array",
                           "items": {
                             "type": "object",
@@ -138,13 +138,13 @@
                         },
                         "message": {
                           "type": "string",
-                          "description": "Present only when whatsapp_connections is empty; explains the empty state."
+                          "description": "Present only when whatsappConnections is empty; explains the empty state."
                         }
                       },
                       "required": [
                         "api",
-                        "account_id",
-                        "whatsapp_connections"
+                        "accountId",
+                        "whatsappConnections"
                       ],
                       "additionalProperties": false
                     }
@@ -262,7 +262,7 @@
                           "type": "string",
                           "description": "Account display name."
                         },
-                        "user_email": {
+                        "userEmail": {
                           "type": "string",
                           "nullable": true,
                           "description": "Email address of the user the API key belongs to, or null if unavailable."
@@ -272,7 +272,7 @@
                           "nullable": true,
                           "description": "IANA timezone (e.g. \"America/New_York\"), or null if unset."
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "description": "RFC 3339 timestamp of account creation."
@@ -281,9 +281,9 @@
                       "required": [
                         "id",
                         "name",
-                        "user_email",
+                        "userEmail",
                         "timezone",
-                        "created_at"
+                        "createdAt"
                       ],
                       "additionalProperties": false
                     }
@@ -469,6 +469,33 @@
                           "to": {
                             "type": "string"
                           },
+                          "contactList": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Resolved contact name; null when none was stored (e.g. API sends)."
+                                },
+                                "_id": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Mongo sub-document id; null for direct (non-persisted) sends."
+                                }
+                              },
+                              "required": [
+                                "id"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
+                          },
                           "type": {
                             "type": "string",
                             "enum": [
@@ -586,6 +613,7 @@
                           "id",
                           "key",
                           "to",
+                          "contactList",
                           "type",
                           "text",
                           "mediaUrl",
@@ -824,6 +852,33 @@
                         "to": {
                           "type": "string"
                         },
+                        "contactList": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
+                              },
+                              "name": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
+                              },
+                              "_id": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
+                              }
+                            },
+                            "required": [
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -941,6 +996,7 @@
                         "id",
                         "key",
                         "to",
+                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -996,6 +1052,33 @@
                         "to": {
                           "type": "string"
                         },
+                        "contactList": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
+                              },
+                              "name": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
+                              },
+                              "_id": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
+                              }
+                            },
+                            "required": [
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -1113,6 +1196,7 @@
                         "id",
                         "key",
                         "to",
+                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -1247,6 +1331,33 @@
                         "to": {
                           "type": "string"
                         },
+                        "contactList": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
+                              },
+                              "name": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
+                              },
+                              "_id": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
+                              }
+                            },
+                            "required": [
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -1364,6 +1475,7 @@
                         "id",
                         "key",
                         "to",
+                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -1479,7 +1591,7 @@
           "Scheduled Messages"
         ],
         "summary": "Update scheduled message",
-        "description": "Edit a previously-queued message that has not dispatched yet. Accepts a subset of `text`, `mediaUrl`, `mediaCaption`, `sendAt` — at least one is required. Returns 400 once the message has advanced past the editable window (status not in `pending`/`sending`).",
+        "description": "Edit a previously-queued message that has not dispatched yet. Accepts a subset of `text`, `mediaUrl`, `mediaCaption`, `sendAt` — at least one is required. Returns 400 once the message has advanced past the editable window (status not `pending`).",
         "security": [
           {
             "BearerAuth": [
@@ -1550,6 +1662,33 @@
                         },
                         "to": {
                           "type": "string"
+                        },
+                        "contactList": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
+                              },
+                              "name": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
+                              },
+                              "_id": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
+                              }
+                            },
+                            "required": [
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
                         },
                         "type": {
                           "type": "string",
@@ -1668,6 +1807,7 @@
                         "id",
                         "key",
                         "to",
+                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -1861,7 +2001,7 @@
                               "disabled"
                             ]
                           },
-                          "created_at": {
+                          "createdAt": {
                             "type": "string",
                             "format": "date-time"
                           }
@@ -1872,7 +2012,7 @@
                           "events",
                           "description",
                           "status",
-                          "created_at"
+                          "createdAt"
                         ],
                         "additionalProperties": false
                       }
@@ -2106,7 +2246,7 @@
                             "disabled"
                           ]
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
@@ -2120,7 +2260,7 @@
                         "events",
                         "description",
                         "status",
-                        "created_at",
+                        "createdAt",
                         "secret"
                       ],
                       "additionalProperties": false
@@ -2254,7 +2394,7 @@
                             "disabled"
                           ]
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         }
@@ -2265,7 +2405,7 @@
                         "events",
                         "description",
                         "status",
-                        "created_at"
+                        "createdAt"
                       ],
                       "additionalProperties": false
                     }
@@ -2492,7 +2632,7 @@
                             "disabled"
                           ]
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         }
@@ -2503,7 +2643,7 @@
                         "events",
                         "description",
                         "status",
-                        "created_at"
+                        "createdAt"
                       ],
                       "additionalProperties": false
                     }
@@ -2796,11 +2936,11 @@
                           "name": {
                             "type": "string"
                           },
-                          "contact_count": {
+                          "contactCount": {
                             "type": "integer",
                             "minimum": 0
                           },
-                          "created_at": {
+                          "createdAt": {
                             "type": "string",
                             "format": "date-time"
                           }
@@ -2808,8 +2948,8 @@
                         "required": [
                           "id",
                           "name",
-                          "contact_count",
-                          "created_at"
+                          "contactCount",
+                          "createdAt"
                         ],
                         "additionalProperties": false
                       }
@@ -2907,7 +3047,7 @@
           "Audiences"
         ],
         "summary": "Create audience",
-        "description": "Create a new audience. Returns the audience with `contact_count: 0`. Requires `audiences:write`.",
+        "description": "Create a new audience. Returns the audience with `contactCount: 0`. Requires `audiences:write`.",
         "security": [
           {
             "BearerAuth": [
@@ -3015,11 +3155,11 @@
                         "name": {
                           "type": "string"
                         },
-                        "contact_count": {
+                        "contactCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         }
@@ -3027,8 +3167,8 @@
                       "required": [
                         "id",
                         "name",
-                        "contact_count",
-                        "created_at"
+                        "contactCount",
+                        "createdAt"
                       ],
                       "additionalProperties": false
                     }
@@ -3112,7 +3252,7 @@
           "Audiences"
         ],
         "summary": "Get audience",
-        "description": "Retrieve a single audience by id, including its `contact_count` and variable schema. Requires `audiences:read`.",
+        "description": "Retrieve a single audience by id, including its `contactCount` and variable schema. Requires `audiences:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -3144,11 +3284,11 @@
                         "name": {
                           "type": "string"
                         },
-                        "contact_count": {
+                        "contactCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         }
@@ -3156,8 +3296,8 @@
                       "required": [
                         "id",
                         "name",
-                        "contact_count",
-                        "created_at"
+                        "contactCount",
+                        "createdAt"
                       ],
                       "additionalProperties": false
                     }
@@ -3322,11 +3462,11 @@
                         "name": {
                           "type": "string"
                         },
-                        "contact_count": {
+                        "contactCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         }
@@ -3334,8 +3474,8 @@
                       "required": [
                         "id",
                         "name",
-                        "contact_count",
-                        "created_at"
+                        "contactCount",
+                        "createdAt"
                       ],
                       "additionalProperties": false
                     }
@@ -3569,7 +3709,7 @@
           "Campaigns"
         ],
         "summary": "List campaigns",
-        "description": "List the campaigns in your workspace, newest first, each with its live counters (`sent_count`, `delivered_count`, `read_count`, `failed_count`). Offset-paginated via `limit` + `skip`. Requires `campaigns:read`.",
+        "description": "List the campaigns in your workspace, newest first, each with its live counters (`sentCount`, `deliveredCount`, `readCount`, `failedCount`). Offset-paginated via `limit` + `skip`. Requires `campaigns:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -3628,7 +3768,7 @@
                           "name": {
                             "type": "string"
                           },
-                          "audience_id": {
+                          "audienceId": {
                             "type": "string"
                           },
                           "status": {
@@ -3642,23 +3782,23 @@
                               "aborted"
                             ]
                           },
-                          "total_count": {
+                          "totalCount": {
                             "type": "integer",
                             "minimum": 0
                           },
-                          "sent_count": {
+                          "sentCount": {
                             "type": "integer",
                             "minimum": 0
                           },
-                          "delivered_count": {
+                          "deliveredCount": {
                             "type": "integer",
                             "minimum": 0
                           },
-                          "read_count": {
+                          "readCount": {
                             "type": "integer",
                             "minimum": 0
                           },
-                          "failed_count": {
+                          "failedCount": {
                             "type": "integer",
                             "minimum": 0
                           },
@@ -3666,21 +3806,21 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "created_at": {
+                          "createdAt": {
                             "type": "string",
                             "format": "date-time"
                           },
-                          "started_at": {
+                          "startedAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "completed_at": {
+                          "completedAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "aborted_at": {
+                          "abortedAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
@@ -3689,18 +3829,18 @@
                         "required": [
                           "id",
                           "name",
-                          "audience_id",
+                          "audienceId",
                           "status",
-                          "total_count",
-                          "sent_count",
-                          "delivered_count",
-                          "read_count",
-                          "failed_count",
+                          "totalCount",
+                          "sentCount",
+                          "deliveredCount",
+                          "readCount",
+                          "failedCount",
                           "from",
-                          "created_at",
-                          "started_at",
-                          "completed_at",
-                          "aborted_at"
+                          "createdAt",
+                          "startedAt",
+                          "completedAt",
+                          "abortedAt"
                         ],
                         "additionalProperties": false
                       }
@@ -3819,7 +3959,7 @@
                     "maxLength": 120,
                     "description": "Display name for the campaign."
                   },
-                  "audience_id": {
+                  "audienceId": {
                     "type": "string",
                     "minLength": 1,
                     "description": "ID of the audience to target. Each audience contact contributes one outgoing message."
@@ -3830,24 +3970,24 @@
                     "maxLength": 4096,
                     "description": "Message body. Supports per-contact substitution using single-brace tokens like `{firstName}` or `{product}`.\nResolution rules (case-insensitive, whitespace stripped):\n  - Built-ins always available: `{whatsappname}` (WA profile name), `{displayname}` (firstname+lastname fallback), `{phone}` / `{mobile}`.\n  - Custom variables: every property attached to a contact via audiences.append_contacts becomes a token of the same name.\n  - Unresolved tokens are left as literal `{token}` in the sent message.\nTemplates use SINGLE braces `{var}` — `{{var}}` is treated as literal text."
                   },
-                  "media_url": {
+                  "mediaUrl": {
                     "type": "string",
                     "format": "uri",
                     "maxLength": 2048,
                     "description": "Public https URL of an image/video/document to attach."
                   },
-                  "media_caption": {
+                  "mediaCaption": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 1024,
-                    "description": "Caption for the media attachment. Requires media_url."
+                    "description": "Caption for the media attachment. Requires mediaUrl."
                   },
                   "from": {
                     "type": "string",
                     "pattern": "^\\+[1-9]\\d{6,14}$",
                     "description": "Sender phone in international format (e.g. +14155551234). When omitted, the workspace default sender is used."
                   },
-                  "on_missing_variable": {
+                  "onMissingVariable": {
                     "type": "string",
                     "enum": [
                       "fail",
@@ -3858,7 +3998,7 @@
                 },
                 "required": [
                   "name",
-                  "audience_id"
+                  "audienceId"
                 ],
                 "additionalProperties": false
               }
@@ -3889,7 +4029,7 @@
                         "name": {
                           "type": "string"
                         },
-                        "audience_id": {
+                        "audienceId": {
                           "type": "string"
                         },
                         "status": {
@@ -3903,23 +4043,23 @@
                             "aborted"
                           ]
                         },
-                        "total_count": {
+                        "totalCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "sent_count": {
+                        "sentCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "delivered_count": {
+                        "deliveredCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "read_count": {
+                        "readCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "failed_count": {
+                        "failedCount": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -3927,21 +4067,21 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "started_at": {
+                        "startedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "completed_at": {
+                        "completedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "aborted_at": {
+                        "abortedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -3950,18 +4090,18 @@
                       "required": [
                         "id",
                         "name",
-                        "audience_id",
+                        "audienceId",
                         "status",
-                        "total_count",
-                        "sent_count",
-                        "delivered_count",
-                        "read_count",
-                        "failed_count",
+                        "totalCount",
+                        "sentCount",
+                        "deliveredCount",
+                        "readCount",
+                        "failedCount",
                         "from",
-                        "created_at",
-                        "started_at",
-                        "completed_at",
-                        "aborted_at"
+                        "createdAt",
+                        "startedAt",
+                        "completedAt",
+                        "abortedAt"
                       ],
                       "additionalProperties": false
                     }
@@ -4077,7 +4217,7 @@
                         "name": {
                           "type": "string"
                         },
-                        "audience_id": {
+                        "audienceId": {
                           "type": "string"
                         },
                         "status": {
@@ -4091,23 +4231,23 @@
                             "aborted"
                           ]
                         },
-                        "total_count": {
+                        "totalCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "sent_count": {
+                        "sentCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "delivered_count": {
+                        "deliveredCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "read_count": {
+                        "readCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "failed_count": {
+                        "failedCount": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -4115,21 +4255,21 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "started_at": {
+                        "startedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "completed_at": {
+                        "completedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "aborted_at": {
+                        "abortedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -4138,18 +4278,18 @@
                       "required": [
                         "id",
                         "name",
-                        "audience_id",
+                        "audienceId",
                         "status",
-                        "total_count",
-                        "sent_count",
-                        "delivered_count",
-                        "read_count",
-                        "failed_count",
+                        "totalCount",
+                        "sentCount",
+                        "deliveredCount",
+                        "readCount",
+                        "failedCount",
                         "from",
-                        "created_at",
-                        "started_at",
-                        "completed_at",
-                        "aborted_at"
+                        "createdAt",
+                        "startedAt",
+                        "completedAt",
+                        "abortedAt"
                       ],
                       "additionalProperties": false
                     }
@@ -4287,7 +4427,7 @@
             "description": "Restrict to one chat kind."
           },
           {
-            "name": "include_last_message",
+            "name": "includeLastMessage",
             "in": "query",
             "required": false,
             "schema": {
@@ -4296,7 +4436,7 @@
             "description": "Include the last message snippet on each chat row."
           },
           {
-            "name": "include_extended_info",
+            "name": "includeExtendedInfo",
             "in": "query",
             "required": false,
             "schema": {
@@ -4305,7 +4445,7 @@
             "description": "Include extended chat metadata (engine-side opt-in)."
           },
           {
-            "name": "include_without_name",
+            "name": "includeWithoutName",
             "in": "query",
             "required": false,
             "schema": {
@@ -4364,34 +4504,34 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "is_group": {
+                          "isGroup": {
                             "type": "boolean"
                           },
-                          "is_newsletter": {
+                          "isNewsletter": {
                             "type": "boolean"
                           },
-                          "last_message_at": {
+                          "lastMessageAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "unread_count": {
+                          "unreadCount": {
                             "type": "integer",
                             "minimum": 0,
                             "nullable": true
                           },
-                          "marked_unread": {
+                          "markedUnread": {
                             "type": "boolean"
                           }
                         },
                         "required": [
                           "id",
                           "name",
-                          "is_group",
-                          "is_newsletter",
-                          "last_message_at",
-                          "unread_count",
-                          "marked_unread"
+                          "isGroup",
+                          "isNewsletter",
+                          "lastMessageAt",
+                          "unreadCount",
+                          "markedUnread"
                         ],
                         "additionalProperties": false
                       }
@@ -4524,34 +4664,34 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "is_group": {
+                        "isGroup": {
                           "type": "boolean"
                         },
-                        "is_newsletter": {
+                        "isNewsletter": {
                           "type": "boolean"
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "unread_count": {
+                        "unreadCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
                         },
-                        "marked_unread": {
+                        "markedUnread": {
                           "type": "boolean"
                         }
                       },
                       "required": [
                         "id",
                         "name",
-                        "is_group",
-                        "is_newsletter",
-                        "last_message_at",
-                        "unread_count",
-                        "marked_unread"
+                        "isGroup",
+                        "isNewsletter",
+                        "lastMessageAt",
+                        "unreadCount",
+                        "markedUnread"
                       ],
                       "additionalProperties": false
                     }
@@ -4734,17 +4874,17 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "created_at": {
+                          "createdAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "last_message_at": {
+                          "lastMessageAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
                           },
-                          "participant_count": {
+                          "participantCount": {
                             "type": "integer",
                             "minimum": 0,
                             "nullable": true
@@ -4762,13 +4902,13 @@
                             "items": {
                               "type": "object",
                               "properties": {
-                                "chat_id": {
+                                "chatId": {
                                   "type": "string"
                                 },
-                                "is_admin": {
+                                "isAdmin": {
                                   "type": "boolean"
                                 },
-                                "is_super_admin": {
+                                "isSuperAdmin": {
                                   "type": "boolean"
                                 },
                                 "name": {
@@ -4777,9 +4917,9 @@
                                 }
                               },
                               "required": [
-                                "chat_id",
-                                "is_admin",
-                                "is_super_admin",
+                                "chatId",
+                                "isAdmin",
+                                "isSuperAdmin",
                                 "name"
                               ],
                               "additionalProperties": false
@@ -4792,9 +4932,9 @@
                           "name",
                           "description",
                           "owner",
-                          "created_at",
-                          "last_message_at",
-                          "participant_count",
+                          "createdAt",
+                          "lastMessageAt",
+                          "participantCount",
                           "announce",
                           "restrict",
                           "participants"
@@ -4978,17 +5118,17 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "participant_count": {
+                        "participantCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
@@ -5006,13 +5146,13 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "chat_id": {
+                              "chatId": {
                                 "type": "string"
                               },
-                              "is_admin": {
+                              "isAdmin": {
                                 "type": "boolean"
                               },
-                              "is_super_admin": {
+                              "isSuperAdmin": {
                                 "type": "boolean"
                               },
                               "name": {
@@ -5021,9 +5161,9 @@
                               }
                             },
                             "required": [
-                              "chat_id",
-                              "is_admin",
-                              "is_super_admin",
+                              "chatId",
+                              "isAdmin",
+                              "isSuperAdmin",
                               "name"
                             ],
                             "additionalProperties": false
@@ -5036,9 +5176,9 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
-                        "last_message_at",
-                        "participant_count",
+                        "createdAt",
+                        "lastMessageAt",
+                        "participantCount",
                         "announce",
                         "restrict",
                         "participants"
@@ -5166,17 +5306,17 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "participant_count": {
+                        "participantCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
@@ -5194,13 +5334,13 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "chat_id": {
+                              "chatId": {
                                 "type": "string"
                               },
-                              "is_admin": {
+                              "isAdmin": {
                                 "type": "boolean"
                               },
-                              "is_super_admin": {
+                              "isSuperAdmin": {
                                 "type": "boolean"
                               },
                               "name": {
@@ -5209,9 +5349,9 @@
                               }
                             },
                             "required": [
-                              "chat_id",
-                              "is_admin",
-                              "is_super_admin",
+                              "chatId",
+                              "isAdmin",
+                              "isSuperAdmin",
                               "name"
                             ],
                             "additionalProperties": false
@@ -5224,9 +5364,9 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
-                        "last_message_at",
-                        "participant_count",
+                        "createdAt",
+                        "lastMessageAt",
+                        "participantCount",
                         "announce",
                         "restrict",
                         "participants"
@@ -5370,7 +5510,7 @@
                       "restrict": {
                         "type": "boolean"
                       },
-                      "edit_info_admins_only": {
+                      "editInfoAdminsOnly": {
                         "type": "boolean"
                       }
                     },
@@ -5415,17 +5555,17 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "participant_count": {
+                        "participantCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
@@ -5443,13 +5583,13 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "chat_id": {
+                              "chatId": {
                                 "type": "string"
                               },
-                              "is_admin": {
+                              "isAdmin": {
                                 "type": "boolean"
                               },
-                              "is_super_admin": {
+                              "isSuperAdmin": {
                                 "type": "boolean"
                               },
                               "name": {
@@ -5458,9 +5598,9 @@
                               }
                             },
                             "required": [
-                              "chat_id",
-                              "is_admin",
-                              "is_super_admin",
+                              "chatId",
+                              "isAdmin",
+                              "isSuperAdmin",
                               "name"
                             ],
                             "additionalProperties": false
@@ -5473,9 +5613,9 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
-                        "last_message_at",
-                        "participant_count",
+                        "createdAt",
+                        "lastMessageAt",
+                        "participantCount",
                         "announce",
                         "restrict",
                         "participants"
@@ -5653,7 +5793,7 @@
                             "nullable": true,
                             "description": "Owner JID, if returned by the engine."
                           },
-                          "created_at": {
+                          "createdAt": {
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
@@ -5682,7 +5822,7 @@
                           "name",
                           "description",
                           "owner",
-                          "created_at",
+                          "createdAt",
                           "subscribers",
                           "invite",
                           "verification"
@@ -5852,7 +5992,7 @@
                           "nullable": true,
                           "description": "Owner JID, if returned by the engine."
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -5881,7 +6021,7 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
+                        "createdAt",
                         "subscribers",
                         "invite",
                         "verification"
@@ -6024,7 +6164,7 @@
                           "nullable": true,
                           "description": "Owner JID, if returned by the engine."
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -6053,7 +6193,7 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
+                        "createdAt",
                         "subscribers",
                         "invite",
                         "verification"
@@ -6208,19 +6348,19 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "chat_id": {
+                          "chatId": {
                             "type": "string"
                           },
                           "name": {
                             "type": "string",
                             "nullable": true
                           },
-                          "is_business": {
+                          "isBusiness": {
                             "type": "boolean"
                           }
                         },
                         "required": [
-                          "chat_id"
+                          "chatId"
                         ],
                         "additionalProperties": false
                       }
@@ -6320,7 +6460,7 @@
           "Engines"
         ],
         "summary": "List engines",
-        "description": "List engines connected to this workspace. Returns an array (currently up to one entry, but the response shape leaves room for multi-engine workspaces). When no engine is connected, `data` is empty and `message` explains why — this is not an error.",
+        "description": "List the WhatsApp engines connected to this workspace — one entry per online engine (a workspace with two paired WhatsApp Web tabs returns two entries). Each entry carries its own `id` (the engine session's MQTT presence client id, same id space as ping's `whatsapp_connections[].id`), its `type` (`gateway` or `regular`), and its connectivity status. When no engine is connected, `data` is empty and `message` explains why — this is not an error.",
         "security": [
           {
             "BearerAuth": [
@@ -6351,6 +6491,18 @@
                           "items": {
                             "type": "object",
                             "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Stable id of this engine session (its MQTT presence client id). Same id space as ping's whatsapp_connections[].id."
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "gateway",
+                                  "regular"
+                                ],
+                                "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
+                              },
                               "connected": {
                                 "type": "boolean",
                                 "description": "Whether this engine is currently online and serving requests."
@@ -6365,17 +6517,19 @@
                                 "nullable": true,
                                 "description": "Underlying WA stream state. Null when unknown."
                               },
-                              "has_synced": {
+                              "hasSynced": {
                                 "type": "boolean",
                                 "nullable": true,
                                 "description": "Whether the engine has completed its initial history sync."
                               }
                             },
                             "required": [
+                              "id",
+                              "type",
                               "connected",
                               "state",
                               "stream",
-                              "has_synced"
+                              "hasSynced"
                             ],
                             "additionalProperties": false
                           },
@@ -6530,7 +6684,7 @@
                             "disabled"
                           ]
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
@@ -6544,7 +6698,7 @@
                         "events",
                         "description",
                         "status",
-                        "created_at",
+                        "createdAt",
                         "secret"
                       ],
                       "additionalProperties": false
@@ -6721,14 +6875,14 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "contact_count": {
+                        "contactCount": {
                           "type": "integer",
                           "minimum": 0
                         }
                       },
                       "required": [
                         "added",
-                        "contact_count"
+                        "contactCount"
                       ],
                       "additionalProperties": false
                     }
@@ -6902,7 +7056,7 @@
                             "type": "string"
                           }
                         },
-                        "added_at": {
+                        "addedAt": {
                           "type": "string",
                           "format": "date-time"
                         }
@@ -6911,7 +7065,7 @@
                         "id",
                         "to",
                         "variables",
-                        "added_at"
+                        "addedAt"
                       ],
                       "additionalProperties": false
                     }
@@ -7188,7 +7342,7 @@
                         "name": {
                           "type": "string"
                         },
-                        "audience_id": {
+                        "audienceId": {
                           "type": "string"
                         },
                         "status": {
@@ -7202,23 +7356,23 @@
                             "aborted"
                           ]
                         },
-                        "total_count": {
+                        "totalCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "sent_count": {
+                        "sentCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "delivered_count": {
+                        "deliveredCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "read_count": {
+                        "readCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "failed_count": {
+                        "failedCount": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -7226,21 +7380,21 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "started_at": {
+                        "startedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "completed_at": {
+                        "completedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "aborted_at": {
+                        "abortedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -7249,18 +7403,18 @@
                       "required": [
                         "id",
                         "name",
-                        "audience_id",
+                        "audienceId",
                         "status",
-                        "total_count",
-                        "sent_count",
-                        "delivered_count",
-                        "read_count",
-                        "failed_count",
+                        "totalCount",
+                        "sentCount",
+                        "deliveredCount",
+                        "readCount",
+                        "failedCount",
                         "from",
-                        "created_at",
-                        "started_at",
-                        "completed_at",
-                        "aborted_at"
+                        "createdAt",
+                        "startedAt",
+                        "completedAt",
+                        "abortedAt"
                       ],
                       "additionalProperties": false
                     }
@@ -7396,7 +7550,7 @@
                         "name": {
                           "type": "string"
                         },
-                        "audience_id": {
+                        "audienceId": {
                           "type": "string"
                         },
                         "status": {
@@ -7410,23 +7564,23 @@
                             "aborted"
                           ]
                         },
-                        "total_count": {
+                        "totalCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "sent_count": {
+                        "sentCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "delivered_count": {
+                        "deliveredCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "read_count": {
+                        "readCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "failed_count": {
+                        "failedCount": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -7434,21 +7588,21 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "started_at": {
+                        "startedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "completed_at": {
+                        "completedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "aborted_at": {
+                        "abortedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -7457,18 +7611,18 @@
                       "required": [
                         "id",
                         "name",
-                        "audience_id",
+                        "audienceId",
                         "status",
-                        "total_count",
-                        "sent_count",
-                        "delivered_count",
-                        "read_count",
-                        "failed_count",
+                        "totalCount",
+                        "sentCount",
+                        "deliveredCount",
+                        "readCount",
+                        "failedCount",
                         "from",
-                        "created_at",
-                        "started_at",
-                        "completed_at",
-                        "aborted_at"
+                        "createdAt",
+                        "startedAt",
+                        "completedAt",
+                        "abortedAt"
                       ],
                       "additionalProperties": false
                     }
@@ -7604,7 +7758,7 @@
                         "name": {
                           "type": "string"
                         },
-                        "audience_id": {
+                        "audienceId": {
                           "type": "string"
                         },
                         "status": {
@@ -7618,23 +7772,23 @@
                             "aborted"
                           ]
                         },
-                        "total_count": {
+                        "totalCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "sent_count": {
+                        "sentCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "delivered_count": {
+                        "deliveredCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "read_count": {
+                        "readCount": {
                           "type": "integer",
                           "minimum": 0
                         },
-                        "failed_count": {
+                        "failedCount": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -7642,21 +7796,21 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time"
                         },
-                        "started_at": {
+                        "startedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "completed_at": {
+                        "completedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "aborted_at": {
+                        "abortedAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
@@ -7665,18 +7819,18 @@
                       "required": [
                         "id",
                         "name",
-                        "audience_id",
+                        "audienceId",
                         "status",
-                        "total_count",
-                        "sent_count",
-                        "delivered_count",
-                        "read_count",
-                        "failed_count",
+                        "totalCount",
+                        "sentCount",
+                        "deliveredCount",
+                        "readCount",
+                        "failedCount",
                         "from",
-                        "created_at",
-                        "started_at",
-                        "completed_at",
-                        "aborted_at"
+                        "createdAt",
+                        "startedAt",
+                        "completedAt",
+                        "abortedAt"
                       ],
                       "additionalProperties": false
                     }
@@ -7926,7 +8080,7 @@
                           "key": {
                             "type": "string"
                           },
-                          "chat_id": {
+                          "chatId": {
                             "type": "string"
                           },
                           "from": {
@@ -7948,14 +8102,14 @@
                           "type": {
                             "type": "string"
                           },
-                          "from_me": {
+                          "fromMe": {
                             "type": "boolean"
                           },
                           "ack": {
                             "type": "integer",
                             "nullable": true
                           },
-                          "media_url": {
+                          "mediaUrl": {
                             "type": "string",
                             "nullable": true
                           },
@@ -7967,7 +8121,7 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "link_preview": {
+                          "linkPreview": {
                             "type": "object",
                             "properties": {
                               "title": {
@@ -7978,7 +8132,7 @@
                                 "type": "string",
                                 "nullable": true
                               },
-                              "canonical_url": {
+                              "canonicalUrl": {
                                 "type": "string",
                                 "nullable": true
                               },
@@ -7990,7 +8144,7 @@
                             "required": [
                               "title",
                               "description",
-                              "canonical_url",
+                              "canonicalUrl",
                               "thumbnail"
                             ],
                             "additionalProperties": false,
@@ -7999,14 +8153,14 @@
                         },
                         "required": [
                           "key",
-                          "chat_id",
+                          "chatId",
                           "from",
                           "timestamp",
                           "text",
                           "type",
-                          "from_me",
+                          "fromMe",
                           "ack",
-                          "media_url",
+                          "mediaUrl",
                           "caption",
                           "filename"
                         ],
@@ -8102,7 +8256,7 @@
         "operationId": "messages.list"
       }
     },
-    "/v1/messages/{chat_id}": {
+    "/v1/messages/{chatId}": {
       "post": {
         "tags": [
           "Messages"
@@ -8118,7 +8272,7 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "chatId",
             "in": "path",
             "required": true,
             "schema": {
@@ -8243,6 +8397,33 @@
                         "to": {
                           "type": "string"
                         },
+                        "contactList": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
+                              },
+                              "name": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
+                              },
+                              "_id": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
+                              }
+                            },
+                            "required": [
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -8360,6 +8541,7 @@
                         "id",
                         "key",
                         "to",
+                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -8516,7 +8698,7 @@
                         "key": {
                           "type": "string"
                         },
-                        "chat_id": {
+                        "chatId": {
                           "type": "string"
                         },
                         "from": {
@@ -8538,14 +8720,14 @@
                         "type": {
                           "type": "string"
                         },
-                        "from_me": {
+                        "fromMe": {
                           "type": "boolean"
                         },
                         "ack": {
                           "type": "integer",
                           "nullable": true
                         },
-                        "media_url": {
+                        "mediaUrl": {
                           "type": "string",
                           "nullable": true
                         },
@@ -8557,7 +8739,7 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "link_preview": {
+                        "linkPreview": {
                           "type": "object",
                           "properties": {
                             "title": {
@@ -8568,7 +8750,7 @@
                               "type": "string",
                               "nullable": true
                             },
-                            "canonical_url": {
+                            "canonicalUrl": {
                               "type": "string",
                               "nullable": true
                             },
@@ -8580,7 +8762,7 @@
                           "required": [
                             "title",
                             "description",
-                            "canonical_url",
+                            "canonicalUrl",
                             "thumbnail"
                           ],
                           "additionalProperties": false,
@@ -8589,14 +8771,14 @@
                       },
                       "required": [
                         "key",
-                        "chat_id",
+                        "chatId",
                         "from",
                         "timestamp",
                         "text",
                         "type",
-                        "from_me",
+                        "fromMe",
                         "ack",
-                        "media_url",
+                        "mediaUrl",
                         "caption",
                         "filename"
                       ],
@@ -8692,7 +8874,7 @@
           "Groups"
         ],
         "summary": "Add member to group",
-        "description": "Add a participant to the group by chat_id (JID) or phone number in international format (e.g. +14155551234). Requires `groups:write`.",
+        "description": "Add a participant to the group by chatId (JID) or phone number in international format (e.g. +14155551234). Requires `groups:write`.",
         "security": [
           {
             "BearerAuth": [
@@ -8717,7 +8899,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "chat_id": {
+                  "chatId": {
                     "type": "string"
                   },
                   "participants": {
@@ -8767,17 +8949,17 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "participant_count": {
+                        "participantCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
@@ -8795,13 +8977,13 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "chat_id": {
+                              "chatId": {
                                 "type": "string"
                               },
-                              "is_admin": {
+                              "isAdmin": {
                                 "type": "boolean"
                               },
-                              "is_super_admin": {
+                              "isSuperAdmin": {
                                 "type": "boolean"
                               },
                               "name": {
@@ -8810,9 +8992,9 @@
                               }
                             },
                             "required": [
-                              "chat_id",
-                              "is_admin",
-                              "is_super_admin",
+                              "chatId",
+                              "isAdmin",
+                              "isSuperAdmin",
                               "name"
                             ],
                             "additionalProperties": false
@@ -8825,9 +9007,9 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
-                        "last_message_at",
-                        "participant_count",
+                        "createdAt",
+                        "lastMessageAt",
+                        "participantCount",
                         "announce",
                         "restrict",
                         "participants"
@@ -9085,17 +9267,17 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "participant_count": {
+                        "participantCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
@@ -9113,13 +9295,13 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "chat_id": {
+                              "chatId": {
                                 "type": "string"
                               },
-                              "is_admin": {
+                              "isAdmin": {
                                 "type": "boolean"
                               },
-                              "is_super_admin": {
+                              "isSuperAdmin": {
                                 "type": "boolean"
                               },
                               "name": {
@@ -9128,9 +9310,9 @@
                               }
                             },
                             "required": [
-                              "chat_id",
-                              "is_admin",
-                              "is_super_admin",
+                              "chatId",
+                              "isAdmin",
+                              "isSuperAdmin",
                               "name"
                             ],
                             "additionalProperties": false
@@ -9143,9 +9325,9 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
-                        "last_message_at",
-                        "participant_count",
+                        "createdAt",
+                        "lastMessageAt",
+                        "participantCount",
                         "announce",
                         "restrict",
                         "participants"
@@ -9301,17 +9483,17 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "participant_count": {
+                        "participantCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
@@ -9329,13 +9511,13 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "chat_id": {
+                              "chatId": {
                                 "type": "string"
                               },
-                              "is_admin": {
+                              "isAdmin": {
                                 "type": "boolean"
                               },
-                              "is_super_admin": {
+                              "isSuperAdmin": {
                                 "type": "boolean"
                               },
                               "name": {
@@ -9344,9 +9526,9 @@
                               }
                             },
                             "required": [
-                              "chat_id",
-                              "is_admin",
-                              "is_super_admin",
+                              "chatId",
+                              "isAdmin",
+                              "isSuperAdmin",
                               "name"
                             ],
                             "additionalProperties": false
@@ -9359,9 +9541,9 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
-                        "last_message_at",
-                        "participant_count",
+                        "createdAt",
+                        "lastMessageAt",
+                        "participantCount",
                         "announce",
                         "restrict",
                         "participants"
@@ -9515,17 +9697,17 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "participant_count": {
+                        "participantCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
@@ -9543,13 +9725,13 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "chat_id": {
+                              "chatId": {
                                 "type": "string"
                               },
-                              "is_admin": {
+                              "isAdmin": {
                                 "type": "boolean"
                               },
-                              "is_super_admin": {
+                              "isSuperAdmin": {
                                 "type": "boolean"
                               },
                               "name": {
@@ -9558,9 +9740,9 @@
                               }
                             },
                             "required": [
-                              "chat_id",
-                              "is_admin",
-                              "is_super_admin",
+                              "chatId",
+                              "isAdmin",
+                              "isSuperAdmin",
                               "name"
                             ],
                             "additionalProperties": false
@@ -9573,9 +9755,9 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
-                        "last_message_at",
-                        "participant_count",
+                        "createdAt",
+                        "lastMessageAt",
+                        "participantCount",
                         "announce",
                         "restrict",
                         "participants"
@@ -9672,7 +9854,7 @@
           "Groups"
         ],
         "summary": "Set group picture",
-        "description": "Replace the group picture. Provide the image as `file_data_url` (base64 data URL, PNG/JPEG, ≤20 MiB) or `url` (https). You can also upload a file as `multipart/form-data` with a `file` part. Requires `groups:write`.\n\n> In the Body panel, the **Attach a file** control has a content-type dropdown: `application/json` inlines the file as base64 in `file_data_url`, or `multipart/form-data` uploads the raw file — then press **Send**.",
+        "description": "Replace the group picture. Provide the image as `fileDataUrl` (base64 data URL, PNG/JPEG, ≤20 MiB) or `url` (https). You can also upload a file as `multipart/form-data` with a `file` part. Requires `groups:write`.\n\n> In the Body panel, the **Attach a file** control has a content-type dropdown: `application/json` inlines the file as base64 in `fileDataUrl`, or `multipart/form-data` uploads the raw file — then press **Send**.",
         "security": [
           {
             "BearerAuth": [
@@ -9697,7 +9879,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "file_data_url": {
+                  "fileDataUrl": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 20971520
@@ -9707,11 +9889,11 @@
                     "format": "uri",
                     "maxLength": 2048
                   },
-                  "file_name": {
+                  "fileName": {
                     "type": "string",
                     "maxLength": 255
                   },
-                  "file_mime_type": {
+                  "fileMimeType": {
                     "type": "string",
                     "maxLength": 127
                   }
@@ -9754,17 +9936,17 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "created_at": {
+                        "createdAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "last_message_at": {
+                        "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
                           "nullable": true
                         },
-                        "participant_count": {
+                        "participantCount": {
                           "type": "integer",
                           "minimum": 0,
                           "nullable": true
@@ -9782,13 +9964,13 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "chat_id": {
+                              "chatId": {
                                 "type": "string"
                               },
-                              "is_admin": {
+                              "isAdmin": {
                                 "type": "boolean"
                               },
-                              "is_super_admin": {
+                              "isSuperAdmin": {
                                 "type": "boolean"
                               },
                               "name": {
@@ -9797,9 +9979,9 @@
                               }
                             },
                             "required": [
-                              "chat_id",
-                              "is_admin",
-                              "is_super_admin",
+                              "chatId",
+                              "isAdmin",
+                              "isSuperAdmin",
                               "name"
                             ],
                             "additionalProperties": false
@@ -9812,9 +9994,9 @@
                         "name",
                         "description",
                         "owner",
-                        "created_at",
-                        "last_message_at",
-                        "participant_count",
+                        "createdAt",
+                        "lastMessageAt",
+                        "participantCount",
                         "announce",
                         "restrict",
                         "participants"
@@ -9905,7 +10087,7 @@
         "operationId": "groups.picture.update"
       }
     },
-    "/v1/chats/{chat_id}/participants": {
+    "/v1/chats/{chatId}/participants": {
       "get": {
         "tags": [
           "Chats"
@@ -9921,7 +10103,7 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "chatId",
             "in": "path",
             "required": true,
             "schema": {
@@ -9982,19 +10164,19 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "chat_id": {
+                          "chatId": {
                             "type": "string"
                           },
-                          "is_admin": {
+                          "isAdmin": {
                             "type": "boolean"
                           },
-                          "is_super_admin": {
+                          "isSuperAdmin": {
                             "type": "boolean"
                           }
                         },
                         "required": [
-                          "chat_id",
-                          "is_admin"
+                          "chatId",
+                          "isAdmin"
                         ],
                         "additionalProperties": false
                       }
@@ -10098,7 +10280,7 @@
         "operationId": "chats.participants.list"
       }
     },
-    "/v1/chats/{chat_id}/mark_read": {
+    "/v1/chats/{chatId}/mark_read": {
       "post": {
         "tags": [
           "Chats"
@@ -10114,7 +10296,7 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "chatId",
             "in": "path",
             "required": true,
             "schema": {
@@ -10236,7 +10418,7 @@
         "operationId": "chats.markread.create"
       }
     },
-    "/v1/chats/{chat_id}/open": {
+    "/v1/chats/{chatId}/open": {
       "post": {
         "tags": [
           "Chats"
@@ -10252,7 +10434,7 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "chatId",
             "in": "path",
             "required": true,
             "schema": {
@@ -10278,12 +10460,12 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "chat_id": {
+                        "chatId": {
                           "type": "string"
                         }
                       },
                       "required": [
-                        "chat_id"
+                        "chatId"
                       ],
                       "additionalProperties": false
                     }
@@ -10687,7 +10869,7 @@
         "operationId": "messages.reactions.create"
       }
     },
-    "/v1/messages/load_older/{chat_id}": {
+    "/v1/messages/load_older/{chatId}": {
       "post": {
         "tags": [
           "Messages"
@@ -10703,7 +10885,7 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "chatId",
             "in": "path",
             "required": true,
             "schema": {
@@ -10729,7 +10911,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "total_messages": {
+                        "totalMessages": {
                           "type": "integer",
                           "nullable": true
                         },
@@ -10737,14 +10919,25 @@
                           "type": "integer",
                           "nullable": true
                         },
-                        "can_load_more": {
+                        "canLoadMore": {
                           "type": "boolean"
+                        },
+                        "historyUnavailable": {
+                          "type": "boolean",
+                          "description": "True when no older messages could be pulled because the phone reported it has no retrievable history for this chat (or the phone is offline). When true, `added` is 0, `canLoadMore` is false, and `error` carries the reason. This is distinct from a chat that is simply already fully synced (historyUnavailable=false, added=0)."
+                        },
+                        "error": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Human-readable reason older messages could not be loaded from the phone; null when the pull succeeded or the chat is already fully synced."
                         }
                       },
                       "required": [
-                        "total_messages",
+                        "totalMessages",
                         "added",
-                        "can_load_more"
+                        "canLoadMore",
+                        "historyUnavailable",
+                        "error"
                       ],
                       "additionalProperties": false
                     }
@@ -10838,7 +11031,7 @@
           "Messages"
         ],
         "summary": "Get message media URL",
-        "description": "Returns a hosted URL for the message media without inlining bytes. Faster + cheaper than `media` when the caller can fetch the URL themselves. Same `media_unavailable` semantics. Requires `chats:read`.",
+        "description": "Returns a hosted URL for the message media without inlining bytes. Faster + cheaper than `media` when the caller can fetch the URL themselves. Same `mediaUnavailable` semantics. Requires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -11000,7 +11193,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "message_keys": {
+                  "messageKeys": {
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -11009,13 +11202,13 @@
                     "minItems": 1,
                     "maxItems": 200
                   },
-                  "chat_id": {
+                  "chatId": {
                     "type": "string",
                     "minLength": 1
                   }
                 },
                 "required": [
-                  "message_keys"
+                  "messageKeys"
                 ],
                 "additionalProperties": false
               }
@@ -11153,7 +11346,7 @@
           "Messages"
         ],
         "summary": "Get message media",
-        "description": "Download the media attached to a WhatsApp message (image, video, document, audio).\nReturns either a hosted URL (`url`) or inline `data_base64`, plus mimetype + filename.\n\nCAVEAT: for own-sent newsletter media (messages you sent to a `@newsletter` chat), the bytes returned are a WA-generated preview JPEG (~7KB) rather than the original you uploaded — WA releases the original blob from memory immediately after the unencrypted upload. The response will include `original_quality:false` when this fallback is in effect; the caller can warn the user or decide to retry from a different source.\n\nRequires `chats:read`.",
+        "description": "Download the media attached to a WhatsApp message (image, video, document, audio).\nReturns either a hosted URL (`url`) or inline `dataBase64`, plus mimetype + filename.\n\nCAVEAT: for own-sent newsletter media (messages you sent to a `@newsletter` chat), the bytes returned are a WA-generated preview JPEG (~7KB) rather than the original you uploaded — WA releases the original blob from memory immediately after the unencrypted upload. The response will include `originalQuality:false` when this fallback is in effect; the caller can warn the user or decide to retry from a different source.\n\nRequires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -11211,16 +11404,16 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "data_base64": {
+                        "dataBase64": {
                           "type": "string",
                           "nullable": true
                         },
-                        "original_quality": {
+                        "originalQuality": {
                           "type": "boolean",
                           "nullable": true,
                           "description": "Set to false when the bytes returned are NOT the original sender uploaded — i.e. WA released the original from memory and we synthesized from a smaller WA-generated preview (#113). Currently only happens for own-sent newsletter media (messages you sent to a @newsletter chat). When absent or true, the bytes are the genuine original. Consumers can use this to warn users / decide whether to retry from a different source."
                         },
-                        "media_unavailable": {
+                        "mediaUnavailable": {
                           "type": "string",
                           "enum": [
                             "expired",
@@ -11237,9 +11430,9 @@
                         "url",
                         "mimetype",
                         "filename",
-                        "data_base64",
-                        "original_quality",
-                        "media_unavailable"
+                        "dataBase64",
+                        "originalQuality",
+                        "mediaUnavailable"
                       ],
                       "additionalProperties": false
                     }
@@ -11327,7 +11520,7 @@
         "operationId": "messages.media.get"
       }
     },
-    "/v1/messages/pinned/{chat_id}": {
+    "/v1/messages/pinned/{chatId}": {
       "get": {
         "tags": [
           "Messages"
@@ -11343,7 +11536,7 @@
         ],
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "chatId",
             "in": "path",
             "required": true,
             "schema": {
@@ -11374,7 +11567,7 @@
                           "key": {
                             "type": "string"
                           },
-                          "chat_id": {
+                          "chatId": {
                             "type": "string"
                           },
                           "text": {
@@ -11384,7 +11577,7 @@
                         },
                         "required": [
                           "key",
-                          "chat_id",
+                          "chatId",
                           "text"
                         ],
                         "additionalProperties": false
@@ -11510,7 +11703,7 @@
             "type": "string",
             "description": "Account display name."
           },
-          "user_email": {
+          "userEmail": {
             "type": "string",
             "nullable": true,
             "description": "Email address of the user the API key belongs to, or null if unavailable."
@@ -11520,7 +11713,7 @@
             "nullable": true,
             "description": "IANA timezone (e.g. \"America/New_York\"), or null if unset."
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "format": "date-time",
             "description": "RFC 3339 timestamp of account creation."
@@ -11529,9 +11722,9 @@
         "required": [
           "id",
           "name",
-          "user_email",
+          "userEmail",
           "timezone",
-          "created_at"
+          "createdAt"
         ]
       },
       "AppendContactsRequest": {
@@ -11578,11 +11771,11 @@
           "name": {
             "type": "string"
           },
-          "contact_count": {
+          "contactCount": {
             "type": "integer",
             "minimum": 0
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -11590,8 +11783,8 @@
         "required": [
           "id",
           "name",
-          "contact_count",
-          "created_at"
+          "contactCount",
+          "createdAt"
         ],
         "additionalProperties": false
       },
@@ -11631,7 +11824,7 @@
               "type": "string"
             }
           },
-          "added_at": {
+          "addedAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -11640,7 +11833,7 @@
           "id",
           "to",
           "variables",
-          "added_at"
+          "addedAt"
         ],
         "additionalProperties": false
       },
@@ -11723,7 +11916,7 @@
           "name": {
             "type": "string"
           },
-          "audience_id": {
+          "audienceId": {
             "type": "string"
           },
           "status": {
@@ -11737,23 +11930,23 @@
               "aborted"
             ]
           },
-          "total_count": {
+          "totalCount": {
             "type": "integer",
             "minimum": 0
           },
-          "sent_count": {
+          "sentCount": {
             "type": "integer",
             "minimum": 0
           },
-          "delivered_count": {
+          "deliveredCount": {
             "type": "integer",
             "minimum": 0
           },
-          "read_count": {
+          "readCount": {
             "type": "integer",
             "minimum": 0
           },
-          "failed_count": {
+          "failedCount": {
             "type": "integer",
             "minimum": 0
           },
@@ -11761,21 +11954,21 @@
             "type": "string",
             "nullable": true
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "started_at": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "completed_at": {
+          "startedAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "aborted_at": {
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "abortedAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
@@ -11784,18 +11977,18 @@
         "required": [
           "id",
           "name",
-          "audience_id",
+          "audienceId",
           "status",
-          "total_count",
-          "sent_count",
-          "delivered_count",
-          "read_count",
-          "failed_count",
+          "totalCount",
+          "sentCount",
+          "deliveredCount",
+          "readCount",
+          "failedCount",
           "from",
-          "created_at",
-          "started_at",
-          "completed_at",
-          "aborted_at"
+          "createdAt",
+          "startedAt",
+          "completedAt",
+          "abortedAt"
         ],
         "additionalProperties": false
       },
@@ -11819,7 +12012,7 @@
             "maxLength": 120,
             "description": "Display name for the campaign."
           },
-          "audience_id": {
+          "audienceId": {
             "type": "string",
             "minLength": 1,
             "description": "ID of the audience to target. Each audience contact contributes one outgoing message."
@@ -11830,24 +12023,24 @@
             "maxLength": 4096,
             "description": "Message body. Supports per-contact substitution using single-brace tokens like `{firstName}` or `{product}`.\nResolution rules (case-insensitive, whitespace stripped):\n  - Built-ins always available: `{whatsappname}` (WA profile name), `{displayname}` (firstname+lastname fallback), `{phone}` / `{mobile}`.\n  - Custom variables: every property attached to a contact via audiences.append_contacts becomes a token of the same name.\n  - Unresolved tokens are left as literal `{token}` in the sent message.\nTemplates use SINGLE braces `{var}` — `{{var}}` is treated as literal text."
           },
-          "media_url": {
+          "mediaUrl": {
             "type": "string",
             "maxLength": 2048,
             "format": "uri",
             "description": "Public https URL of an image/video/document to attach."
           },
-          "media_caption": {
+          "mediaCaption": {
             "type": "string",
             "minLength": 1,
             "maxLength": 1024,
-            "description": "Caption for the media attachment. Requires media_url."
+            "description": "Caption for the media attachment. Requires mediaUrl."
           },
           "from": {
             "type": "string",
             "pattern": "^\\+[1-9]\\d{6,14}$",
             "description": "Sender phone in international format (e.g. +14155551234). When omitted, the workspace default sender is used."
           },
-          "on_missing_variable": {
+          "onMissingVariable": {
             "type": "string",
             "enum": [
               "fail",
@@ -11858,7 +12051,7 @@
         },
         "required": [
           "name",
-          "audience_id"
+          "audienceId"
         ],
         "additionalProperties": false
       },
@@ -11883,7 +12076,7 @@
       "BatchMessageAcksRequest": {
         "type": "object",
         "properties": {
-          "message_keys": {
+          "messageKeys": {
             "type": "array",
             "items": {
               "type": "string",
@@ -11892,20 +12085,20 @@
             "minItems": 1,
             "maxItems": 200
           },
-          "chat_id": {
+          "chatId": {
             "type": "string",
             "minLength": 1
           }
         },
         "required": [
-          "message_keys"
+          "messageKeys"
         ],
         "additionalProperties": false
       },
       "ChangeLabelsRequest": {
         "type": "object",
         "properties": {
-          "label_ids": {
+          "labelIds": {
             "type": "array",
             "items": {
               "type": "string",
@@ -11917,7 +12110,7 @@
           }
         },
         "required": [
-          "label_ids"
+          "labelIds"
         ],
         "additionalProperties": false
       },
@@ -11931,34 +12124,34 @@
             "type": "string",
             "nullable": true
           },
-          "is_group": {
+          "isGroup": {
             "type": "boolean"
           },
-          "is_newsletter": {
+          "isNewsletter": {
             "type": "boolean"
           },
-          "last_message_at": {
+          "lastMessageAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "unread_count": {
+          "unreadCount": {
             "type": "integer",
             "nullable": true,
             "minimum": 0
           },
-          "marked_unread": {
+          "markedUnread": {
             "type": "boolean"
           }
         },
         "required": [
           "id",
           "name",
-          "is_group",
-          "is_newsletter",
-          "last_message_at",
-          "unread_count",
-          "marked_unread"
+          "isGroup",
+          "isNewsletter",
+          "lastMessageAt",
+          "unreadCount",
+          "markedUnread"
         ],
         "additionalProperties": false
       },
@@ -12022,12 +12215,12 @@
       "ChatRef": {
         "type": "object",
         "properties": {
-          "chat_id": {
+          "chatId": {
             "type": "string"
           }
         },
         "required": [
-          "chat_id"
+          "chatId"
         ],
         "additionalProperties": false
       },
@@ -12087,15 +12280,15 @@
             ],
             "description": "Restrict to one chat kind."
           },
-          "include_last_message": {
+          "includeLastMessage": {
             "type": "boolean",
             "description": "Include the last message snippet on each chat row."
           },
-          "include_extended_info": {
+          "includeExtendedInfo": {
             "type": "boolean",
             "description": "Include extended chat metadata (engine-side opt-in)."
           },
-          "include_without_name": {
+          "includeWithoutName": {
             "type": "boolean",
             "description": "Include chats with no resolved name (default: skipped)."
           }
@@ -12105,7 +12298,7 @@
       "LoadOlderResult": {
         "type": "object",
         "properties": {
-          "total_messages": {
+          "totalMessages": {
             "type": "integer",
             "nullable": true
           },
@@ -12113,14 +12306,25 @@
             "type": "integer",
             "nullable": true
           },
-          "can_load_more": {
+          "canLoadMore": {
             "type": "boolean"
+          },
+          "historyUnavailable": {
+            "type": "boolean",
+            "description": "True when no older messages could be pulled because the phone reported it has no retrievable history for this chat (or the phone is offline). When true, `added` is 0, `canLoadMore` is false, and `error` carries the reason. This is distinct from a chat that is simply already fully synced (historyUnavailable=false, added=0)."
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Human-readable reason older messages could not be loaded from the phone; null when the pull succeeded or the chat is already fully synced."
           }
         },
         "required": [
-          "total_messages",
+          "totalMessages",
           "added",
-          "can_load_more"
+          "canLoadMore",
+          "historyUnavailable",
+          "error"
         ],
         "additionalProperties": false
       },
@@ -12139,16 +12343,16 @@
             "type": "string",
             "nullable": true
           },
-          "data_base64": {
+          "dataBase64": {
             "type": "string",
             "nullable": true
           },
-          "original_quality": {
+          "originalQuality": {
             "type": "boolean",
             "nullable": true,
             "description": "Set to false when the bytes returned are NOT the original sender uploaded — i.e. WA released the original from memory and we synthesized from a smaller WA-generated preview (#113). Currently only happens for own-sent newsletter media (messages you sent to a @newsletter chat). When absent or true, the bytes are the genuine original. Consumers can use this to warn users / decide whether to retry from a different source."
           },
-          "media_unavailable": {
+          "mediaUnavailable": {
             "type": "string",
             "nullable": true,
             "enum": [
@@ -12165,9 +12369,9 @@
           "url",
           "mimetype",
           "filename",
-          "data_base64",
-          "original_quality",
-          "media_unavailable"
+          "dataBase64",
+          "originalQuality",
+          "mediaUnavailable"
         ],
         "additionalProperties": false
       },
@@ -12285,7 +12489,7 @@
       "MuteChatRequest": {
         "type": "object",
         "properties": {
-          "unmute_at": {
+          "unmuteAt": {
             "type": "string",
             "format": "date-time",
             "description": "ISO 8601 timestamp at which the chat auto-unmutes. Omit for \"forever\"."
@@ -12296,18 +12500,18 @@
       "MuteState": {
         "type": "object",
         "properties": {
-          "is_muted": {
+          "isMuted": {
             "type": "boolean"
           },
-          "mute_expiration_at": {
+          "muteExpirationAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           }
         },
         "required": [
-          "is_muted",
-          "mute_expiration_at"
+          "isMuted",
+          "muteExpirationAt"
         ],
         "additionalProperties": false
       },
@@ -12329,19 +12533,19 @@
       "Participant": {
         "type": "object",
         "properties": {
-          "chat_id": {
+          "chatId": {
             "type": "string"
           },
-          "is_admin": {
+          "isAdmin": {
             "type": "boolean"
           },
-          "is_super_admin": {
+          "isSuperAdmin": {
             "type": "boolean"
           }
         },
         "required": [
-          "chat_id",
-          "is_admin"
+          "chatId",
+          "isAdmin"
         ],
         "additionalProperties": false
       },
@@ -12351,7 +12555,7 @@
           "key": {
             "type": "string"
           },
-          "chat_id": {
+          "chatId": {
             "type": "string"
           },
           "text": {
@@ -12361,7 +12565,7 @@
         },
         "required": [
           "key",
-          "chat_id",
+          "chatId",
           "text"
         ],
         "additionalProperties": false
@@ -12372,7 +12576,7 @@
           "key": {
             "type": "string"
           },
-          "chat_id": {
+          "chatId": {
             "type": "string"
           },
           "from": {
@@ -12394,14 +12598,14 @@
           "type": {
             "type": "string"
           },
-          "from_me": {
+          "fromMe": {
             "type": "boolean"
           },
           "ack": {
             "type": "integer",
             "nullable": true
           },
-          "media_url": {
+          "mediaUrl": {
             "type": "string",
             "nullable": true
           },
@@ -12413,7 +12617,7 @@
             "type": "string",
             "nullable": true
           },
-          "link_preview": {
+          "linkPreview": {
             "type": "object",
             "nullable": true,
             "properties": {
@@ -12425,7 +12629,7 @@
                 "type": "string",
                 "nullable": true
               },
-              "canonical_url": {
+              "canonicalUrl": {
                 "type": "string",
                 "nullable": true
               },
@@ -12437,21 +12641,21 @@
             "required": [
               "title",
               "description",
-              "canonical_url",
+              "canonicalUrl",
               "thumbnail"
             ]
           }
         },
         "required": [
           "key",
-          "chat_id",
+          "chatId",
           "from",
           "timestamp",
           "text",
           "type",
-          "from_me",
+          "fromMe",
           "ack",
-          "media_url",
+          "mediaUrl",
           "caption",
           "filename"
         ],
@@ -12575,6 +12779,18 @@
             "items": {
               "type": "object",
               "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Stable id of this engine session (its MQTT presence client id). Same id space as ping's whatsapp_connections[].id."
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "gateway",
+                    "regular"
+                  ],
+                  "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
+                },
                 "connected": {
                   "type": "boolean",
                   "description": "Whether this engine is currently online and serving requests."
@@ -12589,17 +12805,19 @@
                   "nullable": true,
                   "description": "Underlying WA stream state. Null when unknown."
                 },
-                "has_synced": {
+                "hasSynced": {
                   "type": "boolean",
                   "nullable": true,
                   "description": "Whether the engine has completed its initial history sync."
                 }
               },
               "required": [
+                "id",
+                "type",
                 "connected",
                 "state",
                 "stream",
-                "has_synced"
+                "hasSynced"
               ],
               "additionalProperties": false
             },
@@ -12618,6 +12836,18 @@
       "EngineStatus": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable id of this engine session (its MQTT presence client id). Same id space as ping's whatsapp_connections[].id."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
+          },
           "connected": {
             "type": "boolean",
             "description": "Whether this engine is currently online and serving requests."
@@ -12632,24 +12862,26 @@
             "nullable": true,
             "description": "Underlying WA stream state. Null when unknown."
           },
-          "has_synced": {
+          "hasSynced": {
             "type": "boolean",
             "nullable": true,
             "description": "Whether the engine has completed its initial history sync."
           }
         },
         "required": [
+          "id",
+          "type",
           "connected",
           "state",
           "stream",
-          "has_synced"
+          "hasSynced"
         ],
         "additionalProperties": false
       },
       "AddMemberRequest": {
         "type": "object",
         "properties": {
-          "chat_id": {
+          "chatId": {
             "type": "string"
           },
           "participants": {
@@ -12704,17 +12936,17 @@
             "type": "string",
             "nullable": true
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "last_message_at": {
+          "lastMessageAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
           },
-          "participant_count": {
+          "participantCount": {
             "type": "integer",
             "nullable": true,
             "minimum": 0
@@ -12733,13 +12965,13 @@
             "items": {
               "type": "object",
               "properties": {
-                "chat_id": {
+                "chatId": {
                   "type": "string"
                 },
-                "is_admin": {
+                "isAdmin": {
                   "type": "boolean"
                 },
-                "is_super_admin": {
+                "isSuperAdmin": {
                   "type": "boolean"
                 },
                 "name": {
@@ -12748,9 +12980,9 @@
                 }
               },
               "required": [
-                "chat_id",
-                "is_admin",
-                "is_super_admin",
+                "chatId",
+                "isAdmin",
+                "isSuperAdmin",
                 "name"
               ],
               "additionalProperties": false
@@ -12762,9 +12994,9 @@
           "name",
           "description",
           "owner",
-          "created_at",
-          "last_message_at",
-          "participant_count",
+          "createdAt",
+          "lastMessageAt",
+          "participantCount",
           "announce",
           "restrict",
           "participants"
@@ -12778,13 +13010,13 @@
       "GroupParticipant": {
         "type": "object",
         "properties": {
-          "chat_id": {
+          "chatId": {
             "type": "string"
           },
-          "is_admin": {
+          "isAdmin": {
             "type": "boolean"
           },
-          "is_super_admin": {
+          "isSuperAdmin": {
             "type": "boolean"
           },
           "name": {
@@ -12793,9 +13025,9 @@
           }
         },
         "required": [
-          "chat_id",
-          "is_admin",
-          "is_super_admin",
+          "chatId",
+          "isAdmin",
+          "isSuperAdmin",
           "name"
         ],
         "additionalProperties": false
@@ -12832,7 +13064,7 @@
       "SetPictureRequest": {
         "type": "object",
         "properties": {
-          "file_data_url": {
+          "fileDataUrl": {
             "type": "string",
             "minLength": 1,
             "maxLength": 20971520
@@ -12842,11 +13074,11 @@
             "maxLength": 2048,
             "format": "uri"
           },
-          "file_name": {
+          "fileName": {
             "type": "string",
             "maxLength": 255
           },
-          "file_mime_type": {
+          "fileMimeType": {
             "type": "string",
             "maxLength": 127
           }
@@ -12870,7 +13102,7 @@
               "restrict": {
                 "type": "boolean"
               },
-              "edit_info_admins_only": {
+              "editInfoAdminsOnly": {
                 "type": "boolean"
               }
             },
@@ -12900,7 +13132,7 @@
                 "type": "string",
                 "description": "Human-readable description of what went wrong."
               },
-              "request_id": {
+              "requestId": {
                 "type": "string",
                 "nullable": true,
                 "description": "Server-assigned request id; pass this when filing support tickets so engineering can trace the failure."
@@ -12936,7 +13168,7 @@
             "required": [
               "code",
               "message",
-              "request_id"
+              "requestId"
             ],
             "additionalProperties": false
           }
@@ -12969,7 +13201,7 @@
                 "type": "string",
                 "description": "Human-readable description of what went wrong."
               },
-              "request_id": {
+              "requestId": {
                 "type": "string",
                 "nullable": true,
                 "description": "Server-assigned request id; pass this when filing support tickets so engineering can trace the failure."
@@ -13005,7 +13237,7 @@
             "required": [
               "code",
               "message",
-              "request_id"
+              "requestId"
             ],
             "additionalProperties": false
           }
@@ -13141,7 +13373,7 @@
             "nullable": true,
             "description": "Owner JID, if returned by the engine."
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "nullable": true,
             "format": "date-time"
@@ -13170,7 +13402,7 @@
           "name",
           "description",
           "owner",
-          "created_at",
+          "createdAt",
           "subscribers",
           "invite",
           "verification"
@@ -13217,11 +13449,11 @@
             ],
             "description": "Blueticks API server liveness. \"ok\" means the API server is up and served this request."
           },
-          "account_id": {
+          "accountId": {
             "type": "string",
             "description": "The account (workspace) the API key belongs to."
           },
-          "whatsapp_connections": {
+          "whatsappConnections": {
             "type": "array",
             "items": {
               "type": "object",
@@ -13257,13 +13489,13 @@
           },
           "message": {
             "type": "string",
-            "description": "Present only when whatsapp_connections is empty; explains the empty state."
+            "description": "Present only when whatsappConnections is empty; explains the empty state."
           }
         },
         "required": [
           "api",
-          "account_id",
-          "whatsapp_connections"
+          "accountId",
+          "whatsappConnections"
         ],
         "additionalProperties": false
       },
@@ -13350,6 +13582,29 @@
           "gif"
         ]
       },
+      "MessageContactResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Resolved contact name; null when none was stored (e.g. API sends)."
+          },
+          "_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Mongo sub-document id; null for direct (non-persisted) sends."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
       "MessageId": {
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
@@ -13367,6 +13622,33 @@
           },
           "to": {
             "type": "string"
+          },
+          "contactList": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
+                },
+                "name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Resolved contact name; null when none was stored (e.g. API sends)."
+                },
+                "_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Mongo sub-document id; null for direct (non-persisted) sends."
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
           },
           "type": {
             "type": "string",
@@ -13485,6 +13767,7 @@
           "id",
           "key",
           "to",
+          "contactList",
           "type",
           "text",
           "mediaUrl",
@@ -13852,7 +14135,7 @@
               "disabled"
             ]
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
@@ -13866,7 +14149,7 @@
           "events",
           "description",
           "status",
-          "created_at",
+          "createdAt",
           "secret"
         ],
         "additionalProperties": false
@@ -13897,7 +14180,7 @@
               "disabled"
             ]
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -13908,7 +14191,7 @@
           "events",
           "description",
           "status",
-          "created_at"
+          "createdAt"
         ],
         "additionalProperties": false
       }
