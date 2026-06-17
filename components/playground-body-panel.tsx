@@ -53,6 +53,57 @@ function readAsDataUrl(file: File): Promise<string> {
   });
 }
 
+// Render the stored ISO-8601 `sendAt` value as the `YYYY-MM-DDThh:mm` string a
+// native `datetime-local` input expects, in the viewer's LOCAL timezone. Returns
+// '' for an absent / unparseable value so the input shows empty.
+function isoToLocalInput(iso: unknown): string {
+  if (typeof iso !== 'string' || iso === '') return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// A native date+time picker for the `sendAt` body field. Mirrors the file-attach
+// pattern: it doesn't replace the raw `sendAt` text input, it sits beside the
+// body and *fills* that field. The picker reads wall-clock time in the viewer's
+// local zone and writes the API's expected ISO-8601-with-offset string (UTC `Z`)
+// via `setValue`. Clearing the input unsets the field (immediate send).
+function SendAtControl() {
+  const sendAt = Custom.useController(['body', 'sendAt']);
+
+  return (
+    <div className="col-span-full flex flex-col gap-2 rounded-lg border border-fd-border p-3">
+      <span className="text-xs font-medium font-mono text-fd-foreground">Schedule send time</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="datetime-local"
+          value={isoToLocalInput(sendAt.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (!v) {
+              sendAt.setValue(undefined);
+              return;
+            }
+            const d = new Date(v);
+            sendAt.setValue(Number.isNaN(d.getTime()) ? undefined : d.toISOString());
+          }}
+          className="rounded-md border border-fd-border bg-fd-background px-2 py-1 text-sm text-fd-foreground [color-scheme:light] dark:[color-scheme:dark]"
+        />
+        {typeof sendAt.value === 'string' && sendAt.value ? (
+          <span className="text-xs text-fd-muted-foreground font-mono">
+            sendAt = {sendAt.value}
+          </span>
+        ) : (
+          <span className="text-xs text-fd-muted-foreground">
+            Pick a local date &amp; time. Leave empty to send immediately.
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function UploadControls({ config }: { config: UploadFieldConfig }) {
   const base64 = Custom.useController(['body', config.base64Field]);
   const [ct, setCt] = useState<ContentType>('application/json');
@@ -142,6 +193,10 @@ export function createUploadBodyPanel(configs: UploadFieldConfig[]) {
     // stays collapsible (chevron intact); this only changes the initial state.
     const isPath = props['data-type'] === 'path';
     const [active, setActive] = useState<UploadFieldConfig | null>(null);
+    // Whether THIS operation accepts a `sendAt` request field (scheduled sends).
+    // Scoped to the Request section so the response schema's `sendAt`
+    // (MessageResponse) on immediate-send pages doesn't false-trigger it.
+    const [hasSendAt, setHasSendAt] = useState(false);
 
     // The interactive panel mounts/unmounts with the collapsible, but the
     // read-only schema section names the field synchronously, so a
@@ -166,12 +221,34 @@ export function createUploadBodyPanel(configs: UploadFieldConfig[]) {
       return () => obs.disconnect();
     }, [isBody]);
 
+    // Detect a `sendAt` request field, scoped to the Request section only.
+    useEffect(() => {
+      if (!isBody) return;
+      const test = () => {
+        const root = document.querySelector('[data-api-section="request"]');
+        return (root?.textContent ?? '').includes('sendAt');
+      };
+      if (test()) {
+        setHasSendAt(true);
+        return;
+      }
+      const obs = new MutationObserver(() => {
+        if (test()) {
+          setHasSendAt(true);
+          obs.disconnect();
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+      return () => obs.disconnect();
+    }, [isBody]);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const Default = DefaultCollapsiblePanel as any;
     return (
       <Default {...props} defaultOpen={props.defaultOpen ?? isPath}>
         {props.children}
         {isBody && active ? <UploadControls config={active} /> : null}
+        {isBody && hasSendAt ? <SendAtControl /> : null}
       </Default>
     );
   };

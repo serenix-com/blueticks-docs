@@ -10,8 +10,46 @@
 - **"string" prefill** = path/query param input boxes show literal `string` (the fumadocs `sample()` artifact) instead of an empty box with the "Enter value" placeholder. This is a GLOBAL render behavior on any page with a path/query param — confirmed on representative pages, applies to all.
 - ☐ not yet checked in browser · ☑ checked in browser
 
-## Cross-cutting findings (apply to all pages) — CONFIRMED in browser
-- [x] **"string" prefill (CONFIRMED)**: every page with a `path` (and `query`) parameter renders the input as `textbox "<name>* string"` with `placeholder: Enter value` BUT a prefilled `text: string` value that overrides the placeholder. Verified on send-message (`chat_id`), get-message (`waMessageKey`), list-pinned-messages (`chat_id`), set-group-picture (`id`). Body-field textboxes correctly show empty + "Enter value". → fixed by Phase 1 `renderParameterField` override.
+## ✅ Optional params/fields "sent by default" — FIXED & VERIFIED (2026-06-16)
+**Problem (user):** on e.g. `list-messages-all-chats`, every optional query param was *active* — pressing Send transmitted them empty. They should default to **not sent** (the `✕`/removed state), opt-in only.
+
+**Root cause:** fumadocs marks a field "active" (included in the request) iff its seeded value `!== undefined` (`inputs.js` `isDefined`; the `✕` just `delete`s the key). My first `stripSampleSeeds` set `example: ''` on **all** params and `example: {}` on bodies — which *activated* every optional field. Wrong direction.
+
+**Fix (revised `lib/openapi.ts → stripSampleSeeds`):** seed ONLY required fields with an empty value; leave optional fields unseeded so they default inactive.
+- params → `example: ''` on **required** path/query params only (optional params untouched → inactive).
+- body → `example: ''` on **required string** props only (skip enums/curated); optional props stay omitted by `sample(skipNonRequired)` → inactive.
+- curated `examples` (create-group/audience/webhook) untouched.
+
+**Verified in browser (cURL = what's actually sent):**
+| Page | Default request (cURL) | Field states |
+|---|---|---|
+| list-messages-all-chats | `GET /v1/messages` (no query string) | all optional query params show "Enter value" but **no `✕`** → inactive ✓ |
+| send-message | `POST /v1/messages/` · body `{"type":"text"}` | required path `chat_id` active+empty; required body enum `type` active; optional body fields (text/mediaUrl/…) **not sent** ✓ |
+| create-newsletter | body `{"name":""}` | required `name` active+empty; optional `description` **not sent** ✓ (fixes the `{}` regression) |
+| create-group | body `{"name":"Q4 Planning","participants":["+15555550100",…]}` | curated example **preserved** ✓ |
+
+Additional spot-checks: **get-newsletter** `GET .../newsletters/` + `id*` "Enter value" ✓ · **update-group** `PATCH .../groups/ -d '{}'` (all-optional body → empty) ✓.
+
+**Field-shape coverage** (all 56 pages reduce to these, transform is uniform): optional query param ✓, required path param ✓, required body string ✓, required body enum ✓, optional body field ✓, all-optional body (`{}`) ✓, curated-example body ✓. 6 pages browser-verified; behavior is deterministic from the shape for the rest.
+
+**Known tradeoff (unchanged):** required path params seed `''`, so the auto-cURL shows an empty path segment (`POST .../messages/`). Hand-written description cURLs (send-message) still show a real JID.
+
+---
+
+## ✅ "string" prefill — FIXED & VERIFIED (2026-06-15)
+**Root cause (revised):** NOT limited to path params. Fumadocs seeds the playground form from `getRequestData` (`ui/operation/get-example-requests.js`): for any **required** param with no example it calls `sample(param.schema)` → `"string"`, and for a body with no curated example it calls `sample(schema,{skipNonRequired:true})` → every **required** body field (e.g. newsletters `name`) becomes `"string"` while optional fields are skipped (which is why optional fields already showed "Enter value").
+
+**Fix:** `lib/openapi.ts` → `stripSampleSeeds(raw)` in the `createOpenAPI` input pipeline. For path/query params lacking an example → `example: ''`; for request bodies with no curated `example`/`examples` → `example: {}`. This makes every field seed to empty so the placeholder shows. Curated examples (create-group/audience/webhook) are left intact. The `renderParameterField` approach in the plan was abandoned — it can't reach required *body* fields and would require reimplementing the whole body panel.
+
+**Verified in browser (placeholder "Enter value", no prefill):**
+- create-newsletter — body `name`* + `description` ✓ (cURL body now `-d '{}'`)
+- get-newsletter / get-group / update-group — path `id`* ✓
+- (covers all 56 pages via the same transform; send-message `chat_id`, get-message `waMessageKey`, etc. all flow through it)
+
+**⚠ Known side effect:** the auto-generated **cURL** path now shows an empty segment for path params, e.g. `GET https://api.blueticks.co/v1/newsletters/` (was `.../newsletters/string`). The form-input value and the cURL are the same `data` object in fumadocs, so emptying the input empties the cURL segment too. Our SDK code samples (Python/Node/PHP/Ruby/Go via `x-codeSamples`) are unaffected — they use `id_01H7...` placeholders. Follow-up option if the empty cURL segment is unwanted: a custom cURL generator that renders `:id`-style placeholders independent of the form seed.
+
+### (superseded) original observation
+- every page with a `path`/`query` param rendered `textbox "<name>* string"` with `placeholder: Enter value` BUT a prefilled `text: string` overriding it — verified on send-message, get-message, list-pinned-messages, set-group-picture. Now resolved by the fix above.
 - [x] **Prefill leaks into examples (NEW, CONFIRMED)**: the `"string"` value also leaks into the generated **cURL** (`.../v1/messages/string` on send-message) and the **JSON request example** (`"audience_id": "string"` on create-campaign, `"message_keys": [...]` keys snake_case on batch-acks). So the prefill isn't only cosmetic — copy-paste examples carry the literal `string`.
 - [x] **Spec already partially migrated (CONFIRMED)**: `{waMessageKey}` (5 message-key endpoints) and `{chatId}` (groups members) already render camelCase; get-message already shows the optional `chatId?` **query** param. `{chat_id}` still remains on 6 endpoints (send-message, chats participants/mark_read/open, messages load_older/pinned).
 - [x] **⚠ SPEC vs SOURCE DRIFT (NEW, CONFIRMED)**: the live `docs/openapi.json` is AHEAD of `backend/scripts/openapi-custom-paths.ts` — the source still defines `/v1/messages/ack/{chat_id}/{key}` etc., but the rendered spec already has `{waMessageKey}` + optional `chatId`. Someone hand-patched the spec artifact (or regenerated from a newer branch) without the source matching. **Re-running `export:openapi` from current source would REVERT the waMessageKey work.** Must reconcile `openapi-custom-paths.ts` to the intended state before any regeneration (folds into Plan Task 3.2).

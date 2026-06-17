@@ -55,7 +55,16 @@ const APIPage = createAPIPage(openapi, {
       },
       // When a file is staged in multipart mode, rewrite the regular Send's
       // request body to multipart/form-data so the file is uploaded as bytes.
-      fetchOptions: { onRequestInit: multipartRewrite },
+      //
+      // requestTimeout: the playground fetcher defaults to 10s (it aborts the
+      // browser fetch with `AbortSignal.timeout`). Slow engine-backed tools —
+      // notably POST /v1/messages/load_older, whose on-demand phone history
+      // sync polls for up to ~20s — legitimately exceed that, so the playground
+      // showed "[TimeoutError] signal timed out" while the API (60s budget) was
+      // still mid-flight and the real response arrived fine. Raise it just past
+      // the API's DEFAULT_TIMEOUT_MS (60s) so the playground never gives up
+      // before the API itself does.
+      fetchOptions: { onRequestInit: multipartRewrite, requestTimeout: 65 },
     },
   },
   // Drop the per-response "TypeScript Definitions" panels. The dedicated

@@ -72,6 +72,8 @@ const SAMPLE_METHODS: Record<string, Record<SdkLang, string | null>> = {
   'POST /v1/messages/acks':                         { python: 'batch_message_acks',    node: 'batchAcks',   php: 'batchMessageAcks',    ruby: 'batch_message_acks',    go: 'BatchMessageAcks' },
   // Pinned messages exist only on the Node SDK so far → others emit no sample.
   'GET /v1/messages/pinned/{chat_id}':              { python: null,                    node: 'listPinned',  php: null,                  ruby: null,                    go: null },
+  'POST /v1/messages/pin/{waMessageKey}':           { python: null,                    node: 'pin',         php: null,                  ruby: null,                    go: null },
+  'POST /v1/messages/unpin/{waMessageKey}':         { python: null,                    node: 'unpin',       php: null,                  ruby: null,                    go: null },
 };
 
 /** PascalCase a hyphenated resource segment for Go (e.g. scheduled-messages → ScheduledMessages). */

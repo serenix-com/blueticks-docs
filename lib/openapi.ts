@@ -271,6 +271,78 @@ function reorderQueryParameters(spec: {
   }
 }
 
+// Two playground-seed problems solved together, both rooted in how fumadocs
+// seeds the "Try it" form from `getRequestData` (ui/operation/get-example-requests):
+//
+//   1. "string" prefill — a REQUIRED field with no example is seeded with
+//      `sample(schema)`, which returns the literal "string" (path params, and
+//      required body fields like newsletters `name`). We want an empty box that
+//      shows the "Enter value" placeholder instead.
+//   2. Optional params/fields are SENT by default — fumadocs marks a field
+//      "active" (included in the request) whenever its seeded value is not
+//      `undefined` (inputs.js: `isDefined = value !== undefined`; the ✕ button
+//      just `delete`s the key). A field left UNSEEDED defaults to inactive /
+//      opt-in (the user clicks to add it). So optional params must NOT be seeded.
+//
+// Therefore: seed ONLY required fields, with an empty value (clears "string",
+// keeps them active), and leave every optional field unseeded so it defaults to
+// "not sent". `sample(schema,{skipNonRequired:true})` already omits optional body
+// props, so we only need to blank the required ones.
+//
+//   • params  → set `example: ''` on REQUIRED path/query params only (pickExample
+//     wins over the sample() fallback → empty, active). Optional params untouched
+//     → inactive.
+//   • body    → on uncurated json bodies, set `example: ''` on each REQUIRED
+//     *string* property (skip enums/selects) so it seeds empty+active; optional
+//     props stay omitted → inactive.
+//
+// Curated examples (create-group / create-audience / create-webhook, which carry
+// an `examples` map) are left untouched. Display-only: the downloadable
+// public/openapi.json keeps its original form.
+function stripSampleSeeds(spec: {
+  paths?: Record<string, Record<string, {
+    parameters?: Array<{ in?: string; required?: boolean; example?: unknown; examples?: unknown }>;
+    requestBody?: { content?: Record<string, {
+      schema?: { properties?: Record<string, { type?: unknown; enum?: unknown; example?: unknown; default?: unknown }>; required?: unknown };
+      example?: unknown;
+      examples?: unknown;
+    }> };
+  }>>;
+}): void {
+  for (const pathItem of Object.values(spec.paths ?? {})) {
+    if (!pathItem || typeof pathItem !== 'object') continue;
+    for (const op of Object.values(pathItem)) {
+      if (!op || typeof op !== 'object') continue;
+
+      // Params: seed only the required ones (clears "string"); optional params
+      // stay unseeded so they default to inactive / opt-in.
+      for (const param of op.parameters ?? []) {
+        if ((param.in === 'path' || param.in === 'query') && param.required === true &&
+            param.example === undefined && param.examples === undefined) {
+          param.example = '';
+        }
+      }
+
+      // Body: blank required string props on uncurated bodies; leave optional
+      // props unseeded (sample omits them → inactive) and curated examples intact.
+      for (const media of Object.values(op.requestBody?.content ?? {})) {
+        if (!media || typeof media !== 'object') continue;
+        if (media.example !== undefined || media.examples !== undefined) continue;
+        const props = media.schema?.properties;
+        const required = Array.isArray(media.schema?.required) ? media.schema.required : [];
+        if (!props || typeof props !== 'object') continue;
+        for (const name of required) {
+          const p = props[name as string];
+          if (p && typeof p === 'object' && p.type === 'string' && p.enum === undefined &&
+              p.example === undefined && p.default === undefined) {
+            p.example = '';
+          }
+        }
+      }
+    }
+  }
+}
+
 export const openapi = createOpenAPI({
   input: async () => {
     const raw = JSON.parse(await fs.readFile(SPEC_KEY, 'utf8'));
@@ -279,6 +351,7 @@ export const openapi = createOpenAPI({
     collapseErrorResponses(raw);
     declutterErrorSchema(raw);
     reorderQueryParameters(raw);
+    stripSampleSeeds(raw);
     return { [SPEC_KEY]: raw };
   },
 });
