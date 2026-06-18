@@ -820,7 +820,7 @@
               "type": "string",
               "maxLength": 64
             },
-            "description": "Optional key for safe retries. Identical bodies with the same key return the original response; differing bodies return 409."
+            "description": "Optional key for safe retries — guarantees a request runs at most once, so a network timeout + retry never double-sends. Reuse the same key to retry: an identical body replays the original response (HTTP 200 instead of 201, no second message); a different body with the same key returns 409 Conflict. Keys are scoped per workspace (max 64 chars). This is the request-level dedup control — distinct from the body `secret` field, which is only a correlation tag and does NOT prevent duplicate sends."
           }
         ],
         "responses": {
@@ -1591,7 +1591,7 @@
           "Scheduled Messages"
         ],
         "summary": "Update scheduled message",
-        "description": "Edit a previously-queued message that has not dispatched yet. Accepts a subset of `text`, `mediaUrl`, `mediaCaption`, `sendAt` — at least one is required. Returns 400 once the message has advanced past the editable window (status not `pending`).",
+        "description": "Edit a previously-queued message that has not dispatched yet (status `pending`).\n\nAccepts the **same flat fields as [Schedule message](#schedule-message)** — `type`, `text`, `mediaUrl`, `mediaBase64`, `mediaKind`, `mediaFilename`, `pollQuestion`, `pollOptions`, `pollAllowMultiple`, `to`, `sendAt`, `replyTo`, `secret` — but **every field is optional**. Send only the fields you want to change; at least one is required.\n\nNotes:\n- A new `mediaUrl` / `mediaBase64` is re-hosted to GCS just like on create; `mediaKind` / `mediaFilename` can be edited on their own.\n- Editing `text` re-derives the link-preview card (auto-attached when the text contains a URL).\n- `sendAt` reschedules (must be ≥10s in the future, ≤365 days).\n- Returns 400 once the message has advanced past the editable window (status not `pending`).",
         "security": [
           {
             "BearerAuth": [
@@ -1605,31 +1605,120 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "media",
+                      "poll"
+                    ]
+                  },
                   "text": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 4096,
-                    "description": "New text body. Replaces the previous text/caption."
+                    "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
                   },
                   "mediaUrl": {
                     "type": "string",
-                    "format": "uri",
                     "maxLength": 2048,
-                    "description": "Replace the attached media URL (https only)."
+                    "description": "Media source URL (https only). One of mediaUrl or mediaBase64 is required for media sends; mediaUrl wins when both are present."
                   },
-                  "mediaCaption": {
+                  "mediaBase64": {
+                    "type": "string",
+                    "maxLength": 15728640,
+                    "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
+                  },
+                  "mediaKind": {
+                    "type": "string",
+                    "enum": [
+                      "image",
+                      "video",
+                      "audio",
+                      "document",
+                      "sticker",
+                      "voice",
+                      "gif"
+                    ],
+                    "description": "Media kind (image · video · audio · document · sticker · voice · gif). Optional — auto-detected from the URL / content-type when omitted."
+                  },
+                  "mediaFilename": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 1024,
-                    "description": "Replace the media's caption. When set alongside `text`, `text` wins."
+                    "maxLength": 255,
+                    "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
+                  },
+                  "pollQuestion": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "description": "Poll question (type=poll). Required for poll sends."
+                  },
+                  "pollOptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "description": "Poll options (type=poll). 2–12 items."
+                  },
+                  "pollAllowMultiple": {
+                    "type": "boolean",
+                    "description": "Allow selecting multiple poll options (type=poll). Default false."
+                  },
+                  "to": {
+                    "type": "string",
+                    "description": "Recipient. Either an international phone number in E.164 format (e.g. +15551234567) for a 1:1 chat, or a WhatsApp chat id: `<id>@g.us` for a group, `<id>@newsletter` for a channel / newsletter, or `<phone>@c.us` for an individual."
                   },
                   "sendAt": {
                     "type": "string",
-                    "format": "date-time",
-                    "description": "Reschedule. ISO 8601 datetime (UTC) in the future."
+                    "format": "date-time"
+                  },
+                  "replyTo": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
+                  },
+                  "secret": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
                   }
                 },
                 "additionalProperties": false
+              },
+              "examples": {
+                "edit_text": {
+                  "summary": "Change the text body",
+                  "value": {
+                    "text": "Updated reminder: meeting moved to 4pm"
+                  }
+                },
+                "reschedule": {
+                  "summary": "Reschedule only",
+                  "value": {
+                    "sendAt": "2026-12-31T15:00:00Z"
+                  }
+                },
+                "swap_media": {
+                  "summary": "Replace the attached media",
+                  "value": {
+                    "mediaUrl": "https://cdn.example.com/new.pdf",
+                    "mediaKind": "document",
+                    "mediaFilename": "new.pdf"
+                  }
+                },
+                "edit_poll": {
+                  "summary": "Edit poll question and options",
+                  "value": {
+                    "pollQuestion": "Pizza or sushi?",
+                    "pollOptions": [
+                      "Pizza",
+                      "Sushi"
+                    ]
+                  }
+                }
               }
             }
           }
@@ -1917,6 +2006,148 @@
           }
         ],
         "operationId": "scheduled-messages.update"
+      },
+      "delete": {
+        "tags": [
+          "Scheduled Messages"
+        ],
+        "summary": "Delete scheduled message",
+        "description": "Delete a scheduled or queued message so it will not be sent. Soft-deletes the message (and records a cancellation in its delivery log). Returns 404 if no pending/queued message with this id is owned by the caller.",
+        "security": [
+          {
+            "BearerAuth": [
+              "messages:write"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Id of the deleted message."
+                        },
+                        "deleted": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ],
+                          "description": "Always true on a successful delete."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "deleted"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "scheduled-messages.delete"
       }
     },
     "/v1/webhooks": {
@@ -4522,6 +4753,16 @@
                           },
                           "markedUnread": {
                             "type": "boolean"
+                          },
+                          "lastMessageText": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+                          },
+                          "lastMessageFromMe": {
+                            "type": "boolean",
+                            "nullable": true,
+                            "description": "True if the last message was sent by the connected account. Present only when includeLastMessage=true."
                           }
                         },
                         "required": [
@@ -4682,6 +4923,16 @@
                         },
                         "markedUnread": {
                           "type": "boolean"
+                        },
+                        "lastMessageText": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+                        },
+                        "lastMessageFromMe": {
+                          "type": "boolean",
+                          "nullable": true,
+                          "description": "True if the last message was sent by the connected account. Present only when includeLastMessage=true."
                         }
                       },
                       "required": [
@@ -8357,7 +8608,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 256,
-                    "description": "Opaque caller id stored on the message `secret` and carried into the WhatsApp messageSecret."
+                    "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
                   }
                 },
                 "required": [
@@ -11681,6 +11932,320 @@
         },
         "operationId": "messages.pinned.get"
       }
+    },
+    "/v1/messages/pin/{waMessageKey}": {
+      "post": {
+        "tags": [
+          "Messages"
+        ],
+        "summary": "Pin message",
+        "description": "Pin a message to the top of its chat. Optionally pass a `duration` (seconds) in the body to control when the pin expires — defaults to 7 days. Requires `chats:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "chats:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "waMessageKey",
+            "in": "path",
+            "required": true,
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatId",
+            "in": "query",
+            "required": false,
+            "description": "Optional. Only used to find the message faster — when you pass a bare message id instead of the complete key, `chatId` lets the server rebuild the full key. If you pass the complete `waMessageKey` you can omit it.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "duration": {
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "message pinned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "ok"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "messages.pin.create"
+      }
+    },
+    "/v1/messages/unpin/{waMessageKey}": {
+      "post": {
+        "tags": [
+          "Messages"
+        ],
+        "summary": "Unpin message",
+        "description": "Remove an existing pin from a message. Requires `chats:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "chats:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "waMessageKey",
+            "in": "path",
+            "required": true,
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatId",
+            "in": "query",
+            "required": false,
+            "description": "Optional. Only used to find the message faster — when you pass a bare message id instead of the complete key, `chatId` lets the server rebuild the full key. If you pass the complete `waMessageKey` you can omit it.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "message unpinned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "ok"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "messages.unpin.create"
+      }
     }
   },
   "components": {
@@ -12142,6 +12707,16 @@
           },
           "markedUnread": {
             "type": "boolean"
+          },
+          "lastMessageText": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+          },
+          "lastMessageFromMe": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "True if the last message was sent by the connected account. Present only when includeLastMessage=true."
           }
         },
         "required": [
@@ -12547,6 +13122,17 @@
           "chatId",
           "isAdmin"
         ],
+        "additionalProperties": false
+      },
+      "PinMessageRequest": {
+        "type": "object",
+        "properties": {
+          "duration": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
         "additionalProperties": false
       },
       "PinnedMessage": {
@@ -13499,6 +14085,27 @@
         ],
         "additionalProperties": false
       },
+      "DeletedMessageResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id of the deleted message."
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Always true on a successful delete."
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ],
+        "additionalProperties": false
+      },
       "LinkPreviewResponse": {
         "type": "object",
         "properties": {
@@ -13799,28 +14406,85 @@
       "PatchMessageRequest": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "media",
+              "poll"
+            ]
+          },
           "text": {
             "type": "string",
-            "minLength": 1,
             "maxLength": 4096,
-            "description": "New text body. Replaces the previous text/caption."
+            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
           },
           "mediaUrl": {
             "type": "string",
             "maxLength": 2048,
-            "format": "uri",
-            "description": "Replace the attached media URL (https only)."
+            "description": "Media source URL (https only). One of mediaUrl or mediaBase64 is required for media sends; mediaUrl wins when both are present."
           },
-          "mediaCaption": {
+          "mediaBase64": {
+            "type": "string",
+            "maxLength": 15728640,
+            "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
+          },
+          "mediaKind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "document",
+              "sticker",
+              "voice",
+              "gif"
+            ],
+            "description": "Media kind (image · video · audio · document · sticker · voice · gif). Optional — auto-detected from the URL / content-type when omitted."
+          },
+          "mediaFilename": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 1024,
-            "description": "Replace the media's caption. When set alongside `text`, `text` wins."
+            "maxLength": 255,
+            "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
+          },
+          "pollQuestion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Poll question (type=poll). Required for poll sends."
+          },
+          "pollOptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "Poll options (type=poll). 2–12 items."
+          },
+          "pollAllowMultiple": {
+            "type": "boolean",
+            "description": "Allow selecting multiple poll options (type=poll). Default false."
+          },
+          "to": {
+            "type": "string",
+            "description": "Recipient. Either an international phone number in E.164 format (e.g. +15551234567) for a 1:1 chat, or a WhatsApp chat id: `<id>@g.us` for a group, `<id>@newsletter` for a channel / newsletter, or `<phone>@c.us` for an individual."
           },
           "sendAt": {
             "type": "string",
-            "format": "date-time",
-            "description": "Reschedule. ISO 8601 datetime (UTC) in the future."
+            "format": "date-time"
+          },
+          "replyTo": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
+          },
+          "secret": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
           }
         },
         "additionalProperties": false
@@ -13898,7 +14562,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "description": "Opaque caller id stored on the message `secret` and carried into the WhatsApp messageSecret."
+            "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
           }
         },
         "required": [
@@ -13987,7 +14651,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
-            "description": "Opaque caller id stored on the message `secret` and carried into the WhatsApp messageSecret."
+            "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
           }
         },
         "required": [

@@ -11,6 +11,8 @@
     "get-message-media-url",
     "batch-get-message-acks",
     "get-message-media",
-    "list-pinned-messages"
+    "list-pinned-messages",
+    "pin-message",
+    "unpin-message"
   ]
 }
