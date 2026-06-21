@@ -42,8 +42,6 @@ const SAMPLE_METHODS: Record<string, Record<SdkLang, string | null>> = {
   'POST /v1/campaigns/{id}/pause':                  { python: 'pause',           node: 'pause',          php: 'pause',           ruby: 'pause',             go: 'Pause' },
   'POST /v1/campaigns/{id}/resume':                 { python: 'resume',          node: 'resume',         php: 'resume',          ruby: 'resume',            go: 'Resume' },
   'POST /v1/campaigns/{id}/cancel':                 { python: 'cancel',          node: 'cancel',         php: 'cancel',          ruby: 'cancel',            go: 'Cancel' },
-  // Webhooks.
-  'POST /v1/webhooks/{id}/rotate-secret':           { python: 'rotate_secret',   node: 'rotateSecret',   php: 'rotateSecret',    ruby: 'rotate_secret',     go: 'RotateSecret' },
   // Audience sub-resources.
   'POST /v1/audiences/{id}/contacts':               { python: 'append_contacts', node: 'appendContacts', php: 'appendContacts',  ruby: 'append_contacts',   go: 'AppendContacts' },
   'PATCH /v1/audiences/{id}/contacts/{contactId}':  { python: 'update_contact',  node: 'updateContact',  php: 'updateContact',   ruby: 'update_contact',    go: 'UpdateContact' },

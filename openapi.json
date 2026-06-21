@@ -57,7 +57,7 @@
     },
     {
       "name": "Webhooks",
-      "description": "Register URLs to receive signed HTTPS POSTs on Blueticks events."
+      "description": "Register URLs to receive HTTPS POSTs on Blueticks events."
     }
   ],
   "paths": {
@@ -413,6 +413,20 @@
               ]
             },
             "description": "Filter by lifecycle status: `pending` (accepted, waiting), `confirmed` (WhatsApp accepted — has waMessageKey), `received` (double grey tick), `read` (double blue tick), `played` (voice played), `failed`."
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
           },
           {
             "name": "skip",
@@ -2166,6 +2180,20 @@
         ],
         "parameters": [
           {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
+          },
+          {
             "name": "skip",
             "in": "query",
             "required": false,
@@ -2341,7 +2369,7 @@
           "Webhooks"
         ],
         "summary": "Create webhook",
-        "description": "Register a new webhook. Returns the signing secret exactly once.",
+        "description": "Register a new webhook.",
         "security": [
           {
             "BearerAuth": [
@@ -2480,9 +2508,6 @@
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
-                        },
-                        "secret": {
-                          "type": "string"
                         }
                       },
                       "required": [
@@ -2491,8 +2516,7 @@
                         "events",
                         "description",
                         "status",
-                        "createdAt",
-                        "secret"
+                        "createdAt"
                       ],
                       "additionalProperties": false
                     }
@@ -3117,6 +3141,20 @@
           }
         ],
         "parameters": [
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
+          },
           {
             "name": "skip",
             "in": "query",
@@ -3950,6 +3988,20 @@
         ],
         "parameters": [
           {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
+          },
+          {
             "name": "skip",
             "in": "query",
             "required": false,
@@ -4033,10 +4085,6 @@
                             "type": "integer",
                             "minimum": 0
                           },
-                          "from": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -4067,7 +4115,6 @@
                           "deliveredCount",
                           "readCount",
                           "failedCount",
-                          "from",
                           "createdAt",
                           "startedAt",
                           "completedAt",
@@ -4213,11 +4260,6 @@
                     "maxLength": 1024,
                     "description": "Caption for the media attachment. Requires mediaUrl."
                   },
-                  "from": {
-                    "type": "string",
-                    "pattern": "^\\+[1-9]\\d{6,14}$",
-                    "description": "Sender phone in international format (e.g. +14155551234). When omitted, the workspace default sender is used."
-                  },
                   "onMissingVariable": {
                     "type": "string",
                     "enum": [
@@ -4294,10 +4336,6 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -4328,7 +4366,6 @@
                         "deliveredCount",
                         "readCount",
                         "failedCount",
-                        "from",
                         "createdAt",
                         "startedAt",
                         "completedAt",
@@ -4482,10 +4519,6 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -4516,7 +4549,6 @@
                         "deliveredCount",
                         "readCount",
                         "failedCount",
-                        "from",
                         "createdAt",
                         "startedAt",
                         "completedAt",
@@ -6039,11 +6071,6 @@
                             "nullable": true,
                             "description": "Optional description."
                           },
-                          "owner": {
-                            "type": "string",
-                            "nullable": true,
-                            "description": "Owner JID, if returned by the engine."
-                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time",
@@ -6072,7 +6099,6 @@
                           "id",
                           "name",
                           "description",
-                          "owner",
                           "createdAt",
                           "subscribers",
                           "invite",
@@ -6238,11 +6264,6 @@
                           "nullable": true,
                           "description": "Optional description."
                         },
-                        "owner": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "Owner JID, if returned by the engine."
-                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time",
@@ -6271,7 +6292,6 @@
                         "id",
                         "name",
                         "description",
-                        "owner",
                         "createdAt",
                         "subscribers",
                         "invite",
@@ -6410,11 +6430,6 @@
                           "nullable": true,
                           "description": "Optional description."
                         },
-                        "owner": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "Owner JID, if returned by the engine."
-                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time",
@@ -6443,7 +6458,6 @@
                         "id",
                         "name",
                         "description",
-                        "owner",
                         "createdAt",
                         "subscribers",
                         "invite",
@@ -6868,174 +6882,6 @@
           }
         },
         "operationId": "engines.list"
-      }
-    },
-    "/v1/webhooks/{id}/rotate-secret": {
-      "post": {
-        "tags": [
-          "Webhooks"
-        ],
-        "summary": "Rotate webhook secret",
-        "description": "Rotate the signing secret. Returns the new secret exactly once. Requires `webhooks:write` scope.",
-        "security": [
-          {
-            "BearerAuth": [
-              "webhooks:write"
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "new secret",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ],
-                      "description": "Always `true` on success responses."
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "url": {
-                          "type": "string"
-                        },
-                        "events": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        },
-                        "description": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "enabled",
-                            "disabled"
-                          ]
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "secret": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "url",
-                        "events",
-                        "description",
-                        "status",
-                        "createdAt",
-                        "secret"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request — invalid params or body.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid API key.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "API key lacks the required scope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed — see `error.details` for per-field issues.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Rate limit exceeded — back off and retry.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "webhooks.rotatesecret.create"
       }
     },
     "/v1/audiences/{id}/contacts": {
@@ -7627,10 +7473,6 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -7661,7 +7503,6 @@
                         "deliveredCount",
                         "readCount",
                         "failedCount",
-                        "from",
                         "createdAt",
                         "startedAt",
                         "completedAt",
@@ -7835,10 +7676,6 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -7869,7 +7706,6 @@
                         "deliveredCount",
                         "readCount",
                         "failedCount",
-                        "from",
                         "createdAt",
                         "startedAt",
                         "completedAt",
@@ -8043,10 +7879,6 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "from": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -8077,7 +7909,6 @@
                         "deliveredCount",
                         "readCount",
                         "failedCount",
-                        "from",
                         "createdAt",
                         "startedAt",
                         "completedAt",
@@ -11492,12 +11323,17 @@
                           "ack": {
                             "type": "integer",
                             "nullable": true,
-                            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when the engine could not determine."
+                            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when the message has no determined ack — or when the key was not found (see `found`)."
+                          },
+                          "found": {
+                            "type": "boolean",
+                            "description": "True when the message exists in the engine store. False when the requested key has no matching message; in that case `ack` is null by definition."
                           }
                         },
                         "required": [
                           "key",
-                          "ack"
+                          "ack",
+                          "found"
                         ],
                         "additionalProperties": false
                       }
@@ -12515,10 +12351,6 @@
             "type": "integer",
             "minimum": 0
           },
-          "from": {
-            "type": "string",
-            "nullable": true
-          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -12549,7 +12381,6 @@
           "deliveredCount",
           "readCount",
           "failedCount",
-          "from",
           "createdAt",
           "startedAt",
           "completedAt",
@@ -12600,11 +12431,6 @@
             "maxLength": 1024,
             "description": "Caption for the media attachment. Requires mediaUrl."
           },
-          "from": {
-            "type": "string",
-            "pattern": "^\\+[1-9]\\d{6,14}$",
-            "description": "Sender phone in international format (e.g. +14155551234). When omitted, the workspace default sender is used."
-          },
           "onMissingVariable": {
             "type": "string",
             "enum": [
@@ -12629,12 +12455,17 @@
           "ack": {
             "type": "integer",
             "nullable": true,
-            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when the engine could not determine."
+            "description": "-1=error, 0=pending, 1=server, 2=device, 3=read, 4=played; null when the message has no determined ack — or when the key was not found (see `found`)."
+          },
+          "found": {
+            "type": "boolean",
+            "description": "True when the message exists in the engine store. False when the requested key has no matching message; in that case `ack` is null by definition."
           }
         },
         "required": [
           "key",
-          "ack"
+          "ack",
+          "found"
         ],
         "additionalProperties": false
       },
@@ -13954,11 +13785,6 @@
             "nullable": true,
             "description": "Optional description."
           },
-          "owner": {
-            "type": "string",
-            "nullable": true,
-            "description": "Owner JID, if returned by the engine."
-          },
           "createdAt": {
             "type": "string",
             "nullable": true,
@@ -13987,7 +13813,6 @@
           "id",
           "name",
           "description",
-          "owner",
           "createdAt",
           "subscribers",
           "invite",
@@ -14173,6 +13998,15 @@
             "minLength": 1,
             "maxLength": 200,
             "description": "Search token; when set, only items whose name matches are returned."
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "desc",
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
           }
         },
         "additionalProperties": false
@@ -14772,51 +14606,6 @@
             ]
           }
         },
-        "additionalProperties": false
-      },
-      "WebhookCreateResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          },
-          "events": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "enabled",
-              "disabled"
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "secret": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "url",
-          "events",
-          "description",
-          "status",
-          "createdAt",
-          "secret"
-        ],
         "additionalProperties": false
       },
       "WebhookResponse": {

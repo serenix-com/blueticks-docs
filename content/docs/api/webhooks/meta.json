@@ -1,12 +1,11 @@
 {
   "title": "Webhooks",
-  "description": "Register URLs to receive signed HTTPS POSTs on Blueticks events.",
+  "description": "Register URLs to receive HTTPS POSTs on Blueticks events.",
   "pages": [
     "list-webhooks",
     "create-webhook",
     "get-webhook",
     "update-webhook",
-    "delete-webhook",
-    "rotate-webhook-secret"
+    "delete-webhook"
   ]
 }
