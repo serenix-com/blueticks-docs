@@ -15,7 +15,7 @@ tracked record:
 | Endpoint | When to use it | Tracked? |
 | --- | --- | --- |
 | [`POST /v1/scheduled-messages`](/docs/api/scheduled-messages/schedule-message) | **The default for almost everything.** Send right now *or* schedule for later. | **Yes** — returns a record you can list, poll for status, and edit. |
-| [`POST /v1/messages/{chat_id}`](/docs/api/messages/send-message) | A lightweight, fire-and-forget send into one chat. | No — dispatched directly, no record kept. |
+| [`POST /v1/messages/{chatId}`](/docs/api/messages/send-message) | A lightweight, fire-and-forget send into one chat. | No — dispatched directly, no record kept. |
 
 <Callout type="info">
 Despite the name, **`POST /v1/scheduled-messages` is the main "send a message"
@@ -470,9 +470,10 @@ Works with `text`, `media`, and `poll`.
 
 ## React to a message
 
-Reactions are a separate endpoint — `POST /v1/messages/reactions/{chat_id}/{key}`
-with body `{ "emoji": "❤️" }`. Pass an empty string to remove a reaction.
-Use the `key` from `MessageResponse`, not the `id`.
+Reactions are a separate endpoint — `POST /v1/messages/reactions/{waMessageKey}`
+with body `{ "emoji": "❤️" }`. `waMessageKey` is the message's complete wire
+`key` from `MessageResponse` (not the `id`). Pass an empty string to remove a
+reaction. The optional `?chatId=` query param just narrows the engine lookup.
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
@@ -482,8 +483,7 @@ import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 bt.chats.react(
-    chat_id="972501234567@c.us",
-    key="false_972501234567@c.us_3EB0ABCDEF",
+    "false_972501234567@c.us_3EB0ABCDEF",  # the wire key from MessageResponse
     emoji="❤️",
 )
 ```
@@ -496,8 +496,7 @@ import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
 await bt.messages.react(
-  '972501234567@c.us',
-  'false_972501234567@c.us_3EB0ABCDEF',
+  'false_972501234567@c.us_3EB0ABCDEF', // the wire key from MessageResponse
   { emoji: '❤️' },
 );
 ```
@@ -510,8 +509,7 @@ use Blueticks\Blueticks;
 $bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 $bt->chats->react(
-    '972501234567@c.us',
-    'false_972501234567@c.us_3EB0ABCDEF',
+    'false_972501234567@c.us_3EB0ABCDEF', // the wire key from MessageResponse
     '❤️',
 );
 ```
@@ -524,8 +522,7 @@ require "blueticks"
 client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
 
 client.chats.react(
-  "972501234567@c.us",
-  "false_972501234567@c.us_3EB0ABCDEF",
+  "false_972501234567@c.us_3EB0ABCDEF", # the wire key from MessageResponse
   emoji: "❤️",
 )
 ```
@@ -544,8 +541,8 @@ c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
 c.Chats.React(
 	context.Background(),
-	"972501234567@c.us",
-	"false_972501234567@c.us_3EB0ABCDEF",
+	"false_972501234567@c.us_3EB0ABCDEF", // the wire key from MessageResponse
+	"",                                   // optional chatId hint
 	"❤️",
 )
 ```
@@ -554,7 +551,7 @@ c.Chats.React(
   <Tab value="cURL">
 
 ```bash
-curl -X POST "https://api.blueticks.co/v1/messages/reactions/972501234567@c.us/false_972501234567@c.us_3EB0ABCDEF" \
+curl -X POST "https://api.blueticks.co/v1/messages/reactions/false_972501234567@c.us_3EB0ABCDEF" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"emoji":"❤️"}'
@@ -704,7 +701,7 @@ field is required; once the message has dispatched, the edit returns `400`:
 
 ## Immediate send into an open chat
 
-The second send path from the top of this guide. `POST /v1/messages/{chat_id}`
+The second send path from the top of this guide. `POST /v1/messages/{chatId}`
 posts straight into one conversation and returns the WhatsApp wire `key`. It's
 fire-and-forget — no record is created, so there's nothing to list, poll, or
 edit afterwards. Reach for it only when you don't need tracking; otherwise
@@ -713,7 +710,7 @@ use `POST /v1/scheduled-messages` (above). The body is the same flat `text` /
 accepts `multipart/form-data` with the file in a `mediaFile` part, for media
 sends without a public URL:
 
-<ApiExample op="POST /v1/messages/{chat_id}" kind="request" />
+<ApiExample op="POST /v1/messages/{chatId}" kind="request" />
 
 ### Response
 

@@ -1,29 +1,22 @@
 ---
 title: Receiving webhooks
-description: Receive HTTPS POSTs on message and session events. Register URLs and act on events.
+description: Get Blueticks events — message delivery, incoming WhatsApp messages, group activity, sessions, campaigns — POSTed to your server in real time.
 ---
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
-Webhooks push Blueticks events to your server in near real time.
+Webhooks push Blueticks events to your server over HTTPS, in near real time — so
+you can react to message delivery, incoming WhatsApp messages, group activity,
+session changes, and campaign progress **without polling the API**.
 
 This guide assumes you have an API key ([Authentication](/docs/authentication))
 and an SDK client set up ([Quickstart](/docs/quickstart)).
 
-## Event types
+## 1. Register a webhook
 
-- `message.queued`, `message.sending`, `message.delivered`, `message.failed`, `message.read`
-- `session.connected`, `session.disconnected`
-- `campaign.started`, `campaign.paused`, `campaign.resumed`, `campaign.completed`, `campaign.aborted`
-
-The enum also accepts legacy `*_webhook` event names for inbound and group
-activity — e.g. `new_message_received_webhook`, `message_reaction_webhook`,
-`ack_changed_webhook`, `poll_vote_webhook`, `reply_to_my_message_webhook`,
-and the `participant_*` / `group_*` membership events. See the
-[Create webhook reference](/docs/api/webhooks/create-webhook) for the full
-enum.
-
-## Register a webhook
+Point an HTTPS endpoint at Blueticks and subscribe it to the events you care
+about (pick any from the [catalog](#3-events-you-can-subscribe-to) below). You
+can register several endpoints, each with its own event list.
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
@@ -98,41 +91,92 @@ curl -X POST https://api.blueticks.co/v1/webhooks \
   </Tab>
 </Tabs>
 
-## Payload shape
+Prefer no code? You can also add and toggle webhooks from the dashboard under
+**Settings → API → Webhooks**.
 
-Every delivery POSTs:
+## 2. What you receive
+
+Each event is a single HTTPS `POST`. The body is always the same envelope —
+only `type` and `data` change:
 
 ```json
 {
-  "id": "evt_01h7...",
+  "id": "evt_01h7za9c8m...",
   "type": "message.delivered",
   "created_at": "2026-04-23T16:42:00.000Z",
-  "data": { /* same shape as the resource being reported */ }
+  "data": { /* fields specific to this event type */ }
 }
 ```
 
-Headers:
+with these headers:
 
 ```
 Content-Type: application/json
-Blueticks-Webhook-Id: wh_...
+Blueticks-Webhook-Id: 6a380a8258bece30b485036e
 ```
 
-If you want to confirm a request really came from Blueticks, register a URL
-that includes a hard-to-guess token (for example a path segment or query
-string only you know) and reject any POST that doesn't carry it.
+- **`id`** is unique per delivery — store it and ignore repeats, since a retry
+  can re-deliver an event your server already handled (see
+  [Reliability](#5-reliability-retries--auto-disable)).
+- **`Blueticks-Webhook-Id`** is the id of *your* webhook that matched — handy
+  when one server backs several endpoints.
+- **Respond `2xx` within 10 seconds.** Anything else (or a timeout) is treated
+  as a failure and retried. Do heavy work *after* you respond.
 
-## Retries
+## 3. Events you can subscribe to
 
-Non-2xx responses or timeouts trigger up to 8 retries over ~24 h with
-exponential backoff: `1m → 5m → 15m → 1h → 2h → 6h → 12h → 24h`.
-After 8 consecutive failures the webhook auto-disables — you'll need
-to PATCH `status: "enabled"` to re-enable after fixing your endpoint.
+You only receive the events you subscribe to. Group them however you like across
+one or more endpoints.
 
-## Manage your webhooks
+**Message delivery** — lifecycle of messages *you* send:
+`message.queued` · `message.sending` · `message.delivered` · `message.read` · `message.failed`
 
-List every registered endpoint, fetch one by id, change its URL/events/status,
-or delete it:
+**Incoming WhatsApp activity:**
+- `new_message_received_webhook` — someone messaged you
+- `reply_to_my_message_webhook` — a reply to one of your messages
+- `message_edited_webhook` · `message_deleted_revoked_webhook` — a message was edited / deleted
+- `message_reaction_webhook` — an emoji reaction
+- `poll_vote_webhook` — a vote on your poll
+- `ack_changed_webhook` — a message's delivered/read status changed
+
+**Group &amp; chat activity:**
+- `participant_joined_via_link_webhook` · `participant_added_by_admin_webhook` · `participant_left_group_webhook` · `participant_kicked_from_group_webhook`
+- `group_admin_changed_webhook` · `group_name_changed_webhook` · `group_description_changed_webhook` · `group_message_pinned_webhook`
+
+**Sessions** — `session.connected` · `session.disconnected`
+
+**Campaigns** — `campaign.started` · `campaign.paused` · `campaign.resumed` · `campaign.completed` · `campaign.aborted`
+
+The [Create webhook reference](/docs/api/webhooks/create-webhook) lists the exact
+accepted enum.
+
+## 4. Verify requests really came from Blueticks
+
+Blueticks does **not** sign webhook payloads. To confirm a request is genuinely
+from us, register a URL containing a secret only you know — a hard-to-guess path
+segment or query string — and reject any POST that doesn't carry it:
+
+```
+https://api.your-server.com/bt-webhooks?token=ek3f9q2...
+```
+
+Always serve the endpoint over HTTPS so that secret stays private in transit.
+
+## 5. Reliability: retries &amp; auto-disable
+
+- Each delivery attempt must complete within **10 seconds**.
+- A non-2xx response or a timeout is retried — up to **8 attempts total** (the
+  first delivery plus 7 retries) over roughly **21 hours**, with growing backoff
+  between attempts: `1m → 5m → 15m → 1h → 2h → 6h → 12h`.
+- Because of retries, the **same event can arrive more than once** — dedupe on
+  the delivery `id`.
+- After **8 consecutive failures**, the endpoint **auto-disables**. Once your
+  server is healthy, re-enable it by patching `status: "enabled"` (next section).
+
+## 6. Manage your webhooks
+
+List every endpoint, fetch one by id, change its URL / events / status, or
+delete it:
 
 <ApiExample op="GET /v1/webhooks" kind="request" />
 
@@ -142,5 +186,5 @@ or delete it:
 
 <ApiExample op="DELETE /v1/webhooks/{id}" kind="request" />
 
-To re-enable an auto-disabled endpoint, `PATCH` it with `status: "enabled"`
-once your server is healthy again.
+To re-enable an auto-disabled endpoint, `PATCH` it with `status: "enabled"` once
+your server is healthy again.
