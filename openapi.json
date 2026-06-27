@@ -473,42 +473,35 @@
                         "type": "object",
                         "properties": {
                           "id": {
-                            "type": "string",
-                            "nullable": true
+                            "type": "string"
                           },
-                          "key": {
-                            "type": "string",
+                          "waMessageKey": {
+                            "type": "object",
+                            "properties": {
+                              "fromMe": {
+                                "type": "boolean"
+                              },
+                              "remote": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "_serialized": {
+                                "type": "string"
+                              },
+                              "participant": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "fromMe"
+                            ],
+                            "additionalProperties": false,
                             "nullable": true
                           },
                           "to": {
                             "type": "string"
-                          },
-                          "contactList": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "string",
-                                  "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
-                                },
-                                "name": {
-                                  "type": "string",
-                                  "nullable": true,
-                                  "description": "Resolved contact name; null when none was stored (e.g. API sends)."
-                                },
-                                "_id": {
-                                  "type": "string",
-                                  "nullable": true,
-                                  "description": "Mongo sub-document id; null for direct (non-persisted) sends."
-                                }
-                              },
-                              "required": [
-                                "id"
-                              ],
-                              "additionalProperties": false
-                            },
-                            "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
                           },
                           "type": {
                             "type": "string",
@@ -624,10 +617,8 @@
                           }
                         },
                         "required": [
-                          "id",
-                          "key",
+                          "waMessageKey",
                           "to",
-                          "contactList",
                           "type",
                           "text",
                           "mediaUrl",
@@ -856,42 +847,35 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
-                        "key": {
-                          "type": "string",
+                        "waMessageKey": {
+                          "type": "object",
+                          "properties": {
+                            "fromMe": {
+                              "type": "boolean"
+                            },
+                            "remote": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "_serialized": {
+                              "type": "string"
+                            },
+                            "participant": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fromMe"
+                          ],
+                          "additionalProperties": false,
                           "nullable": true
                         },
                         "to": {
                           "type": "string"
-                        },
-                        "contactList": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
-                              },
-                              "name": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
-                              },
-                              "_id": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
-                              }
-                            },
-                            "required": [
-                              "id"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
                         },
                         "type": {
                           "type": "string",
@@ -1007,10 +991,8 @@
                         }
                       },
                       "required": [
-                        "id",
-                        "key",
+                        "waMessageKey",
                         "to",
-                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -1056,42 +1038,35 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
-                        "key": {
-                          "type": "string",
+                        "waMessageKey": {
+                          "type": "object",
+                          "properties": {
+                            "fromMe": {
+                              "type": "boolean"
+                            },
+                            "remote": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "_serialized": {
+                              "type": "string"
+                            },
+                            "participant": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fromMe"
+                          ],
+                          "additionalProperties": false,
                           "nullable": true
                         },
                         "to": {
                           "type": "string"
-                        },
-                        "contactList": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
-                              },
-                              "name": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
-                              },
-                              "_id": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
-                              }
-                            },
-                            "required": [
-                              "id"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
                         },
                         "type": {
                           "type": "string",
@@ -1207,10 +1182,8 @@
                         }
                       },
                       "required": [
-                        "id",
-                        "key",
+                        "waMessageKey",
                         "to",
-                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -1335,42 +1308,35 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
-                        "key": {
-                          "type": "string",
+                        "waMessageKey": {
+                          "type": "object",
+                          "properties": {
+                            "fromMe": {
+                              "type": "boolean"
+                            },
+                            "remote": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "_serialized": {
+                              "type": "string"
+                            },
+                            "participant": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fromMe"
+                          ],
+                          "additionalProperties": false,
                           "nullable": true
                         },
                         "to": {
                           "type": "string"
-                        },
-                        "contactList": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
-                              },
-                              "name": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
-                              },
-                              "_id": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
-                              }
-                            },
-                            "required": [
-                              "id"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
                         },
                         "type": {
                           "type": "string",
@@ -1486,10 +1452,8 @@
                         }
                       },
                       "required": [
-                        "id",
-                        "key",
+                        "waMessageKey",
                         "to",
-                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -1630,7 +1594,7 @@
                   "text": {
                     "type": "string",
                     "maxLength": 4096,
-                    "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
+                    "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Jon Daw](xxxxxxxxxxxx@c.us)`."
                   },
                   "mediaUrl": {
                     "type": "string",
@@ -1756,42 +1720,35 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
-                        "key": {
-                          "type": "string",
+                        "waMessageKey": {
+                          "type": "object",
+                          "properties": {
+                            "fromMe": {
+                              "type": "boolean"
+                            },
+                            "remote": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "_serialized": {
+                              "type": "string"
+                            },
+                            "participant": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fromMe"
+                          ],
+                          "additionalProperties": false,
                           "nullable": true
                         },
                         "to": {
                           "type": "string"
-                        },
-                        "contactList": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
-                              },
-                              "name": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
-                              },
-                              "_id": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
-                              }
-                            },
-                            "required": [
-                              "id"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
                         },
                         "type": {
                           "type": "string",
@@ -1907,10 +1864,8 @@
                         }
                       },
                       "required": [
-                        "id",
-                        "key",
+                        "waMessageKey",
                         "to",
-                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -4760,7 +4715,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "id": {
+                          "chatId": {
                             "type": "string"
                           },
                           "name": {
@@ -4798,7 +4753,7 @@
                           }
                         },
                         "required": [
-                          "id",
+                          "chatId",
                           "name",
                           "isGroup",
                           "isNewsletter",
@@ -4930,7 +4885,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "chatId": {
                           "type": "string"
                         },
                         "name": {
@@ -4968,7 +4923,7 @@
                         }
                       },
                       "required": [
-                        "id",
+                        "chatId",
                         "name",
                         "isGroup",
                         "isNewsletter",
@@ -6058,7 +6013,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "id": {
+                          "chatId": {
                             "type": "string",
                             "description": "Newsletter JID, e.g. 120363201733549020@newsletter."
                           },
@@ -6096,7 +6051,7 @@
                           }
                         },
                         "required": [
-                          "id",
+                          "chatId",
                           "name",
                           "description",
                           "createdAt",
@@ -6251,7 +6206,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "newsletterId": {
                           "type": "string",
                           "description": "Newsletter JID, e.g. 120363201733549020@newsletter."
                         },
@@ -6289,7 +6244,7 @@
                         }
                       },
                       "required": [
-                        "id",
+                        "newsletterId",
                         "name",
                         "description",
                         "createdAt",
@@ -6417,7 +6372,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "newsletterId": {
                           "type": "string",
                           "description": "Newsletter JID, e.g. 120363201733549020@newsletter."
                         },
@@ -6455,7 +6410,7 @@
                         }
                       },
                       "required": [
-                        "id",
+                        "newsletterId",
                         "name",
                         "description",
                         "createdAt",
@@ -8159,8 +8114,29 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "key": {
-                            "type": "string"
+                          "waMessageKey": {
+                            "type": "object",
+                            "properties": {
+                              "fromMe": {
+                                "type": "boolean"
+                              },
+                              "remote": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "_serialized": {
+                                "type": "string"
+                              },
+                              "participant": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "fromMe"
+                            ],
+                            "additionalProperties": false
                           },
                           "chatId": {
                             "type": "string"
@@ -8234,7 +8210,7 @@
                           }
                         },
                         "required": [
-                          "key",
+                          "waMessageKey",
                           "chatId",
                           "from",
                           "timestamp",
@@ -8344,7 +8320,7 @@
           "Messages"
         ],
         "summary": "Send message",
-        "description": "Send a message immediately to a specific chat. The body is the same FLAT shape as `POST /v1/scheduled-messages` minus `to` (derived from the URL path) and `sendAt` (this endpoint is fire-and-forget). Set `type` to `text`, `media`, or `poll`. The dispatch is direct — no DB row is created; the response carries the WhatsApp wire key under `key`. For scheduled or queue-managed sends use `POST /v1/scheduled-messages` instead. Requires `messages:write`.\n\n### Sending media (`type: \"media\"`)\n\nProvide the media **one** of these ways:\n\n- **`mediaUrl`** — a public `https://` URL to the file.\n- **`mediaBase64`** — the file bytes base64-encoded (or a `data:` URL), inline in the JSON body.\n- **Upload a file** — send the request as `multipart/form-data` with the file in a **`mediaFile`** part. See the cURL example below.\n\nIf both `mediaUrl` and `mediaBase64` are present, `mediaUrl` wins. Optional: `mediaFilename` (display name) and `mediaKind` (`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`; auto-detected otherwise).\n\n> In the Body panel, the **Attach a file** control has a content-type dropdown next to it. Pick `application/json` to inline a small file as base64 in `mediaBase64`, or `multipart/form-data` to upload the raw file (no 10 MB JSON-body limit) — then just press **Send**. The cURL below is the multipart equivalent.\n\n```bash\ncurl -X POST \"https://api.blueticks.co/v1/messages/120363000000000000@g.us\" \\\n  -H \"Authorization: Bearer $BLUETICKS_API_KEY\" \\\n  -F \"type=media\" \\\n  -F \"text=Here is the file\" \\\n  -F \"mediaFile=@/path/to/photo.png\"\n```\n\n### Mentioning contacts\n\nMentions are written **inline in `text`** — there is no separate field. Use `@[Display Name](<jid>)`:\n\n```\nHi @[Joni Naor](972544325389@c.us) this is a test\n```",
+        "description": "Send a message immediately to a specific chat. The body is the same FLAT shape as `POST /v1/scheduled-messages` minus `to` (derived from the URL path) and `sendAt` (this endpoint is fire-and-forget). Set `type` to `text`, `media`, or `poll`. The dispatch is direct — no DB row is created; the response carries the WhatsApp wire key under `key`. For scheduled or queue-managed sends use `POST /v1/scheduled-messages` instead. Requires `messages:write`.\n\n### Sending media (`type: \"media\"`)\n\nProvide the media **one** of these ways:\n\n- **`mediaUrl`** — a public `https://` URL to the file.\n- **`mediaBase64`** — the file bytes base64-encoded (or a `data:` URL), inline in the JSON body.\n- **Upload a file** — send the request as `multipart/form-data` with the file in a **`mediaFile`** part. See the cURL example below.\n\nIf both `mediaUrl` and `mediaBase64` are present, `mediaUrl` wins. Optional: `mediaFilename` (display name) and `mediaKind` (`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`; auto-detected otherwise).\n\n> In the Body panel, the **Attach a file** control has a content-type dropdown next to it. Pick `application/json` to inline a small file as base64 in `mediaBase64`, or `multipart/form-data` to upload the raw file (no 10 MB JSON-body limit) — then just press **Send**. The cURL below is the multipart equivalent.\n\n```bash\ncurl -X POST \"https://api.blueticks.co/v1/messages/120363000000000000@g.us\" \\\n  -H \"Authorization: Bearer $BLUETICKS_API_KEY\" \\\n  -F \"type=media\" \\\n  -F \"text=Here is the file\" \\\n  -F \"mediaFile=@/path/to/photo.png\"\n```\n\n### Mentioning contacts\n\nMentions are written **inline in `text`** — there is no separate field. Use `@[Display Name](<jid>)`:\n\n```\nHi @[Jon Daw](xxxxxxxxxxxx@c.us) this is a test\n```",
         "security": [
           {
             "BearerAuth": [
@@ -8380,7 +8356,7 @@
                   "text": {
                     "type": "string",
                     "maxLength": 4096,
-                    "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
+                    "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Jon Daw](xxxxxxxxxxxx@c.us)`."
                   },
                   "mediaUrl": {
                     "type": "string",
@@ -8440,6 +8416,16 @@
                     "minLength": 1,
                     "maxLength": 256,
                     "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+                  },
+                  "withTyping": {
+                    "type": "boolean",
+                    "description": "Briefly show the \"typing…\" indicator before sending a text message. Default true. Ignored for media/poll sends."
+                  },
+                  "typingSeconds": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 25,
+                    "description": "Extra typing duration in seconds, added on top of the built-in 0.4–0.8s random jitter. Default 0. Capped at 25s (WhatsApp clears the indicator after ~25s)."
                   }
                 },
                 "required": [
@@ -8469,42 +8455,35 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
-                        "key": {
-                          "type": "string",
+                        "waMessageKey": {
+                          "type": "object",
+                          "properties": {
+                            "fromMe": {
+                              "type": "boolean"
+                            },
+                            "remote": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "_serialized": {
+                              "type": "string"
+                            },
+                            "participant": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fromMe"
+                          ],
+                          "additionalProperties": false,
                           "nullable": true
                         },
                         "to": {
                           "type": "string"
-                        },
-                        "contactList": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
-                              },
-                              "name": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Resolved contact name; null when none was stored (e.g. API sends)."
-                              },
-                              "_id": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Mongo sub-document id; null for direct (non-persisted) sends."
-                              }
-                            },
-                            "required": [
-                              "id"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
                         },
                         "type": {
                           "type": "string",
@@ -8620,10 +8599,8 @@
                         }
                       },
                       "required": [
-                        "id",
-                        "key",
+                        "waMessageKey",
                         "to",
-                        "contactList",
                         "type",
                         "text",
                         "mediaUrl",
@@ -8777,8 +8754,29 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "key": {
-                          "type": "string"
+                        "waMessageKey": {
+                          "type": "object",
+                          "properties": {
+                            "fromMe": {
+                              "type": "boolean"
+                            },
+                            "remote": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "_serialized": {
+                              "type": "string"
+                            },
+                            "participant": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fromMe"
+                          ],
+                          "additionalProperties": false
                         },
                         "chatId": {
                           "type": "string"
@@ -8852,7 +8850,7 @@
                         }
                       },
                       "required": [
-                        "key",
+                        "waMessageKey",
                         "chatId",
                         "from",
                         "timestamp",
@@ -10498,141 +10496,6 @@
           }
         },
         "operationId": "chats.markread.create"
-      }
-    },
-    "/v1/chats/{chatId}/open": {
-      "post": {
-        "tags": [
-          "Chats"
-        ],
-        "summary": "Open chat in engine",
-        "description": "Brings the chat to the foreground on the connected WhatsApp Web client (creates the chat if it doesn`t exist yet for the engine). Useful before issuing follow-up reads on a fresh JID. Requires `chats:write`.",
-        "security": [
-          {
-            "BearerAuth": [
-              "chats:write"
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "name": "chatId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "opened",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ],
-                      "description": "Always `true` on success responses."
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "chatId": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "chatId"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request — invalid params or body.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid API key.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "API key lacks the required scope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed — see `error.details` for per-field issues.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Rate limit exceeded — back off and retry.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "chats.open.create"
       }
     },
     "/v1/messages/ack/{waMessageKey}": {
@@ -12513,7 +12376,7 @@
       "Chat": {
         "type": "object",
         "properties": {
-          "id": {
+          "chatId": {
             "type": "string"
           },
           "name": {
@@ -12551,7 +12414,7 @@
           }
         },
         "required": [
-          "id",
+          "chatId",
           "name",
           "isGroup",
           "isNewsletter",
@@ -12990,8 +12853,29 @@
       "PublicMessage": {
         "type": "object",
         "properties": {
-          "key": {
-            "type": "string"
+          "waMessageKey": {
+            "type": "object",
+            "properties": {
+              "fromMe": {
+                "type": "boolean"
+              },
+              "remote": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "_serialized": {
+                "type": "string"
+              },
+              "participant": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "fromMe"
+            ],
+            "additionalProperties": false
           },
           "chatId": {
             "type": "string"
@@ -13064,7 +12948,7 @@
           }
         },
         "required": [
-          "key",
+          "waMessageKey",
           "chatId",
           "from",
           "timestamp",
@@ -13075,6 +12959,30 @@
           "mediaUrl",
           "caption",
           "filename"
+        ],
+        "additionalProperties": false
+      },
+      "PublicWaMessageKey": {
+        "type": "object",
+        "properties": {
+          "fromMe": {
+            "type": "boolean"
+          },
+          "remote": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "_serialized": {
+            "type": "string"
+          },
+          "participant": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fromMe"
         ],
         "additionalProperties": false
       },
@@ -13769,10 +13677,10 @@
         "pattern": "^\\d+@newsletter$",
         "description": "Newsletter JID, e.g. 12345@newsletter."
       },
-      "NewsletterResponse": {
+      "NewsletterListItem": {
         "type": "object",
         "properties": {
-          "id": {
+          "chatId": {
             "type": "string",
             "description": "Newsletter JID, e.g. 120363201733549020@newsletter."
           },
@@ -13810,7 +13718,58 @@
           }
         },
         "required": [
-          "id",
+          "chatId",
+          "name",
+          "description",
+          "createdAt",
+          "subscribers",
+          "invite",
+          "verification"
+        ],
+        "additionalProperties": false
+      },
+      "NewsletterResponse": {
+        "type": "object",
+        "properties": {
+          "newsletterId": {
+            "type": "string",
+            "description": "Newsletter JID, e.g. 120363201733549020@newsletter."
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the newsletter / WhatsApp channel."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional description."
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "subscribers": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
+          },
+          "invite": {
+            "type": "string",
+            "nullable": true,
+            "description": "Invite code (suffix of https://whatsapp.com/channel/<invite>)."
+          },
+          "verification": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED"
+            ]
+          }
+        },
+        "required": [
+          "newsletterId",
           "name",
           "description",
           "createdAt",
@@ -14023,29 +13982,6 @@
           "gif"
         ]
       },
-      "MessageContactResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
-          },
-          "name": {
-            "type": "string",
-            "nullable": true,
-            "description": "Resolved contact name; null when none was stored (e.g. API sends)."
-          },
-          "_id": {
-            "type": "string",
-            "nullable": true,
-            "description": "Mongo sub-document id; null for direct (non-persisted) sends."
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      },
       "MessageId": {
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
@@ -14054,42 +13990,35 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
-          "key": {
-            "type": "string",
-            "nullable": true
+          "waMessageKey": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "fromMe": {
+                "type": "boolean"
+              },
+              "remote": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "_serialized": {
+                "type": "string"
+              },
+              "participant": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "fromMe"
+            ],
+            "additionalProperties": false
           },
           "to": {
             "type": "string"
-          },
-          "contactList": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "description": "Recipient WhatsApp JID, e.g. `972547602737@c.us`."
-                },
-                "name": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Resolved contact name; null when none was stored (e.g. API sends)."
-                },
-                "_id": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Mongo sub-document id; null for direct (non-persisted) sends."
-                }
-              },
-              "required": [
-                "id"
-              ],
-              "additionalProperties": false
-            },
-            "description": "Recipients the message was addressed to, with all stored contact-card fields. `to` mirrors the first entry’s mobile."
           },
           "type": {
             "type": "string",
@@ -14205,10 +14134,8 @@
           }
         },
         "required": [
-          "id",
-          "key",
+          "waMessageKey",
           "to",
-          "contactList",
           "type",
           "text",
           "mediaUrl",
@@ -14251,7 +14178,7 @@
           "text": {
             "type": "string",
             "maxLength": 4096,
-            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
+            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Jon Daw](xxxxxxxxxxxx@c.us)`."
           },
           "mediaUrl": {
             "type": "string",
@@ -14337,7 +14264,7 @@
           "text": {
             "type": "string",
             "maxLength": 4096,
-            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
+            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Jon Daw](xxxxxxxxxxxx@c.us)`."
           },
           "mediaUrl": {
             "type": "string",
@@ -14397,6 +14324,16 @@
             "minLength": 1,
             "maxLength": 256,
             "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+          },
+          "withTyping": {
+            "type": "boolean",
+            "description": "Briefly show the \"typing…\" indicator before sending a text message. Default true. Ignored for media/poll sends."
+          },
+          "typingSeconds": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 25,
+            "description": "Extra typing duration in seconds, added on top of the built-in 0.4–0.8s random jitter. Default 0. Capped at 25s (WhatsApp clears the indicator after ~25s)."
           }
         },
         "required": [
@@ -14418,7 +14355,7 @@
           "text": {
             "type": "string",
             "maxLength": 4096,
-            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Joni Naor](972544325389@c.us)`."
+            "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Jon Daw](xxxxxxxxxxxx@c.us)`."
           },
           "mediaUrl": {
             "type": "string",

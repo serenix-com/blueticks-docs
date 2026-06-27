@@ -5,7 +5,6 @@
     "list-chats",
     "get-chat",
     "list-chat-participants",
-    "mark-chat-as-read",
-    "open-chat-in-engine"
+    "mark-chat-as-read"
   ]
 }

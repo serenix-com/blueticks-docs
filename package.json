@@ -7,7 +7,7 @@
     "generate:postman": "tsx scripts/generate-postman.ts",
     "prebuild": "pnpm run generate:openapi && pnpm run generate:postman",
     "build": "next build",
-    "dev": "next dev",
+    "dev": "next dev -p 3500",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
