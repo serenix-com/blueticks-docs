@@ -724,555 +724,6 @@
           }
         },
         "operationId": "scheduled-messages.list"
-      },
-      "post": {
-        "tags": [
-          "Scheduled Messages"
-        ],
-        "summary": "Schedule message",
-        "description": "Send a message via WhatsApp. The body is a FLAT object — set the `type` field to one of `text`, `media`, or `poll`; `type` selects which top-level fields are relevant.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). A rich link-preview card is attached automatically when the text contains a URL. Example body:\n  ```json\n  {\"type\":\"text\",\"to\":\"+15551234567\",\"text\":\"hello\"}\n  ```\n- `type: \"media\"` — provide the media as `mediaUrl` (HTTPS) **or** `mediaBase64` (base64 / data: URL); `mediaUrl` wins if both are sent. The bytes are uploaded server-side and only a URL is sent on to the engine. Optional `mediaKind` (`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`; auto-detected when omitted), `text` (caption), `mediaFilename`. Example:\n  ```json\n  {\"type\":\"media\",\"to\":\"+15551234567\",\"mediaUrl\":\"https://cdn.example.com/x.pdf\",\"mediaKind\":\"document\",\"mediaFilename\":\"receipt.pdf\"}\n  ```\n- `type: \"poll\"` — required `pollQuestion` and `pollOptions` (2–12 items). Optional `pollAllowMultiple` (default false). Example:\n  ```json\n  {\"type\":\"poll\",\"to\":\"+15551234567\",\"pollQuestion\":\"Pizza?\",\"pollOptions\":[\"Yes\",\"No\"]}\n  ```\n\nAll variants accept optional `sendAt` (ISO 8601 ≥10s future, ≤365d) and `replyTo` (wire `key` of a prior message to quote).\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
-        "security": [
-          {
-            "BearerAuth": [
-              "messages:write"
-            ]
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendMessageRequest"
-              },
-              "examples": {
-                "text": {
-                  "summary": "Plain text",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "text",
-                    "text": "Hello from Blueticks!"
-                  }
-                },
-                "text_with_link": {
-                  "summary": "Text with a URL (link preview auto-attached)",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "text",
-                    "text": "Check this out: https://blueticks.co"
-                  }
-                },
-                "media_url": {
-                  "summary": "Image from URL",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "media",
-                    "mediaKind": "image",
-                    "mediaUrl": "https://blueticks.co/favicon.ico",
-                    "text": "Our logo"
-                  }
-                },
-                "media_document": {
-                  "summary": "Document attachment",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "media",
-                    "mediaKind": "document",
-                    "mediaUrl": "https://example.com/invoice.pdf",
-                    "mediaFilename": "invoice.pdf"
-                  }
-                },
-                "poll": {
-                  "summary": "Poll",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "poll",
-                    "pollQuestion": "Pizza tonight?",
-                    "pollOptions": [
-                      "Yes",
-                      "No",
-                      "Maybe"
-                    ]
-                  }
-                },
-                "scheduled_text": {
-                  "summary": "Scheduled text (3 hours out)",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "text",
-                    "text": "Reminder: meeting in 3 hours",
-                    "sendAt": "2026-12-31T12:00:00Z"
-                  }
-                },
-                "replyTo": {
-                  "summary": "Reply quoting a prior message",
-                  "value": {
-                    "to": "+15555550100",
-                    "type": "text",
-                    "text": "Sounds good!",
-                    "replyTo": "true_15555550100@c.us_3EB0ABCDEF1234567890"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 64
-            },
-            "description": "Optional key for safe retries — guarantees a request runs at most once, so a network timeout + retry never double-sends. Reuse the same key to retry: an identical body replays the original response (HTTP 200 instead of 201, no second message); a different body with the same key returns 409 Conflict. Keys are scoped per workspace (max 64 chars). This is the request-level dedup control — distinct from the body `secret` field, which is only a correlation tag and does NOT prevent duplicate sends."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Idempotency replay",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ],
-                      "description": "Always `true` on success responses."
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "waMessageKey": {
-                          "type": "object",
-                          "properties": {
-                            "fromMe": {
-                              "type": "boolean"
-                            },
-                            "remote": {
-                              "type": "string"
-                            },
-                            "id": {
-                              "type": "string"
-                            },
-                            "_serialized": {
-                              "type": "string"
-                            },
-                            "participant": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "fromMe"
-                          ],
-                          "additionalProperties": false,
-                          "nullable": true
-                        },
-                        "to": {
-                          "type": "string"
-                        },
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "text",
-                            "media",
-                            "poll"
-                          ],
-                          "description": "Message kind that was sent."
-                        },
-                        "text": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "mediaUrl": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "mediaKind": {
-                          "type": "string",
-                          "enum": [
-                            "image",
-                            "video",
-                            "audio",
-                            "document",
-                            "sticker",
-                            "voice",
-                            "gif"
-                          ],
-                          "nullable": true
-                        },
-                        "pollQuestion": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "pending",
-                            "confirmed",
-                            "received",
-                            "read",
-                            "played",
-                            "failed"
-                          ]
-                        },
-                        "sendAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "confirmedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "receivedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "readAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "playedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "failedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "failureReason": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "linkPreview": {
-                          "type": "object",
-                          "properties": {
-                            "title": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "description": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "canonicalUrl": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "thumbnail": {
-                              "type": "string",
-                              "nullable": true
-                            }
-                          },
-                          "required": [
-                            "title",
-                            "description",
-                            "canonicalUrl",
-                            "thumbnail"
-                          ],
-                          "additionalProperties": false,
-                          "nullable": true
-                        }
-                      },
-                      "required": [
-                        "waMessageKey",
-                        "to",
-                        "type",
-                        "text",
-                        "mediaUrl",
-                        "mediaKind",
-                        "pollQuestion",
-                        "status",
-                        "sendAt",
-                        "createdAt",
-                        "confirmedAt",
-                        "receivedAt",
-                        "readAt",
-                        "playedAt",
-                        "failedAt",
-                        "failureReason"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ],
-                      "description": "Always `true` on success responses."
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "waMessageKey": {
-                          "type": "object",
-                          "properties": {
-                            "fromMe": {
-                              "type": "boolean"
-                            },
-                            "remote": {
-                              "type": "string"
-                            },
-                            "id": {
-                              "type": "string"
-                            },
-                            "_serialized": {
-                              "type": "string"
-                            },
-                            "participant": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "fromMe"
-                          ],
-                          "additionalProperties": false,
-                          "nullable": true
-                        },
-                        "to": {
-                          "type": "string"
-                        },
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "text",
-                            "media",
-                            "poll"
-                          ],
-                          "description": "Message kind that was sent."
-                        },
-                        "text": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "mediaUrl": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "mediaKind": {
-                          "type": "string",
-                          "enum": [
-                            "image",
-                            "video",
-                            "audio",
-                            "document",
-                            "sticker",
-                            "voice",
-                            "gif"
-                          ],
-                          "nullable": true
-                        },
-                        "pollQuestion": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "pending",
-                            "confirmed",
-                            "received",
-                            "read",
-                            "played",
-                            "failed"
-                          ]
-                        },
-                        "sendAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "confirmedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "receivedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "readAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "playedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "failedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "nullable": true
-                        },
-                        "failureReason": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "linkPreview": {
-                          "type": "object",
-                          "properties": {
-                            "title": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "description": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "canonicalUrl": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "thumbnail": {
-                              "type": "string",
-                              "nullable": true
-                            }
-                          },
-                          "required": [
-                            "title",
-                            "description",
-                            "canonicalUrl",
-                            "thumbnail"
-                          ],
-                          "additionalProperties": false,
-                          "nullable": true
-                        }
-                      },
-                      "required": [
-                        "waMessageKey",
-                        "to",
-                        "type",
-                        "text",
-                        "mediaUrl",
-                        "mediaKind",
-                        "pollQuestion",
-                        "status",
-                        "sendAt",
-                        "createdAt",
-                        "confirmedAt",
-                        "receivedAt",
-                        "readAt",
-                        "playedAt",
-                        "failedAt",
-                        "failureReason"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request — invalid params or body.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid API key.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "API key lacks the required scope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed — see `error.details` for per-field issues.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Rate limit exceeded — back off and retry.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "scheduled-messages.create"
       }
     },
     "/v1/scheduled-messages/{id}": {
@@ -1569,7 +1020,7 @@
           "Scheduled Messages"
         ],
         "summary": "Update scheduled message",
-        "description": "Edit a previously-queued message that has not dispatched yet (status `pending`).\n\nAccepts the **same flat fields as [Schedule message](#schedule-message)** — `type`, `text`, `mediaUrl`, `mediaBase64`, `mediaKind`, `mediaFilename`, `pollQuestion`, `pollOptions`, `pollAllowMultiple`, `to`, `sendAt`, `replyTo`, `secret` — but **every field is optional**. Send only the fields you want to change; at least one is required.\n\nNotes:\n- A new `mediaUrl` / `mediaBase64` is re-hosted to GCS just like on create; `mediaKind` / `mediaFilename` can be edited on their own.\n- Editing `text` re-derives the link-preview card (auto-attached when the text contains a URL).\n- `sendAt` reschedules (must be ≥10s in the future, ≤365 days).\n- Returns 400 once the message has advanced past the editable window (status not `pending`).",
+        "description": "Edit a previously-queued message that has not dispatched yet (status `pending`).\n\nAccepts the **same flat body fields as [Schedule message](#schedule-message)** — `type`, `text`, `mediaUrl`, `mediaBase64`, `mediaKind`, `mediaFilename`, `pollQuestion`, `pollOptions`, `pollAllowMultiple`, `sendAt`, `replyTo`, `secret` — but **every field is optional**. Send only the fields you want to change; at least one is required. The recipient is fixed at schedule time (it was the `{chatId}` path param) and cannot be changed here.\n\nNotes:\n- A new `mediaUrl` / `mediaBase64` is re-hosted to GCS just like on create; `mediaKind` / `mediaFilename` can be edited on their own.\n- Editing `text` re-derives the link-preview card (auto-attached when the text contains a URL).\n- `sendAt` reschedules (must be ≥10s in the future, ≤365 days).\n- Returns 400 once the message has advanced past the editable window (status not `pending`).",
         "security": [
           {
             "BearerAuth": [
@@ -1625,29 +1076,6 @@
                     "maxLength": 255,
                     "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
                   },
-                  "pollQuestion": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255,
-                    "description": "Poll question (type=poll). Required for poll sends."
-                  },
-                  "pollOptions": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    },
-                    "description": "Poll options (type=poll). 2–12 items."
-                  },
-                  "pollAllowMultiple": {
-                    "type": "boolean",
-                    "description": "Allow selecting multiple poll options (type=poll). Default false."
-                  },
-                  "to": {
-                    "type": "string",
-                    "description": "Recipient. Either an international phone number in E.164 format (e.g. +15551234567) for a 1:1 chat, or a WhatsApp chat id: `<id>@g.us` for a group, `<id>@newsletter` for a channel / newsletter, or `<phone>@c.us` for an individual."
-                  },
                   "sendAt": {
                     "type": "string",
                     "format": "date-time"
@@ -1662,6 +1090,25 @@
                     "minLength": 1,
                     "maxLength": 256,
                     "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+                  },
+                  "pollQuestion": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "description": "Poll question (type=poll). Required for poll sends."
+                  },
+                  "pollAllowMultiple": {
+                    "type": "boolean",
+                    "description": "Allow selecting multiple poll options (type=poll). Default false."
+                  },
+                  "pollOptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "description": "Poll options (type=poll). 2–12 items."
                   }
                 },
                 "additionalProperties": false
@@ -4000,7 +3447,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "id": {
+                          "cmpId": {
                             "type": "string"
                           },
                           "name": {
@@ -4061,7 +3508,7 @@
                           }
                         },
                         "required": [
-                          "id",
+                          "cmpId",
                           "name",
                           "audienceId",
                           "status",
@@ -4251,7 +3698,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "cmpId": {
                           "type": "string"
                         },
                         "name": {
@@ -4312,7 +3759,7 @@
                         }
                       },
                       "required": [
-                        "id",
+                        "cmpId",
                         "name",
                         "audienceId",
                         "status",
@@ -4434,7 +3881,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "cmpId": {
                           "type": "string"
                         },
                         "name": {
@@ -4495,7 +3942,7 @@
                         }
                       },
                       "required": [
-                        "id",
+                        "cmpId",
                         "name",
                         "audienceId",
                         "status",
@@ -5127,41 +4574,8 @@
                             "minimum": 0,
                             "nullable": true
                           },
-                          "announce": {
-                            "type": "boolean",
-                            "nullable": true
-                          },
                           "restrict": {
                             "type": "boolean",
-                            "nullable": true
-                          },
-                          "participants": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "chatId": {
-                                  "type": "string"
-                                },
-                                "isAdmin": {
-                                  "type": "boolean"
-                                },
-                                "isSuperAdmin": {
-                                  "type": "boolean"
-                                },
-                                "name": {
-                                  "type": "string",
-                                  "nullable": true
-                                }
-                              },
-                              "required": [
-                                "chatId",
-                                "isAdmin",
-                                "isSuperAdmin",
-                                "name"
-                              ],
-                              "additionalProperties": false
-                            },
                             "nullable": true
                           }
                         },
@@ -5173,9 +4587,7 @@
                           "createdAt",
                           "lastMessageAt",
                           "participantCount",
-                          "announce",
-                          "restrict",
-                          "participants"
+                          "restrict"
                         ],
                         "additionalProperties": false
                       }
@@ -5503,12 +4915,34 @@
           "Groups"
         ],
         "summary": "Get group",
-        "description": "Retrieve a single group by its `@g.us` id, including its subject, description, and participant list. Requires `groups:read`.",
+        "description": "Retrieve a single group by its `@g.us` id, including its subject, description, and (with `?include=participants`) its participant list. Requires `groups:read`.",
         "security": [
           {
             "BearerAuth": [
               "groups:read"
             ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "participants"
+              ]
+            },
+            "description": "Set to `participants` to inline the group members array on the response. Omit to leave `participants` null."
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5692,16 +5126,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "operationId": "groups.get"
       },
       "patch": {
@@ -7388,7 +6812,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "cmpId": {
                           "type": "string"
                         },
                         "name": {
@@ -7449,7 +6873,7 @@
                         }
                       },
                       "required": [
-                        "id",
+                        "cmpId",
                         "name",
                         "audienceId",
                         "status",
@@ -7591,7 +7015,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "cmpId": {
                           "type": "string"
                         },
                         "name": {
@@ -7652,7 +7076,7 @@
                         }
                       },
                       "required": [
-                        "id",
+                        "cmpId",
                         "name",
                         "audienceId",
                         "status",
@@ -7794,7 +7218,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "cmpId": {
                           "type": "string"
                         },
                         "name": {
@@ -7855,7 +7279,7 @@
                         }
                       },
                       "required": [
-                        "id",
+                        "cmpId",
                         "name",
                         "audienceId",
                         "status",
@@ -8145,17 +7569,17 @@
                             "type": "string"
                           },
                           "author": {
-                            "type": "string",
-                            "nullable": true
+                            "type": "string"
+                          },
+                          "senderName": {
+                            "type": "string"
                           },
                           "timestamp": {
                             "type": "string",
-                            "format": "date-time",
-                            "nullable": true
+                            "format": "date-time"
                           },
                           "text": {
-                            "type": "string",
-                            "nullable": true
+                            "type": "string"
                           },
                           "type": {
                             "type": "string"
@@ -8164,63 +7588,39 @@
                             "type": "boolean"
                           },
                           "ack": {
-                            "type": "integer",
-                            "nullable": true
+                            "type": "integer"
                           },
                           "mediaUrl": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "caption": {
-                            "type": "string",
-                            "nullable": true
+                            "type": "string"
                           },
                           "filename": {
-                            "type": "string",
-                            "nullable": true
+                            "type": "string"
                           },
                           "linkPreview": {
                             "type": "object",
                             "properties": {
                               "title": {
-                                "type": "string",
-                                "nullable": true
+                                "type": "string"
                               },
                               "description": {
-                                "type": "string",
-                                "nullable": true
+                                "type": "string"
                               },
                               "canonicalUrl": {
-                                "type": "string",
-                                "nullable": true
+                                "type": "string"
                               },
                               "thumbnail": {
-                                "type": "string",
-                                "nullable": true
+                                "type": "string"
                               }
                             },
-                            "required": [
-                              "title",
-                              "description",
-                              "canonicalUrl",
-                              "thumbnail"
-                            ],
-                            "additionalProperties": false,
-                            "nullable": true
+                            "additionalProperties": false
                           }
                         },
                         "required": [
                           "waMessageKey",
                           "chatId",
                           "from",
-                          "timestamp",
-                          "text",
                           "type",
-                          "fromMe",
-                          "ack",
-                          "mediaUrl",
-                          "caption",
-                          "filename"
+                          "fromMe"
                         ],
                         "additionalProperties": false
                       }
@@ -8236,6 +7636,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "hasMore": {
+                      "type": "boolean",
+                      "description": "True when more messages exist in the store beyond this page."
                     }
                   },
                   "required": [
@@ -8353,6 +7757,11 @@
                       "poll"
                     ]
                   },
+                  "replyTo": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
+                  },
                   "text": {
                     "type": "string",
                     "maxLength": 4096,
@@ -8405,11 +7814,6 @@
                   "pollAllowMultiple": {
                     "type": "boolean",
                     "description": "Allow selecting multiple poll options (type=poll). Default false."
-                  },
-                  "replyTo": {
-                    "type": "string",
-                    "maxLength": 256,
-                    "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
                   },
                   "secret": {
                     "type": "string",
@@ -8702,6 +8106,651 @@
         "operationId": "messages.create"
       }
     },
+    "/v1/scheduled-messages/{chatId}": {
+      "post": {
+        "tags": [
+          "Scheduled Messages"
+        ],
+        "summary": "Schedule message",
+        "description": "Send or schedule a WhatsApp message to the chat named in the URL path (`{chatId}` — a phone number in E.164 format, e.g. `+15551234567`, or a WhatsApp chat id like `12345@c.us` / `1234567890@g.us` / `12345@newsletter`). Omit `sendAt` to send immediately; set it (RFC 3339, ≥10s and ≤365d in the future) to defer delivery.\n\nThe body is a FLAT object — set the `type` field to one of `text`, `media`, or `poll`; `type` selects which top-level fields are relevant.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). A rich link-preview card is attached automatically when the text contains a URL. Example:\n  ```bash\n  curl -X POST \"https://api.blueticks.co/v1/scheduled-messages/+15551234567\" \\\n    -H \"Authorization: Bearer $BLUETICKS_API_KEY\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"type\":\"text\",\"text\":\"hello\"}'\n  ```\n- `type: \"media\"` — provide the media as `mediaUrl` (HTTPS) **or** `mediaBase64` (base64 / data: URL); `mediaUrl` wins if both are sent. The bytes are uploaded server-side and only a URL is sent on to the engine. Optional `mediaKind` (`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`; auto-detected when omitted), `text` (caption), `mediaFilename`. You can also upload a file as `multipart/form-data` with the bytes in a `mediaFile` part.\n- `type: \"poll\"` — required `pollQuestion` and `pollOptions` (2–12 items). Optional `pollAllowMultiple` (default false).\n\nAll variants accept optional `sendAt` (defer) and `replyTo` (wire `key` of a prior message to quote). Pass an `Idempotency-Key` header to make retries safe (at most one send per key). Requires `messages:write`.\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
+        "security": [
+          {
+            "BearerAuth": [
+              "messages:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "description": "Optional key for safe retries — guarantees a request runs at most once, so a network timeout + retry never double-sends. Reuse the same key to retry: an identical body replays the original response (HTTP 200 instead of 201, no second message); a different body with the same key returns 409 Conflict. Keys are scoped per workspace (max 64 chars). This is the request-level dedup control — distinct from the body `secret` field, which is only a correlation tag and does NOT prevent duplicate sends."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "media",
+                      "poll"
+                    ]
+                  },
+                  "replyTo": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 4096,
+                    "description": "Text body (required for type=text) or optional media caption (type=media). Up to 4096 chars. Mention a contact inline with `@[Display Name](<jid>)`, e.g. `Hi @[Jon Daw](xxxxxxxxxxxx@c.us)`."
+                  },
+                  "mediaUrl": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "Media source URL (https only). One of mediaUrl or mediaBase64 is required for media sends; mediaUrl wins when both are present."
+                  },
+                  "mediaBase64": {
+                    "type": "string",
+                    "maxLength": 15728640,
+                    "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
+                  },
+                  "mediaKind": {
+                    "type": "string",
+                    "enum": [
+                      "image",
+                      "video",
+                      "audio",
+                      "document",
+                      "sticker",
+                      "voice",
+                      "gif"
+                    ],
+                    "description": "Media kind (image · video · audio · document · sticker · voice · gif). Optional — auto-detected from the URL / content-type when omitted."
+                  },
+                  "mediaFilename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
+                  },
+                  "pollQuestion": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "description": "Poll question (type=poll). Required for poll sends."
+                  },
+                  "pollOptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "description": "Poll options (type=poll). 2–12 items."
+                  },
+                  "pollAllowMultiple": {
+                    "type": "boolean",
+                    "description": "Allow selecting multiple poll options (type=poll). Default false."
+                  },
+                  "secret": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+                  },
+                  "sendAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              "examples": {
+                "text": {
+                  "summary": "Plain text",
+                  "value": {
+                    "type": "text",
+                    "text": "Hello from Blueticks!"
+                  }
+                },
+                "text_with_link": {
+                  "summary": "Text with a URL (link preview auto-attached)",
+                  "value": {
+                    "type": "text",
+                    "text": "Check this out: https://blueticks.co"
+                  }
+                },
+                "media_url": {
+                  "summary": "Image from URL",
+                  "value": {
+                    "type": "media",
+                    "mediaKind": "image",
+                    "mediaUrl": "https://blueticks.co/favicon.ico",
+                    "text": "Our logo"
+                  }
+                },
+                "media_document": {
+                  "summary": "Document attachment",
+                  "value": {
+                    "type": "media",
+                    "mediaKind": "document",
+                    "mediaUrl": "https://example.com/invoice.pdf",
+                    "mediaFilename": "invoice.pdf"
+                  }
+                },
+                "poll": {
+                  "summary": "Poll",
+                  "value": {
+                    "type": "poll",
+                    "pollQuestion": "Pizza tonight?",
+                    "pollOptions": [
+                      "Yes",
+                      "No",
+                      "Maybe"
+                    ]
+                  }
+                },
+                "scheduled_text": {
+                  "summary": "Scheduled text (deferred send)",
+                  "value": {
+                    "type": "text",
+                    "text": "Reminder: meeting in 3 hours",
+                    "sendAt": "2026-12-31T12:00:00Z"
+                  }
+                },
+                "replyTo": {
+                  "summary": "Reply quoting a prior message",
+                  "value": {
+                    "type": "text",
+                    "text": "Sounds good!",
+                    "replyTo": "true_15555550100@c.us_3EB0ABCDEF1234567890"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotency replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "waMessageKey": {
+                          "type": "object",
+                          "properties": {
+                            "fromMe": {
+                              "type": "boolean"
+                            },
+                            "remote": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "_serialized": {
+                              "type": "string"
+                            },
+                            "participant": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fromMe"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "to": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "media",
+                            "poll"
+                          ],
+                          "description": "Message kind that was sent."
+                        },
+                        "text": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "mediaUrl": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "mediaKind": {
+                          "type": "string",
+                          "enum": [
+                            "image",
+                            "video",
+                            "audio",
+                            "document",
+                            "sticker",
+                            "voice",
+                            "gif"
+                          ],
+                          "nullable": true
+                        },
+                        "pollQuestion": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "confirmed",
+                            "received",
+                            "read",
+                            "played",
+                            "failed"
+                          ]
+                        },
+                        "sendAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "confirmedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "receivedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "readAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "playedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "failedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "failureReason": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "linkPreview": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "description": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "canonicalUrl": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "thumbnail": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "description",
+                            "canonicalUrl",
+                            "thumbnail"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "waMessageKey",
+                        "to",
+                        "type",
+                        "text",
+                        "mediaUrl",
+                        "mediaKind",
+                        "pollQuestion",
+                        "status",
+                        "sendAt",
+                        "createdAt",
+                        "confirmedAt",
+                        "receivedAt",
+                        "readAt",
+                        "playedAt",
+                        "failedAt",
+                        "failureReason"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "waMessageKey": {
+                          "type": "object",
+                          "properties": {
+                            "fromMe": {
+                              "type": "boolean"
+                            },
+                            "remote": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "_serialized": {
+                              "type": "string"
+                            },
+                            "participant": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fromMe"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "to": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "media",
+                            "poll"
+                          ],
+                          "description": "Message kind that was sent."
+                        },
+                        "text": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "mediaUrl": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "mediaKind": {
+                          "type": "string",
+                          "enum": [
+                            "image",
+                            "video",
+                            "audio",
+                            "document",
+                            "sticker",
+                            "voice",
+                            "gif"
+                          ],
+                          "nullable": true
+                        },
+                        "pollQuestion": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "confirmed",
+                            "received",
+                            "read",
+                            "played",
+                            "failed"
+                          ]
+                        },
+                        "sendAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "confirmedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "receivedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "readAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "playedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "failedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "failureReason": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "linkPreview": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "description": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "canonicalUrl": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "thumbnail": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "description",
+                            "canonicalUrl",
+                            "thumbnail"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "waMessageKey",
+                        "to",
+                        "type",
+                        "text",
+                        "mediaUrl",
+                        "mediaKind",
+                        "pollQuestion",
+                        "status",
+                        "sendAt",
+                        "createdAt",
+                        "confirmedAt",
+                        "receivedAt",
+                        "readAt",
+                        "playedAt",
+                        "failedAt",
+                        "failureReason"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "scheduled-messages.create"
+      }
+    },
     "/v1/messages/{waMessageKey}": {
       "get": {
         "tags": [
@@ -8785,17 +8834,17 @@
                           "type": "string"
                         },
                         "author": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
+                        },
+                        "senderName": {
+                          "type": "string"
                         },
                         "timestamp": {
                           "type": "string",
-                          "format": "date-time",
-                          "nullable": true
+                          "format": "date-time"
                         },
                         "text": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
                         "type": {
                           "type": "string"
@@ -8804,63 +8853,39 @@
                           "type": "boolean"
                         },
                         "ack": {
-                          "type": "integer",
-                          "nullable": true
+                          "type": "integer"
                         },
                         "mediaUrl": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "caption": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
                         "filename": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
                         "linkPreview": {
                           "type": "object",
                           "properties": {
                             "title": {
-                              "type": "string",
-                              "nullable": true
+                              "type": "string"
                             },
                             "description": {
-                              "type": "string",
-                              "nullable": true
+                              "type": "string"
                             },
                             "canonicalUrl": {
-                              "type": "string",
-                              "nullable": true
+                              "type": "string"
                             },
                             "thumbnail": {
-                              "type": "string",
-                              "nullable": true
+                              "type": "string"
                             }
                           },
-                          "required": [
-                            "title",
-                            "description",
-                            "canonicalUrl",
-                            "thumbnail"
-                          ],
-                          "additionalProperties": false,
-                          "nullable": true
+                          "additionalProperties": false
                         }
                       },
                       "required": [
                         "waMessageKey",
                         "chatId",
                         "from",
-                        "timestamp",
-                        "text",
                         "type",
-                        "fromMe",
-                        "ack",
-                        "mediaUrl",
-                        "caption",
-                        "filename"
+                        "fromMe"
                       ],
                       "additionalProperties": false
                     }
@@ -10167,6 +10192,197 @@
         "operationId": "groups.picture.update"
       }
     },
+    "/v1/contacts/{id}/common_groups": {
+      "get": {
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Get common groups",
+        "description": "List the groups the connected WhatsApp account shares with this contact (WhatsApp’s \"groups in common\"). `id` is the contact’s JID (e.g. `12345@c.us`). Returns the same group list-item shape as `GET /v1/groups`. Requires `groups:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "groups:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "common groups",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "owner": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "lastMessageAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "participantCount": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "restrict": {
+                            "type": "boolean",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "description",
+                          "owner",
+                          "createdAt",
+                          "lastMessageAt",
+                          "participantCount",
+                          "restrict"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Page size echoed back from the request."
+                    },
+                    "skip": {
+                      "type": "integer",
+                      "description": "Offset echoed back from the request."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of items matching the query, across all pages."
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "limit",
+                    "skip",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "contacts.commongroups.list"
+      }
+    },
     "/v1/chats/{chatId}/participants": {
       "get": {
         "tags": [
@@ -10970,153 +11186,6 @@
         "operationId": "messages.loadolder.create"
       }
     },
-    "/v1/messages/media_url/{waMessageKey}": {
-      "get": {
-        "tags": [
-          "Messages"
-        ],
-        "summary": "Get message media URL",
-        "description": "Returns a hosted URL for the message media without inlining bytes. Faster + cheaper than `media` when the caller can fetch the URL themselves. Same `mediaUnavailable` semantics. Requires `chats:read`.",
-        "security": [
-          {
-            "BearerAuth": [
-              "chats:read"
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "name": "waMessageKey",
-            "in": "path",
-            "required": true,
-            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "chatId",
-            "in": "query",
-            "required": false,
-            "description": "Optional. Only used to find the message faster — when you pass a bare message id instead of the complete key, `chatId` lets the server rebuild the full key. If you pass the complete `waMessageKey` you can omit it.",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "media url",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ],
-                      "description": "Always `true` on success responses."
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "url": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "Hosted URL for the media bytes, or null if the engine could not produce one."
-                        }
-                      },
-                      "required": [
-                        "url"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request — invalid params or body.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid API key.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "API key lacks the required scope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed — see `error.details` for per-field issues.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Rate limit exceeded — back off and retry.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "messages.mediaurl.get"
-      }
-    },
     "/v1/messages/acks": {
       "post": {
         "tags": [
@@ -11296,7 +11365,7 @@
           "Messages"
         ],
         "summary": "Get message media",
-        "description": "Download the media attached to a WhatsApp message (image, video, document, audio).\nReturns either a hosted URL (`url`) or inline `dataBase64`, plus mimetype + filename.\n\nCAVEAT: for own-sent newsletter media (messages you sent to a `@newsletter` chat), the bytes returned are a WA-generated preview JPEG (~7KB) rather than the original you uploaded — WA releases the original blob from memory immediately after the unencrypted upload. The response will include `originalQuality:false` when this fallback is in effect; the caller can warn the user or decide to retry from a different source.\n\nRequires `chats:read`.",
+        "description": "Download the media attached to a WhatsApp message (image, video, document, audio).\nReturns either a hosted URL (`url`) or inline `dataBase64`, plus mimetype + filename.\n\nThe engine fetches media lazily, so the first call right after a message arrives may still be in flight. By default the server polls up to 6 times (1.5s apart) until the bytes are ready. Pass `?maxAttempts=1` to skip the poll and return immediately (the fast path — useful when you only need the hosted `url` and can tolerate a retry yourself).\n\nCAVEAT: for own-sent newsletter media (messages you sent to a `@newsletter` chat), the bytes returned are a WA-generated preview JPEG (~7KB) rather than the original you uploaded — WA releases the original blob from memory immediately after the unencrypted upload. The response will include `originalQuality:false` when this fallback is in effect; the caller can warn the user or decide to retry from a different source.\n\nRequires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -11322,6 +11391,18 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "maxAttempts",
+            "in": "query",
+            "required": false,
+            "description": "Optional. Maximum number of engine attempts (including the first) while the media is still being fetched from the phone. Defaults to `6`; pass `1` to skip retries and return immediately. Range 1–10.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "default": 6
+            }
           }
         ],
         "responses": {
@@ -11343,24 +11424,19 @@
                       "type": "object",
                       "properties": {
                         "url": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
                         "mimetype": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
                         "filename": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
                         "dataBase64": {
-                          "type": "string",
-                          "nullable": true
+                          "type": "string"
                         },
                         "originalQuality": {
                           "type": "boolean",
-                          "nullable": true,
                           "description": "Set to false when the bytes returned are NOT the original sender uploaded — i.e. WA released the original from memory and we synthesized from a smaller WA-generated preview (#113). Currently only happens for own-sent newsletter media (messages you sent to a @newsletter chat). When absent or true, the bytes are the genuine original. Consumers can use this to warn users / decide whether to retry from a different source."
                         },
                         "mediaUnavailable": {
@@ -11372,18 +11448,9 @@
                             "error",
                             "no_media"
                           ],
-                          "nullable": true,
                           "description": "Set when the bytes could not be downloaded or never existed. \"expired\" = WA aged the file out of CDN retention (typically older than ~30 days for documents) and there is nothing to retry. \"fetching\" = WA is mid-download from its CDN — transient, the server already retried for ~10s; calling again in a few seconds usually resolves to bytes. \"awaiting_sender\" = WA's CDN does not have the file but has asked the sender's device to reupload it. The reupload only completes when the sender's WhatsApp client is open and online; closed/backgrounded apps block it indefinitely. Tell the user to ask the sender to open WhatsApp; do not poll. \"error\" = unexpected failure; \"no_media\" = the message is text-only / revoked / location / vcard, i.e. it never carried media — caller should not have invoked this tool on this messageKey. Absent when bytes were not needed or when the fetch succeeded."
                         }
                       },
-                      "required": [
-                        "url",
-                        "mimetype",
-                        "filename",
-                        "dataBase64",
-                        "originalQuality",
-                        "mediaUnavailable"
-                      ],
                       "additionalProperties": false
                     }
                   },
@@ -12174,7 +12241,7 @@
       "CampaignResponse": {
         "type": "object",
         "properties": {
-          "id": {
+          "cmpId": {
             "type": "string"
           },
           "name": {
@@ -12235,7 +12302,7 @@
           }
         },
         "required": [
-          "id",
+          "cmpId",
           "name",
           "audienceId",
           "status",
@@ -12601,29 +12668,23 @@
         "type": "object",
         "properties": {
           "url": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "mimetype": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "filename": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "dataBase64": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "originalQuality": {
             "type": "boolean",
-            "nullable": true,
             "description": "Set to false when the bytes returned are NOT the original sender uploaded — i.e. WA released the original from memory and we synthesized from a smaller WA-generated preview (#113). Currently only happens for own-sent newsletter media (messages you sent to a @newsletter chat). When absent or true, the bytes are the genuine original. Consumers can use this to warn users / decide whether to retry from a different source."
           },
           "mediaUnavailable": {
             "type": "string",
-            "nullable": true,
             "enum": [
               "expired",
               "fetching",
@@ -12634,28 +12695,6 @@
             "description": "Set when the bytes could not be downloaded or never existed. \"expired\" = WA aged the file out of CDN retention (typically older than ~30 days for documents) and there is nothing to retry. \"fetching\" = WA is mid-download from its CDN — transient, the server already retried for ~10s; calling again in a few seconds usually resolves to bytes. \"awaiting_sender\" = WA's CDN does not have the file but has asked the sender's device to reupload it. The reupload only completes when the sender's WhatsApp client is open and online; closed/backgrounded apps block it indefinitely. Tell the user to ask the sender to open WhatsApp; do not poll. \"error\" = unexpected failure; \"no_media\" = the message is text-only / revoked / location / vcard, i.e. it never carried media — caller should not have invoked this tool on this messageKey. Absent when bytes were not needed or when the fetch succeeded."
           }
         },
-        "required": [
-          "url",
-          "mimetype",
-          "filename",
-          "dataBase64",
-          "originalQuality",
-          "mediaUnavailable"
-        ],
-        "additionalProperties": false
-      },
-      "MediaUrl": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "nullable": true,
-            "description": "Hosted URL for the media bytes, or null if the engine could not produce one."
-          }
-        },
-        "required": [
-          "url"
-        ],
         "additionalProperties": false
       },
       "MessageAck": {
@@ -12884,17 +12923,17 @@
             "type": "string"
           },
           "author": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
+          },
+          "senderName": {
+            "type": "string"
           },
           "timestamp": {
             "type": "string",
-            "nullable": true,
             "format": "date-time"
           },
           "text": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "type": {
             "type": "string"
@@ -12903,62 +12942,38 @@
             "type": "boolean"
           },
           "ack": {
-            "type": "integer",
-            "nullable": true
+            "type": "integer"
           },
           "mediaUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "caption": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "filename": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "linkPreview": {
             "type": "object",
-            "nullable": true,
             "properties": {
               "title": {
-                "type": "string",
-                "nullable": true
+                "type": "string"
               },
               "description": {
-                "type": "string",
-                "nullable": true
+                "type": "string"
               },
               "canonicalUrl": {
-                "type": "string",
-                "nullable": true
+                "type": "string"
               },
               "thumbnail": {
-                "type": "string",
-                "nullable": true
+                "type": "string"
               }
-            },
-            "required": [
-              "title",
-              "description",
-              "canonicalUrl",
-              "thumbnail"
-            ]
+            }
           }
         },
         "required": [
           "waMessageKey",
           "chatId",
           "from",
-          "timestamp",
-          "text",
           "type",
-          "fromMe",
-          "ack",
-          "mediaUrl",
-          "caption",
-          "filename"
+          "fromMe"
         ],
         "additionalProperties": false
       },
@@ -13243,6 +13258,19 @@
         ],
         "additionalProperties": false
       },
+      "GetGroupQuery": {
+        "type": "object",
+        "properties": {
+          "include": {
+            "type": "string",
+            "enum": [
+              "participants"
+            ],
+            "description": "Set to `participants` to inline the group members array on the response. Omit to leave `participants` null."
+          }
+        },
+        "additionalProperties": false
+      },
       "Group": {
         "type": "object",
         "properties": {
@@ -13331,6 +13359,56 @@
       "GroupId": {
         "type": "string",
         "pattern": "^\\d+(?:-\\d+)?@g\\.us$"
+      },
+      "GroupListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "owner": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastMessageAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "participantCount": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0
+          },
+          "restrict": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "owner",
+          "createdAt",
+          "lastMessageAt",
+          "participantCount",
+          "restrict"
+        ],
+        "additionalProperties": false
       },
       "GroupParticipant": {
         "type": "object",
@@ -14209,29 +14287,6 @@
             "maxLength": 255,
             "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
           },
-          "pollQuestion": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Poll question (type=poll). Required for poll sends."
-          },
-          "pollOptions": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            },
-            "description": "Poll options (type=poll). 2–12 items."
-          },
-          "pollAllowMultiple": {
-            "type": "boolean",
-            "description": "Allow selecting multiple poll options (type=poll). Default false."
-          },
-          "to": {
-            "type": "string",
-            "description": "Recipient. Either an international phone number in E.164 format (e.g. +15551234567) for a 1:1 chat, or a WhatsApp chat id: `<id>@g.us` for a group, `<id>@newsletter` for a channel / newsletter, or `<phone>@c.us` for an individual."
-          },
           "sendAt": {
             "type": "string",
             "format": "date-time"
@@ -14246,9 +14301,32 @@
             "minLength": 1,
             "maxLength": 256,
             "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+          },
+          "pollQuestion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Poll question (type=poll). Required for poll sends."
+          },
+          "pollAllowMultiple": {
+            "type": "boolean",
+            "description": "Allow selecting multiple poll options (type=poll). Default false."
+          },
+          "pollOptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "description": "Poll options (type=poll). 2–12 items."
           }
         },
         "additionalProperties": false
+      },
+      "PhoneOrChatId": {
+        "type": "string",
+        "description": "Recipient. Either an international phone number in E.164 format (e.g. +15551234567) for a 1:1 chat, or a WhatsApp chat id: `<id>@g.us` for a group, `<id>@newsletter` for a channel / newsletter, or `<phone>@c.us` for an individual."
       },
       "SendInChatRequest": {
         "type": "object",
@@ -14260,6 +14338,11 @@
               "media",
               "poll"
             ]
+          },
+          "replyTo": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
           },
           "text": {
             "type": "string",
@@ -14313,11 +14396,6 @@
           "pollAllowMultiple": {
             "type": "boolean",
             "description": "Allow selecting multiple poll options (type=poll). Default false."
-          },
-          "replyTo": {
-            "type": "string",
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
           },
           "secret": {
             "type": "string",
@@ -14352,6 +14430,11 @@
               "poll"
             ]
           },
+          "replyTo": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
+          },
           "text": {
             "type": "string",
             "maxLength": 4096,
@@ -14405,29 +14488,19 @@
             "type": "boolean",
             "description": "Allow selecting multiple poll options (type=poll). Default false."
           },
-          "to": {
-            "type": "string",
-            "description": "Recipient. Either an international phone number in E.164 format (e.g. +15551234567) for a 1:1 chat, or a WhatsApp chat id: `<id>@g.us` for a group, `<id>@newsletter` for a channel / newsletter, or `<phone>@c.us` for an individual."
-          },
-          "sendAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "replyTo": {
-            "type": "string",
-            "maxLength": 256,
-            "description": "Wire `key` of a prior message to quote-reply (from MessageResponse.key). Empty string = no reply."
-          },
           "secret": {
             "type": "string",
             "minLength": 1,
             "maxLength": 256,
             "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+          },
+          "sendAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
-          "type",
-          "to"
+          "type"
         ],
         "additionalProperties": false
       },

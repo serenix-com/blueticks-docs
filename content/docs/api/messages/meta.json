@@ -8,7 +8,6 @@
     "get-message-delivery-status",
     "react-to-message",
     "load-older-messages",
-    "get-message-media-url",
     "batch-get-message-acks",
     "get-message-media",
     "list-pinned-messages",

@@ -6,7 +6,7 @@ const SPEC_KEY = './openapi.json';
 
 const PROD_URL = 'https://api.blueticks.co';
 const STAGING_URL = 'https://stg-api.blueticks.co';
-const DEV_URL = 'http://localhost:3320';
+const DEV_URL = 'http://localhost:3310';
 
 // Human-readable label for the server-select dropdown.
 function describeServer(url: string): string {
@@ -302,11 +302,13 @@ function reorderQueryParameters(spec: {
 function stripSampleSeeds(spec: {
   paths?: Record<string, Record<string, {
     parameters?: Array<{ in?: string; required?: boolean; example?: unknown; examples?: unknown }>;
-    requestBody?: { content?: Record<string, {
-      schema?: { properties?: Record<string, { type?: unknown; enum?: unknown; example?: unknown; default?: unknown }>; required?: unknown };
-      example?: unknown;
-      examples?: unknown;
-    }> };
+    requestBody?: {
+      content?: Record<string, {
+        schema?: { properties?: Record<string, { type?: unknown; enum?: unknown; example?: unknown; default?: unknown }>; required?: unknown };
+        example?: unknown;
+        examples?: unknown;
+      }>
+    };
   }>>;
 }): void {
   for (const pathItem of Object.values(spec.paths ?? {})) {
@@ -318,7 +320,7 @@ function stripSampleSeeds(spec: {
       // stay unseeded so they default to inactive / opt-in.
       for (const param of op.parameters ?? []) {
         if ((param.in === 'path' || param.in === 'query') && param.required === true &&
-            param.example === undefined && param.examples === undefined) {
+          param.example === undefined && param.examples === undefined) {
           param.example = '';
         }
       }
@@ -334,7 +336,7 @@ function stripSampleSeeds(spec: {
         for (const name of required) {
           const p = props[name as string];
           if (p && typeof p === 'object' && p.type === 'string' && p.enum === undefined &&
-              p.example === undefined && p.default === undefined) {
+            p.example === undefined && p.default === undefined) {
             p.example = '';
           }
         }

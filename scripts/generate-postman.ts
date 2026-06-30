@@ -25,7 +25,7 @@ const STAGING_ENV_OUT = './public/blueticks.staging.postman_environment.json';
 
 const PROD_URL = 'https://api.blueticks.co';
 const STAGING_URL = 'https://stg-api.blueticks.co';
-const LOCALTEST_URL = 'http://localhost:3320';
+const LOCALTEST_URL = 'http://localhost:3310';
 
 // Staging is internal-only — generated for deploy-preview, branch-deploy,
 // and local builds, but suppressed on the production Netlify context where

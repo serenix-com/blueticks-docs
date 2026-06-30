@@ -91,9 +91,9 @@ describe('resolveSampleCall (per-language)', () => {
     });
   });
 
-  it('Go uses PascalCase resources and methods (incl GetMediaURL, ScheduledMessages)', () => {
-    expect(resolveSampleCall('go', 'get', '/v1/messages/media_url/{chat_id}/{key}')).toEqual({
-      resource: 'Chats', method: 'GetMediaURL', callable: false,
+  it('Go uses PascalCase resources and methods (incl GetMedia, ScheduledMessages)', () => {
+    expect(resolveSampleCall('go', 'get', '/v1/messages/media/{chat_id}/{key}')).toEqual({
+      resource: 'Chats', method: 'GetMedia', callable: false,
     });
     expect(resolveSampleCall('go', 'get', '/v1/scheduled-messages/{id}')).toEqual({
       resource: 'ScheduledMessages', method: 'Retrieve', callable: false,

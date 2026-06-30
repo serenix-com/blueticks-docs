@@ -13,7 +13,7 @@
 //   - `ping` is a callable client method in Python/Node/PHP (`bt.ping()`), but a
 //     resource in Ruby/Go (`client.ping.retrieve` / `client.Ping.Retrieve(ctx)`).
 //   - Go uses PascalCase resources+methods (`client.Chats.SendMessage`,
-//     `GetMediaURL`); the others use snake/camel.
+//     `GetMessageAck`); the others use snake/camel.
 //
 // Two consumers:
 //   - resolveSampleCall() — drives the per-language code samples on every
@@ -65,7 +65,6 @@ const SAMPLE_METHODS: Record<string, Record<SdkLang, string | null>> = {
   'GET /v1/messages/ack/{chat_id}/{key}':           { python: 'get_message_ack',       node: 'getAck',      php: 'getMessageAck',       ruby: 'get_message_ack',       go: 'GetMessageAck' },
   'POST /v1/messages/reactions/{chat_id}/{key}':    { python: 'react',                 node: 'react',       php: 'react',               ruby: 'react',                 go: 'React' },
   'POST /v1/messages/load_older/{chat_id}':         { python: 'load_older_messages',   node: 'loadOlder',   php: 'loadOlderMessages',   ruby: 'load_older_messages',   go: 'LoadOlderMessages' },
-  'GET /v1/messages/media_url/{chat_id}/{key}':     { python: 'get_media_url',         node: 'getMediaUrl', php: 'getMediaUrl',         ruby: 'get_media_url',         go: 'GetMediaURL' },
   'GET /v1/messages/media/{chat_id}/{key}':         { python: 'get_media',             node: 'getMedia',    php: 'getMedia',            ruby: 'get_media',             go: 'GetMedia' },
   'POST /v1/messages/acks':                         { python: 'batch_message_acks',    node: 'batchAcks',   php: 'batchMessageAcks',    ruby: 'batch_message_acks',    go: 'BatchMessageAcks' },
   // Pinned messages exist only on the Node SDK so far → others emit no sample.
