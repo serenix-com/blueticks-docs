@@ -4119,6 +4119,15 @@
             "description": "Include chats with no resolved name (default: skipped)."
           },
           {
+            "name": "includeArchive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include archived chats (default false → archived excluded)."
+          },
+          {
             "name": "skip",
             "in": "query",
             "required": false,
@@ -4169,10 +4178,18 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "isGroup": {
+                          "chatType": {
+                            "type": "string",
+                            "enum": [
+                              "contact",
+                              "group",
+                              "newsletter"
+                            ]
+                          },
+                          "pinned": {
                             "type": "boolean"
                           },
-                          "isNewsletter": {
+                          "archived": {
                             "type": "boolean"
                           },
                           "lastMessageAt": {
@@ -4202,8 +4219,7 @@
                         "required": [
                           "chatId",
                           "name",
-                          "isGroup",
-                          "isNewsletter",
+                          "chatType",
                           "lastMessageAt",
                           "unreadCount",
                           "markedUnread"
@@ -4339,10 +4355,18 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "isGroup": {
+                        "chatType": {
+                          "type": "string",
+                          "enum": [
+                            "contact",
+                            "group",
+                            "newsletter"
+                          ]
+                        },
+                        "pinned": {
                           "type": "boolean"
                         },
-                        "isNewsletter": {
+                        "archived": {
                           "type": "boolean"
                         },
                         "lastMessageAt": {
@@ -4372,8 +4396,7 @@
                       "required": [
                         "chatId",
                         "name",
-                        "isGroup",
-                        "isNewsletter",
+                        "chatType",
                         "lastMessageAt",
                         "unreadCount",
                         "markedUnread"
@@ -4499,6 +4522,15 @@
               "maxLength": 128
             },
             "description": "Search token; when set, only items whose name matches are returned."
+          },
+          {
+            "name": "includeArchive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include archived groups (default false → archived excluded)."
           },
           {
             "name": "skip",
@@ -5394,6 +5426,15 @@
             "description": "Search token; when set, only newsletters whose name matches (case-insensitive substring) are returned, and `total` reflects the matched count."
           },
           {
+            "name": "includeArchive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include archived newsletters (default false → archived excluded)."
+          },
+          {
             "name": "skip",
             "in": "query",
             "required": false,
@@ -5952,6 +5993,15 @@
               "maxLength": 200
             },
             "description": "Search token; when set, only items whose name matches are returned."
+          },
+          {
+            "name": "includeArchive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include archived chats (default false → archived excluded)."
           },
           {
             "name": "skip",
@@ -10463,6 +10513,11 @@
                           "chatId": {
                             "type": "string"
                           },
+                          "name": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Participant's display name, or null when the engine couldn't resolve one."
+                          },
                           "isAdmin": {
                             "type": "boolean"
                           },
@@ -12450,10 +12505,18 @@
             "type": "string",
             "nullable": true
           },
-          "isGroup": {
+          "chatType": {
+            "type": "string",
+            "enum": [
+              "contact",
+              "group",
+              "newsletter"
+            ]
+          },
+          "pinned": {
             "type": "boolean"
           },
-          "isNewsletter": {
+          "archived": {
             "type": "boolean"
           },
           "lastMessageAt": {
@@ -12483,8 +12546,7 @@
         "required": [
           "chatId",
           "name",
-          "isGroup",
-          "isNewsletter",
+          "chatType",
           "lastMessageAt",
           "unreadCount",
           "markedUnread"
@@ -12627,6 +12689,10 @@
           "includeWithoutName": {
             "type": "boolean",
             "description": "Include chats with no resolved name (default: skipped)."
+          },
+          "includeArchive": {
+            "type": "boolean",
+            "description": "Include archived chats (default false → archived excluded)."
           }
         },
         "additionalProperties": false
@@ -12843,6 +12909,11 @@
         "properties": {
           "chatId": {
             "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Participant's display name, or null when the engine couldn't resolve one."
           },
           "isAdmin": {
             "type": "boolean"
@@ -13457,6 +13528,10 @@
             "minLength": 1,
             "maxLength": 128,
             "description": "Search token; when set, only items whose name matches are returned."
+          },
+          "includeArchive": {
+            "type": "boolean",
+            "description": "Include archived groups (default false → archived excluded)."
           }
         },
         "additionalProperties": false
@@ -13747,6 +13822,10 @@
             "minimum": 0,
             "default": 0,
             "description": "Number of items to skip before the page (default 0)."
+          },
+          "includeArchive": {
+            "type": "boolean",
+            "description": "Include archived newsletters (default false → archived excluded)."
           }
         }
       },
