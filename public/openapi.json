@@ -56,6 +56,10 @@
       "description": "Send or schedule WhatsApp messages via the user-messages queue. Each request creates a queued send — set `sendAt` (RFC 3339) to defer delivery, omit it to send immediately. List, retrieve, edit, and cancel queued sends."
     },
     {
+      "name": "Suno",
+      "description": "Generate songs on Suno from lyrics + style, and poll their progress."
+    },
+    {
       "name": "Webhooks",
       "description": "Register URLs to receive HTTPS POSTs on Blueticks events."
     }
@@ -6311,6 +6315,746 @@
           }
         },
         "operationId": "engines.list"
+      }
+    },
+    "/v1/suno/songs/{id}": {
+      "get": {
+        "tags": [
+          "Suno"
+        ],
+        "summary": "Get song",
+        "description": "Poll a single generated clip by id. When `status` is `complete`, `audioUrl` (MP3) and `imageUrl` are populated. Requires `suno:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "suno:read"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "song",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Clip id — poll GET /v1/suno/songs/{id} for progress."
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "submitted",
+                            "queued",
+                            "running",
+                            "streaming",
+                            "complete",
+                            "error"
+                          ],
+                          "description": "Generation status. Terminal states: \"complete\" or \"error\"."
+                        },
+                        "audioUrl": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "MP3 URL once complete, else null."
+                        },
+                        "imageUrl": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Cover-art URL once available, else null."
+                        },
+                        "title": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Resolved song title, if any."
+                        },
+                        "durationSec": {
+                          "type": "number",
+                          "nullable": true,
+                          "description": "Audio duration in seconds once complete, else null."
+                        },
+                        "model": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Model version that produced the clip (e.g. \"v5.5\")."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "audioUrl",
+                        "imageUrl",
+                        "title",
+                        "durationSec",
+                        "model"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "suno.songs.get"
+      }
+    },
+    "/v1/suno/songs": {
+      "post": {
+        "tags": [
+          "Suno"
+        ],
+        "summary": "Generate song",
+        "description": "Submit a song generation to Suno from `lyrics` + `style`, optionally steering `vocalGender`, `weirdness`, `styleInfluence`, and a reference recording (`uploadId` from POST /v1/suno/uploads). Returns two clip variants — poll each with GET /v1/suno/songs/{id} until `status` is `complete`. Requires `suno:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "suno:write"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "lyrics": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000,
+                    "description": "The song lyrics. Maps to Suno `prompt`. Ignored when `instrumental` is true."
+                  },
+                  "style": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000,
+                    "description": "Style / genre text, e.g. \"pop ballad, acoustic guitar\". Maps to Suno `tags`."
+                  },
+                  "negativeStyle": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "description": "Styles to steer away from. Maps to Suno `negative_tags`."
+                  },
+                  "vocalGender": {
+                    "type": "string",
+                    "enum": [
+                      "m",
+                      "f"
+                    ],
+                    "description": "Preferred vocal gender: \"m\" (male) or \"f\" (female). Omit to let Suno decide."
+                  },
+                  "weirdness": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Creative deviation 0–1 (Suno \"Weirdness\"). Maps to `control_sliders.weirdness_constraint`."
+                  },
+                  "styleInfluence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "How strongly the style is applied, 0–1 (Suno \"Style Influence\"). Maps to `control_sliders.style_weight`."
+                  },
+                  "instrumental": {
+                    "type": "boolean",
+                    "description": "Generate without vocals. Maps to Suno `make_instrumental`."
+                  },
+                  "model": {
+                    "type": "string",
+                    "description": "Model version, e.g. \"v5.5\" or \"v4\". Defaults to v5.5. Mapped to Suno `mv`."
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Optional song title."
+                  },
+                  "uploadId": {
+                    "type": "string",
+                    "description": "Reference-audio id from POST /v1/suno/uploads, to cover/transform your own recording."
+                  },
+                  "captchaToken": {
+                    "type": "string",
+                    "description": "Cloudflare Turnstile token. REQUIRED for cover generations (when `uploadId` is set) — Suno gates upload/voice-clone generations behind a captcha and rejects them otherwise. Not needed for plain text→song generations. Obtain from the Turnstile widget on suno.com."
+                  }
+                },
+                "required": [
+                  "lyrics",
+                  "style"
+                ],
+                "additionalProperties": false
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Lyrics + style, female vocal",
+                  "value": {
+                    "lyrics": "[Verse]\nSunlight on the open road\n[Chorus]\nWe are the morning",
+                    "style": "upbeat pop, acoustic guitar",
+                    "vocalGender": "f",
+                    "weirdness": 0.4,
+                    "styleInfluence": 0.7
+                  }
+                },
+                "cover": {
+                  "summary": "Cover a user recording",
+                  "value": {
+                    "lyrics": "[Verse]\nMy own words here",
+                    "style": "lo-fi hip hop",
+                    "uploadId": "00000000-0000-0000-0000-000000000000"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "generation submitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "jobId": {
+                          "type": "string",
+                          "description": "Batch id for this generation request."
+                        },
+                        "clips": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Clip id — poll GET /v1/suno/songs/{id} for progress."
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "submitted",
+                                  "queued",
+                                  "running",
+                                  "streaming",
+                                  "complete",
+                                  "error"
+                                ],
+                                "description": "Generation status. Terminal states: \"complete\" or \"error\"."
+                              },
+                              "audioUrl": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "MP3 URL once complete, else null."
+                              },
+                              "imageUrl": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Cover-art URL once available, else null."
+                              },
+                              "title": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Resolved song title, if any."
+                              },
+                              "durationSec": {
+                                "type": "number",
+                                "nullable": true,
+                                "description": "Audio duration in seconds once complete, else null."
+                              },
+                              "model": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Model version that produced the clip (e.g. \"v5.5\")."
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "status",
+                              "audioUrl",
+                              "imageUrl",
+                              "title",
+                              "durationSec",
+                              "model"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "The generated song variants (typically two). Poll each by id."
+                        }
+                      },
+                      "required": [
+                        "jobId",
+                        "clips"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "suno.songs"
+      }
+    },
+    "/v1/suno/uploads": {
+      "post": {
+        "tags": [
+          "Suno"
+        ],
+        "summary": "Upload reference audio",
+        "description": "Upload an audio recording (via `audioUrl` or base64 `audioBase64`) to Suno. Returns an `uploadId` to pass to POST /v1/suno/songs as `uploadId` to cover/transform it. Max 500 MB. Requires `suno:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "suno:write"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audioUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Public URL of the reference audio to fetch and upload. Provide this OR `audioBase64` (or send multipart file)."
+                  },
+                  "audioBase64": {
+                    "type": "string",
+                    "description": "Base64-encoded audio bytes. Provide this OR `audioUrl` (or send multipart file)."
+                  },
+                  "fileName": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Original file name, used for the extension (defaults to \"audio.mp3\")."
+                  }
+                },
+                "additionalProperties": false
+              },
+              "examples": {
+                "fromUrl": {
+                  "summary": "From a URL",
+                  "value": {
+                    "audioUrl": "https://example.com/me-singing.mp3",
+                    "fileName": "me-singing.mp3"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "upload ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "uploadId": {
+                          "type": "string",
+                          "description": "Pass as `uploadId` to POST /v1/suno/songs to cover/transform this audio."
+                        },
+                        "status": {
+                          "type": "string",
+                          "description": "Upload processing status (e.g. \"complete\")."
+                        }
+                      },
+                      "required": [
+                        "uploadId",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "suno.uploads"
+      }
+    },
+    "/v1/suno/account": {
+      "get": {
+        "tags": [
+          "Suno"
+        ],
+        "summary": "Get Suno account",
+        "description": "Remaining credits, monthly usage, and plan on the connected Suno account. Requires `suno:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "suno:read"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "suno account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "creditsLeft": {
+                          "type": "number",
+                          "description": "Remaining generation credits on the connected Suno account."
+                        },
+                        "monthlyLimit": {
+                          "type": "number",
+                          "nullable": true,
+                          "description": "Monthly credit allowance, if known."
+                        },
+                        "monthlyUsage": {
+                          "type": "number",
+                          "nullable": true,
+                          "description": "Credits used this month, if known."
+                        },
+                        "plan": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Suno plan name (e.g. \"Pro Plan\")."
+                        }
+                      },
+                      "required": [
+                        "creditsLeft",
+                        "monthlyLimit",
+                        "monthlyUsage",
+                        "plan"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "suno.account"
       }
     },
     "/v1/audiences/{id}/contacts": {
@@ -14858,6 +15602,321 @@
           "type"
         ],
         "additionalProperties": false
+      },
+      "AccountUsageResponse": {
+        "type": "object",
+        "properties": {
+          "creditsLeft": {
+            "type": "number",
+            "description": "Remaining generation credits on the connected Suno account."
+          },
+          "monthlyLimit": {
+            "type": "number",
+            "nullable": true,
+            "description": "Monthly credit allowance, if known."
+          },
+          "monthlyUsage": {
+            "type": "number",
+            "nullable": true,
+            "description": "Credits used this month, if known."
+          },
+          "plan": {
+            "type": "string",
+            "nullable": true,
+            "description": "Suno plan name (e.g. \"Pro Plan\")."
+          }
+        },
+        "required": [
+          "creditsLeft",
+          "monthlyLimit",
+          "monthlyUsage",
+          "plan"
+        ]
+      },
+      "CreateUploadRequest": {
+        "type": "object",
+        "properties": {
+          "audioUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Public URL of the reference audio to fetch and upload. Provide this OR `audioBase64` (or send multipart file)."
+          },
+          "audioBase64": {
+            "type": "string",
+            "description": "Base64-encoded audio bytes. Provide this OR `audioUrl` (or send multipart file)."
+          },
+          "fileName": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Original file name, used for the extension (defaults to \"audio.mp3\")."
+          }
+        }
+      },
+      "CreateUploadResponse": {
+        "type": "object",
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "description": "Pass as `uploadId` to POST /v1/suno/songs to cover/transform this audio."
+          },
+          "status": {
+            "type": "string",
+            "description": "Upload processing status (e.g. \"complete\")."
+          }
+        },
+        "required": [
+          "uploadId",
+          "status"
+        ]
+      },
+      "GenerateSongRequest": {
+        "type": "object",
+        "properties": {
+          "lyrics": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "description": "The song lyrics. Maps to Suno `prompt`. Ignored when `instrumental` is true."
+          },
+          "style": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Style / genre text, e.g. \"pop ballad, acoustic guitar\". Maps to Suno `tags`."
+          },
+          "negativeStyle": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Styles to steer away from. Maps to Suno `negative_tags`."
+          },
+          "vocalGender": {
+            "type": "string",
+            "enum": [
+              "m",
+              "f"
+            ],
+            "description": "Preferred vocal gender: \"m\" (male) or \"f\" (female). Omit to let Suno decide."
+          },
+          "weirdness": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Creative deviation 0–1 (Suno \"Weirdness\"). Maps to `control_sliders.weirdness_constraint`."
+          },
+          "styleInfluence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "How strongly the style is applied, 0–1 (Suno \"Style Influence\"). Maps to `control_sliders.style_weight`."
+          },
+          "instrumental": {
+            "type": "boolean",
+            "description": "Generate without vocals. Maps to Suno `make_instrumental`."
+          },
+          "model": {
+            "type": "string",
+            "description": "Model version, e.g. \"v5.5\" or \"v4\". Defaults to v5.5. Mapped to Suno `mv`."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Optional song title."
+          },
+          "uploadId": {
+            "type": "string",
+            "description": "Reference-audio id from POST /v1/suno/uploads, to cover/transform your own recording."
+          },
+          "captchaToken": {
+            "type": "string",
+            "description": "Cloudflare Turnstile token. REQUIRED for cover generations (when `uploadId` is set) — Suno gates upload/voice-clone generations behind a captcha and rejects them otherwise. Not needed for plain text→song generations. Obtain from the Turnstile widget on suno.com."
+          }
+        },
+        "required": [
+          "lyrics",
+          "style"
+        ]
+      },
+      "GenerateSongResponse": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "description": "Batch id for this generation request."
+          },
+          "clips": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Clip id — poll GET /v1/suno/songs/{id} for progress."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "submitted",
+                    "queued",
+                    "running",
+                    "streaming",
+                    "complete",
+                    "error"
+                  ],
+                  "description": "Generation status. Terminal states: \"complete\" or \"error\"."
+                },
+                "audioUrl": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "MP3 URL once complete, else null."
+                },
+                "imageUrl": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Cover-art URL once available, else null."
+                },
+                "title": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Resolved song title, if any."
+                },
+                "durationSec": {
+                  "type": "number",
+                  "nullable": true,
+                  "description": "Audio duration in seconds once complete, else null."
+                },
+                "model": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Model version that produced the clip (e.g. \"v5.5\")."
+                }
+              },
+              "required": [
+                "id",
+                "status",
+                "audioUrl",
+                "imageUrl",
+                "title",
+                "durationSec",
+                "model"
+              ]
+            },
+            "description": "The generated song variants (typically two). Poll each by id."
+          }
+        },
+        "required": [
+          "jobId",
+          "clips"
+        ]
+      },
+      "GetSongResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Clip id — poll GET /v1/suno/songs/{id} for progress."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "queued",
+              "running",
+              "streaming",
+              "complete",
+              "error"
+            ],
+            "description": "Generation status. Terminal states: \"complete\" or \"error\"."
+          },
+          "audioUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "MP3 URL once complete, else null."
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cover-art URL once available, else null."
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "Resolved song title, if any."
+          },
+          "durationSec": {
+            "type": "number",
+            "nullable": true,
+            "description": "Audio duration in seconds once complete, else null."
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "Model version that produced the clip (e.g. \"v5.5\")."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "audioUrl",
+          "imageUrl",
+          "title",
+          "durationSec",
+          "model"
+        ]
+      },
+      "SongClip": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Clip id — poll GET /v1/suno/songs/{id} for progress."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "queued",
+              "running",
+              "streaming",
+              "complete",
+              "error"
+            ],
+            "description": "Generation status. Terminal states: \"complete\" or \"error\"."
+          },
+          "audioUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "MP3 URL once complete, else null."
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cover-art URL once available, else null."
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "Resolved song title, if any."
+          },
+          "durationSec": {
+            "type": "number",
+            "nullable": true,
+            "description": "Audio duration in seconds once complete, else null."
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "Model version that produced the clip (e.g. \"v5.5\")."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "audioUrl",
+          "imageUrl",
+          "title",
+          "durationSec",
+          "model"
+        ]
       },
       "CreateWebhookRequest": {
         "type": "object",
