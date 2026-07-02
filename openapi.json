@@ -6572,7 +6572,7 @@
                   },
                   "captchaToken": {
                     "type": "string",
-                    "description": "Cloudflare Turnstile token. REQUIRED for cover generations (when `uploadId` is set) — Suno gates upload/voice-clone generations behind a captcha and rejects them otherwise. Not needed for plain text→song generations. Obtain from the Turnstile widget on suno.com."
+                    "description": "Cloudflare Turnstile token for cover generations (when `uploadId` is set) — Suno gates upload/voice-clone generations behind a captcha. Not needed for plain text→song. Optional here: if omitted and the server has a solver configured (SUNO_CAPTCHA_PROVIDER + key), the token is minted automatically. Supply your own (minted by a real browser) to skip the solver."
                   }
                 },
                 "required": [
@@ -15728,7 +15728,7 @@
           },
           "captchaToken": {
             "type": "string",
-            "description": "Cloudflare Turnstile token. REQUIRED for cover generations (when `uploadId` is set) — Suno gates upload/voice-clone generations behind a captcha and rejects them otherwise. Not needed for plain text→song generations. Obtain from the Turnstile widget on suno.com."
+            "description": "Cloudflare Turnstile token for cover generations (when `uploadId` is set) — Suno gates upload/voice-clone generations behind a captcha. Not needed for plain text→song. Optional here: if omitted and the server has a solver configured (SUNO_CAPTCHA_PROVIDER + key), the token is minted automatically. Supply your own (minted by a real browser) to skip the solver."
           }
         },
         "required": [
