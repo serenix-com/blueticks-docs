@@ -56,6 +56,8 @@ const SAMPLE_METHODS: Record<string, Record<SdkLang, string | null>> = {
   // Chat reads.
   'GET /v1/chats/{chat_id}/participants':           { python: 'list_participants', node: 'listParticipants', php: 'listParticipants', ruby: 'list_participants', go: 'ListParticipants' },
   'POST /v1/chats/{chat_id}/mark_read':             { python: 'mark_read',       node: 'markRead',       php: 'markRead',        ruby: 'mark_read',         go: 'MarkRead' },
+  'POST /v1/chats/{chat_id}/archive':               { python: 'archive',         node: 'archive',        php: 'archive',         ruby: 'archive',           go: 'Archive' },
+  'POST /v1/chats/{chat_id}/unarchive':             { python: 'unarchive',       node: 'unarchive',      php: 'unarchive',       ruby: 'unarchive',         go: 'Unarchive' },
   'POST /v1/chats/{chat_id}/open':                  { python: 'open',            node: 'open',           php: 'open',            ruby: 'open',              go: 'Open' },
   // Message family — resource is `messages` in Node, `chats` elsewhere (see
   // sampleResource). Method names diverge per language; verified 1:1.
