@@ -15709,6 +15709,12 @@
             "maximum": 1,
             "description": "How strongly the style is applied, 0–1 (Suno \"Style Influence\"). Maps to `control_sliders.style_weight`."
           },
+          "audioInfluence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "How closely a cover follows the reference recording, 0–1 (Suno \"Audio Influence\"). Only meaningful when `uploadId` is set. Maps to `control_sliders.audio_weight`."
+          },
           "instrumental": {
             "type": "boolean",
             "description": "Generate without vocals. Maps to Suno `make_instrumental`."
