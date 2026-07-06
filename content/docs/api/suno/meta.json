@@ -2,8 +2,8 @@
   "title": "Suno",
   "description": "Generate songs on Suno from lyrics + style, and poll their progress.",
   "pages": [
-    "get-song",
     "generate-song",
+    "get-song",
     "upload-reference-audio",
     "get-suno-account"
   ]

@@ -27,14 +27,14 @@ describe('sdk-mapping forward', () => {
   // /v1/chats/{chat_id}/messages/... to /v1/messages/..., which left these
   // reference pages showing cURL only.
   it('maps /v1/messages/* to the chats resource', () => {
-    expect(forwardResource('/v1/messages/{chat_id}')).toBe('chats');
-    expect(forwardResource('/v1/messages/ack/{chat_id}/{key}')).toBe('chats');
+    expect(forwardResource('/v1/messages/{chatId}')).toBe('chats');
+    expect(forwardResource('/v1/messages/ack/{waMessageKey}')).toBe('chats');
     expect(forwardResource('/v1/messages')).toBe('chats');
   });
   it('maps message operations to the real chats SDK methods', () => {
-    expect(forwardMethod('post', '/v1/messages/{chat_id}')).toBe('send_message');
-    expect(forwardMethod('get', '/v1/messages/{chat_id}/{key}')).toBe('get_message');
-    expect(forwardMethod('post', '/v1/messages/reactions/{chat_id}/{key}')).toBe('react');
+    expect(forwardMethod('post', '/v1/messages/{chatId}')).toBe('send_message');
+    expect(forwardMethod('get', '/v1/messages/{waMessageKey}')).toBe('get_message');
+    expect(forwardMethod('post', '/v1/messages/reactions/{waMessageKey}')).toBe('react');
     expect(forwardMethod('post', '/v1/messages/acks')).toBe('batch_message_acks');
     expect(forwardMethod('get', '/v1/messages')).toBe('list_messages');
   });
@@ -45,19 +45,19 @@ describe('sdk-mapping forward', () => {
     expect(forwardMethod('get', '/v1/newsletters/{id}')).toBe('retrieve');
   });
   it('leaves pinned messages unmapped for Python (no SDK method yet)', () => {
-    expect(forwardMethod('get', '/v1/messages/pinned/{chat_id}')).toBeNull();
+    expect(forwardMethod('get', '/v1/messages/pinned/{chatId}')).toBeNull();
   });
 });
 
 describe('resolveSampleCall (per-language)', () => {
   it('send-message uses the divergent resource+method per language', () => {
-    expect(resolveSampleCall('python', 'post', '/v1/messages/{chat_id}')).toEqual({
+    expect(resolveSampleCall('python', 'post', '/v1/messages/{chatId}')).toEqual({
       resource: 'chats', method: 'send_message', callable: false,
     });
-    expect(resolveSampleCall('node', 'post', '/v1/messages/{chat_id}')).toEqual({
+    expect(resolveSampleCall('node', 'post', '/v1/messages/{chatId}')).toEqual({
       resource: 'messages', method: 'send', callable: false,
     });
-    expect(resolveSampleCall('php', 'post', '/v1/messages/{chat_id}')).toEqual({
+    expect(resolveSampleCall('php', 'post', '/v1/messages/{chatId}')).toEqual({
       resource: 'chats', method: 'sendMessage', callable: false,
     });
   });
@@ -83,16 +83,16 @@ describe('resolveSampleCall (per-language)', () => {
   });
 
   it('send-message resolves correctly for Ruby and Go', () => {
-    expect(resolveSampleCall('ruby', 'post', '/v1/messages/{chat_id}')).toEqual({
+    expect(resolveSampleCall('ruby', 'post', '/v1/messages/{chatId}')).toEqual({
       resource: 'chats', method: 'send_message', callable: false,
     });
-    expect(resolveSampleCall('go', 'post', '/v1/messages/{chat_id}')).toEqual({
+    expect(resolveSampleCall('go', 'post', '/v1/messages/{chatId}')).toEqual({
       resource: 'Chats', method: 'SendMessage', callable: false,
     });
   });
 
   it('Go uses PascalCase resources and methods (incl GetMedia, ScheduledMessages)', () => {
-    expect(resolveSampleCall('go', 'get', '/v1/messages/media/{chat_id}/{key}')).toEqual({
+    expect(resolveSampleCall('go', 'get', '/v1/messages/media/{waMessageKey}')).toEqual({
       resource: 'Chats', method: 'GetMedia', callable: false,
     });
     expect(resolveSampleCall('go', 'get', '/v1/scheduled-messages/{id}')).toEqual({
@@ -113,10 +113,46 @@ describe('resolveSampleCall (per-language)', () => {
     expect(resolveSampleCall('python', 'get', '/v1/engines')?.method).toBe('retrieve');
   });
 
+  it('suno ops resolve to the divergent per-language method names', () => {
+    // POST /v1/suno/songs → generate
+    expect(resolveSampleCall('python', 'post', '/v1/suno/songs')).toEqual({
+      resource: 'suno', method: 'generate', callable: false,
+    });
+    expect(resolveSampleCall('node', 'post', '/v1/suno/songs')).toEqual({
+      resource: 'suno', method: 'generateSong', callable: false,
+    });
+    expect(resolveSampleCall('php', 'post', '/v1/suno/songs')?.method).toBe('generateSong');
+    expect(resolveSampleCall('ruby', 'post', '/v1/suno/songs')?.method).toBe('generate_song');
+    expect(resolveSampleCall('go', 'post', '/v1/suno/songs')).toEqual({
+      resource: 'Suno', method: 'Generate', callable: false,
+    });
+
+    // GET /v1/suno/songs/{id} → get song
+    expect(resolveSampleCall('python', 'get', '/v1/suno/songs/{id}')?.method).toBe('retrieve');
+    expect(resolveSampleCall('node', 'get', '/v1/suno/songs/{id}')?.method).toBe('getSong');
+    expect(resolveSampleCall('php', 'get', '/v1/suno/songs/{id}')?.method).toBe('getSong');
+    expect(resolveSampleCall('ruby', 'get', '/v1/suno/songs/{id}')?.method).toBe('get_song');
+    expect(resolveSampleCall('go', 'get', '/v1/suno/songs/{id}')?.method).toBe('GetSong');
+
+    // POST /v1/suno/uploads → upload
+    expect(resolveSampleCall('python', 'post', '/v1/suno/uploads')?.method).toBe('upload');
+    expect(resolveSampleCall('node', 'post', '/v1/suno/uploads')?.method).toBe('uploadAudio');
+    expect(resolveSampleCall('php', 'post', '/v1/suno/uploads')?.method).toBe('uploadAudio');
+    expect(resolveSampleCall('ruby', 'post', '/v1/suno/uploads')?.method).toBe('upload');
+    expect(resolveSampleCall('go', 'post', '/v1/suno/uploads')?.method).toBe('Upload');
+
+    // GET /v1/suno/account → account
+    expect(resolveSampleCall('python', 'get', '/v1/suno/account')?.method).toBe('account');
+    expect(resolveSampleCall('node', 'get', '/v1/suno/account')?.method).toBe('getAccount');
+    expect(resolveSampleCall('php', 'get', '/v1/suno/account')?.method).toBe('getAccount');
+    expect(resolveSampleCall('ruby', 'get', '/v1/suno/account')?.method).toBe('get_account');
+    expect(resolveSampleCall('go', 'get', '/v1/suno/account')?.method).toBe('GetAccount');
+  });
+
   it('pinned messages emit a sample only for Node', () => {
-    expect(resolveSampleCall('python', 'get', '/v1/messages/pinned/{chat_id}')).toBeNull();
-    expect(resolveSampleCall('php', 'get', '/v1/messages/pinned/{chat_id}')).toBeNull();
-    expect(resolveSampleCall('node', 'get', '/v1/messages/pinned/{chat_id}')).toEqual({
+    expect(resolveSampleCall('python', 'get', '/v1/messages/pinned/{chatId}')).toBeNull();
+    expect(resolveSampleCall('php', 'get', '/v1/messages/pinned/{chatId}')).toBeNull();
+    expect(resolveSampleCall('node', 'get', '/v1/messages/pinned/{chatId}')).toEqual({
       resource: 'messages', method: 'listPinned', callable: false,
     });
   });

@@ -146,14 +146,14 @@ A successful response looks like:
 ```json
 {
   "api": "ok",
-  "account_id": "acct_abc123",
-  "whatsapp_connections": [
+  "accountId": "acct_abc123",
+  "whatsappConnections": [
     { "id": "engine_01h7...", "type": "gateway", "connected": true }
   ]
 }
 ```
 
-`api: "ok"` confirms your key works. `whatsapp_connections` lists the
+`api: "ok"` confirms your key works. `whatsappConnections` lists the
 WhatsApp engines currently connected for your account — an empty array
 means no WhatsApp is connected yet (not an error; the `message` field
 explains it).

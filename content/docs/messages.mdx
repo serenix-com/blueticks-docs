@@ -34,21 +34,21 @@ Omit `sendAt` to send it right now:
 
 
 
-<ApiExample op="POST /v1/scheduled-messages" kind="request" />
+<ApiExample op="POST /v1/scheduled-messages/{chatId}" kind="request" />
 
 ### Response
 
-<ApiExample op="POST /v1/scheduled-messages" kind="response" status="201" />
+<ApiExample op="POST /v1/scheduled-messages/{chatId}" kind="response" status="201" />
 
 ## Send to a group or channel
 
-The `to` field accepts a phone number in international format OR a WhatsApp JID. JIDs come in three flavors:
+The recipient is the `{chatId}` path segment — a phone number in international format OR a WhatsApp JID. JIDs come in three flavors:
 
 - `<digits>@c.us` — individual chat (digits-only equivalent of an international-format phone number with `+` stripped).
 - `<id>@g.us` — group chat (e.g. `120363427920657250@g.us`). Find a group's id with `GET /v1/groups` or by inspecting the URL in WhatsApp Web.
 - `<id>@newsletter` — channel (e.g. `12345@newsletter`).
 
-The send call is identical — just swap the `to`:
+The send call is identical — just swap the recipient:
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
@@ -59,14 +59,14 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 # Send to a group
 msg = bt.scheduled_messages.create(
-    to="120363427920657250@g.us",
+    "120363427920657250@g.us",
     type="text",
     text="Team standup in 10 minutes!",
 )
 
 # Send to a channel
 msg = bt.scheduled_messages.create(
-    to="12345@newsletter",
+    "12345@newsletter",
     type="text",
     text="New announcement for all subscribers.",
 )
@@ -80,15 +80,13 @@ import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
 // Send to a group
-const groupMsg = await bt.scheduledMessages.create({
-  to: '120363427920657250@g.us',
+const groupMsg = await bt.scheduledMessages.create('120363427920657250@g.us', {
   type: 'text',
   text: 'Team standup in 10 minutes!',
 });
 
 // Send to a channel
-const channelMsg = await bt.scheduledMessages.create({
-  to: '12345@newsletter',
+const channelMsg = await bt.scheduledMessages.create('12345@newsletter', {
   type: 'text',
   text: 'New announcement for all subscribers.',
 });
@@ -102,15 +100,13 @@ use Blueticks\Blueticks;
 $bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 // Send to a group
-$groupMsg = $bt->scheduled_messages->create([
-    'to'   => '120363427920657250@g.us',
+$groupMsg = $bt->scheduled_messages->create('120363427920657250@g.us', [
     'type' => 'text',
     'text' => 'Team standup in 10 minutes!',
 ]);
 
 // Send to a channel
-$channelMsg = $bt->scheduled_messages->create([
-    'to'   => '12345@newsletter',
+$channelMsg = $bt->scheduled_messages->create('12345@newsletter', [
     'type' => 'text',
     'text' => 'New announcement for all subscribers.',
 ]);
@@ -125,14 +121,14 @@ client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
 
 # Send to a group
 client.scheduled_messages.create(
-  to: "120363427920657250@g.us",
+  "120363427920657250@g.us",
   type: "text",
   text: "Team standup in 10 minutes!",
 )
 
 # Send to a channel
 client.scheduled_messages.create(
-  to: "12345@newsletter",
+  "12345@newsletter",
   type: "text",
   text: "New announcement for all subscribers.",
 )
@@ -151,15 +147,13 @@ import (
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
 // Send to a group
-c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
-	To:   "120363427920657250@g.us",
+c.ScheduledMessages.Create(context.Background(), "120363427920657250@g.us", blueticks.CreateScheduledMessageParams{
 	Type: "text",
 	Text: "Team standup in 10 minutes!",
 })
 
 // Send to a channel
-c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
-	To:   "12345@newsletter",
+c.ScheduledMessages.Create(context.Background(), "12345@newsletter", blueticks.CreateScheduledMessageParams{
 	Type: "text",
 	Text: "New announcement for all subscribers.",
 })
@@ -170,21 +164,19 @@ c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessag
 
 ```bash
 # Send to a group
-curl -X POST https://api.blueticks.co/v1/scheduled-messages \
+curl -X POST "https://api.blueticks.co/v1/scheduled-messages/120363427920657250@g.us" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "120363427920657250@g.us",
     "type": "text",
     "text": "Team standup in 10 minutes!"
   }'
 
 # Send to a channel
-curl -X POST https://api.blueticks.co/v1/scheduled-messages \
+curl -X POST "https://api.blueticks.co/v1/scheduled-messages/12345@newsletter" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "12345@newsletter",
     "type": "text",
     "text": "New announcement for all subscribers."
   }'
@@ -213,12 +205,14 @@ import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 msg = bt.scheduled_messages.create(
-    to="+972501234567",
+    "+972501234567",
     type="media",
-    media_url="https://cdn.example.com/receipt.pdf",
-    media_kind="document",
-    media_filename="receipt-A42.pdf",
-    text="Order #A-42",  # caption
+    media={
+        "url": "https://cdn.example.com/receipt.pdf",
+        "kind": "document",
+        "filename": "receipt-A42.pdf",
+        "caption": "Order #A-42",
+    },
 )
 print(msg.id, msg.status)
 ```
@@ -230,8 +224,7 @@ print(msg.id, msg.status)
 import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
-const msg = await bt.scheduledMessages.create({
-  to: '+972501234567',
+const msg = await bt.scheduledMessages.create('+972501234567', {
   type: 'media',
   mediaUrl: 'https://cdn.example.com/receipt.pdf',
   mediaKind: 'document',
@@ -247,27 +240,28 @@ const msg = await bt.scheduledMessages.create({
 use Blueticks\Blueticks;
 $bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
-$msg = $bt->scheduled_messages->create([
-    'to'            => '+972501234567',
-    'type'          => 'media',
-    'mediaUrl'      => 'https://cdn.example.com/receipt.pdf',
-    'mediaKind'     => 'document',
-    'mediaFilename' => 'receipt-A42.pdf',
-    'text'          => 'Order #A-42', // caption
+$msg = $bt->scheduled_messages->create('+972501234567', [
+    'type'  => 'media',
+    'media' => [
+        'url'      => 'https://cdn.example.com/receipt.pdf',
+        'kind'     => 'document',
+        'filename' => 'receipt-A42.pdf',
+        'caption'  => 'Order #A-42',
+    ],
 ]);
 ```
 
   </Tab>
   <Tab value="Ruby">
 
-Ruby and Go nest the file details under a `media` object (`caption` lives there):
+The Python, PHP, Ruby, and Go SDKs nest the file details under a `media` object (`caption` lives there); only the Node SDK and the raw HTTP body use the flat `mediaUrl` / `mediaKind` / `text`-as-caption fields:
 
 ```ruby
 require "blueticks"
 client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
 
 msg = client.scheduled_messages.create(
-  to: "+972501234567",
+  "+972501234567",
   type: "media",
   media: {
     "url" => "https://cdn.example.com/receipt.pdf",
@@ -291,8 +285,7 @@ import (
 
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
-msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
-	To:   "+972501234567",
+msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.CreateScheduledMessageParams{
 	Type: "media",
 	Media: &blueticks.SendMediaObject{
 		URL:      "https://cdn.example.com/receipt.pdf",
@@ -307,11 +300,10 @@ msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateSched
   <Tab value="cURL">
 
 ```bash
-curl -X POST https://api.blueticks.co/v1/scheduled-messages \
+curl -X POST "https://api.blueticks.co/v1/scheduled-messages/+972501234567" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "+972501234567",
     "type": "media",
     "mediaUrl": "https://cdn.example.com/receipt.pdf",
     "mediaKind": "document",
@@ -323,10 +315,11 @@ curl -X POST https://api.blueticks.co/v1/scheduled-messages \
   </Tab>
 </Tabs>
 
-Voice notes are media with `mediaKind: "voice"`:
+Voice notes are media with `mediaKind: "voice"`. The recipient is the `{chatId}`
+path segment (e.g. `POST /v1/scheduled-messages/+972...`), so the body carries no `to`:
 
 ```json
-{ "to": "+972...", "type": "media", "mediaUrl": "https://.../note.ogg", "mediaKind": "voice" }
+{ "type": "media", "mediaUrl": "https://.../note.ogg", "mediaKind": "voice" }
 ```
 
 `mediaUrl` must be `https://` and resolve to a non-private host — we fetch
@@ -346,11 +339,13 @@ import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 msg = bt.scheduled_messages.create(
-    to="+972501234567",
+    "+972501234567",
     type="poll",
-    poll_question="Pizza tonight?",
-    poll_options=["Yes", "No", "Maybe"],
-    poll_allow_multiple=False,
+    poll={
+        "question": "Pizza tonight?",
+        "options": ["Yes", "No", "Maybe"],
+        "allow_multiple": False,
+    },
 )
 print(msg.id, msg.status)
 ```
@@ -362,8 +357,7 @@ print(msg.id, msg.status)
 import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
-const msg = await bt.scheduledMessages.create({
-  to: '+972501234567',
+const msg = await bt.scheduledMessages.create('+972501234567', {
   type: 'poll',
   pollQuestion: 'Pizza tonight?',
   pollOptions: ['Yes', 'No', 'Maybe'],
@@ -378,12 +372,13 @@ const msg = await bt.scheduledMessages.create({
 use Blueticks\Blueticks;
 $bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
-$msg = $bt->scheduled_messages->create([
-    'to'                => '+972501234567',
-    'type'              => 'poll',
-    'pollQuestion'      => 'Pizza tonight?',
-    'pollOptions'       => ['Yes', 'No', 'Maybe'],
-    'pollAllowMultiple' => false,
+$msg = $bt->scheduled_messages->create('+972501234567', [
+    'type' => 'poll',
+    'poll' => [
+        'question'       => 'Pizza tonight?',
+        'options'        => ['Yes', 'No', 'Maybe'],
+        'allow_multiple' => false,
+    ],
 ]);
 ```
 
@@ -395,7 +390,7 @@ require "blueticks"
 client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
 
 msg = client.scheduled_messages.create(
-  to: "+972501234567",
+  "+972501234567",
   type: "poll",
   poll: {
     "question" => "Pizza tonight?",
@@ -418,8 +413,7 @@ import (
 
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
-msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
-	To:   "+972501234567",
+msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.CreateScheduledMessageParams{
 	Type: "poll",
 	Poll: &blueticks.SendPollObject{
 		Question:      "Pizza tonight?",
@@ -433,11 +427,10 @@ msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateSched
   <Tab value="cURL">
 
 ```bash
-curl -X POST https://api.blueticks.co/v1/scheduled-messages \
+curl -X POST "https://api.blueticks.co/v1/scheduled-messages/+972501234567" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "+972501234567",
     "type": "poll",
     "pollQuestion": "Pizza tonight?",
     "pollOptions": ["Yes", "No", "Maybe"],
@@ -452,27 +445,29 @@ curl -X POST https://api.blueticks.co/v1/scheduled-messages \
 
 `sendAt` (ISO 8601 with offset, ≥ 10 s in the future, ≤ 365 d out)
 works on every type. The response status is `pending` — the message waits
-until the `sendAt` time before dispatching.
+until the `sendAt` time before dispatching. The recipient stays in the path
+(`POST /v1/scheduled-messages/+972...`); only the body is shown here:
 
 ```json
-{ "to": "+972...", "type": "text", "text": "Reminder", "sendAt": "2026-12-01T09:00:00Z" }
+{ "type": "text", "text": "Reminder", "sendAt": "2026-12-01T09:00:00Z" }
 ```
 
 ## Quote-reply to a prior message
 
-Set `replyTo` to the wire `key` of a message in the same chat
-(returned in `MessageResponse.key` once the original has been sent).
-Works with `text`, `media`, and `poll`.
+Set `replyTo` to the serialized wire key of a message in the same chat
+(returned as `data.waMessageKey._serialized` once the original has been sent).
+Works with `text`, `media`, and `poll`. The recipient is the `{chatId}` path
+segment (`POST /v1/scheduled-messages/+972...`), so it isn't in the body:
 
 ```json
-{ "to": "+972...", "type": "text", "text": "Got it 👍", "replyTo": "false_972...@c.us_3EB0..." }
+{ "type": "text", "text": "Got it 👍", "replyTo": "false_972...@c.us_3EB0..." }
 ```
 
 ## React to a message
 
 Reactions are a separate endpoint — `POST /v1/messages/reactions/{waMessageKey}`
-with body `{ "emoji": "❤️" }`. `waMessageKey` is the message's complete wire
-`key` from `MessageResponse` (not the `id`). Pass an empty string to remove a
+with body `{ "emoji": "❤️" }`. `waMessageKey` is the message's complete
+serialized wire key (`data.waMessageKey._serialized` from a send response). Pass an empty string to remove a
 reaction. The optional `?chatId=` query param just narrows the engine lookup.
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
@@ -574,7 +569,7 @@ import blueticks
 bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 msg = bt.scheduled_messages.create(
-    to="+972501234567",
+    "+972501234567",
     type="text",
     text="Your order is confirmed.",
     idempotency_key="order-42-reminder",
@@ -588,12 +583,10 @@ msg = bt.scheduled_messages.create(
 import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
-const msg = await bt.scheduledMessages.create({
-  to: '+972501234567',
+const msg = await bt.scheduledMessages.create('+972501234567', {
   type: 'text',
   text: 'Your order is confirmed.',
-  idempotencyKey: 'order-42-reminder',
-});
+}, { idempotencyKey: 'order-42-reminder' });
 ```
 
   </Tab>
@@ -603,11 +596,10 @@ const msg = await bt.scheduledMessages.create({
 use Blueticks\Blueticks;
 $bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
-$msg = $bt->scheduled_messages->create([
-    'to'              => '+972501234567',
-    'type'            => 'text',
-    'text'            => 'Your order is confirmed.',
-    'idempotency_key' => 'order-42-reminder',
+$msg = $bt->scheduled_messages->create('+972501234567', [
+    'type'           => 'text',
+    'text'           => 'Your order is confirmed.',
+    'idempotencyKey' => 'order-42-reminder',
 ]);
 ```
 
@@ -619,7 +611,7 @@ require "blueticks"
 client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
 
 msg = client.scheduled_messages.create(
-  to: "+972501234567",
+  "+972501234567",
   type: "text",
   text: "Your order is confirmed.",
   idempotency_key: "order-42-reminder",
@@ -638,8 +630,7 @@ import (
 
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
-msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateScheduledMessageParams{
-	To:             "+972501234567",
+msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.CreateScheduledMessageParams{
 	Type:           "text",
 	Text:           "Your order is confirmed.",
 	IdempotencyKey: "order-42-reminder",
@@ -650,12 +641,11 @@ msg, _ := c.ScheduledMessages.Create(context.Background(), blueticks.CreateSched
   <Tab value="cURL">
 
 ```bash
-curl -X POST https://api.blueticks.co/v1/scheduled-messages \
+curl -X POST "https://api.blueticks.co/v1/scheduled-messages/+972501234567" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: order-42-reminder" \
   -d '{
-    "to": "+972501234567",
     "type": "text",
     "text": "Your order is confirmed."
   }'
@@ -694,7 +684,7 @@ Fetch one by id to read its current status:
 
 Before a message dispatches (while still `pending`) you can edit it with
 `PATCH /v1/scheduled-messages/{id}` — reschedule (`sendAt`), rewrite the body
-(`text`), or swap the attachment (`mediaUrl`, `mediaCaption`). At least one
+(`text`), or swap the attachment (`mediaUrl`, `mediaFilename`). At least one
 field is required; once the message has dispatched, the edit returns `400`:
 
 <ApiExample op="PATCH /v1/scheduled-messages/{id}" kind="request" />
@@ -714,14 +704,20 @@ sends without a public URL:
 
 ### Response
 
-A successful send returns `200 OK`; the wire `key` is under `data.key`:
+A successful send returns `201 Created`; the WhatsApp wire key is the object
+under `data.waMessageKey` (its `_serialized` form is mirrored on `data.id`):
 
 ```json
 {
   "success": true,
   "data": {
-    "id": null,
-    "key": "false_972501234567@c.us_3EB0ABCDEF",
+    "id": "true_972501234567@c.us_3EB0ABCDEF",
+    "waMessageKey": {
+      "fromMe": true,
+      "remote": "972501234567@c.us",
+      "id": "3EB0ABCDEF",
+      "_serialized": "true_972501234567@c.us_3EB0ABCDEF"
+    },
     "to": "972501234567@c.us",
     "type": "text",
     "text": "Got it 👍",

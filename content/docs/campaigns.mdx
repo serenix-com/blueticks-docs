@@ -137,15 +137,16 @@ Use `{var_name}` in `text`; each contact's `variables` fill in. Token
 lookup is case-insensitive, and four built-ins are always available
 without setting any variables: `{whatsappname}` (WhatsApp profile name),
 `{displayname}`, `{phone}`, and `{mobile}`. If any contact is missing a
-referenced variable, `on_missing_variable`
+referenced variable, `onMissingVariable`
 decides: `"fail"` (default — 400 request rejected before the campaign starts,
 no messages sent) or `"skip"` (the campaign is accepted and contacts missing
 the variable still receive the message with the literal `{token}` left in
 place).
 
-Two more optional fields: `media_url` (plus `media_caption`) attaches an
-image/video/document to every message, and `from` (a phone number in international format)
-picks the sending number when the workspace default isn't what you want.
+Two more optional fields — `mediaUrl` and its `mediaCaption` — attach an
+image/video/document to every message. (The wire body is camelCase; the
+Python, Ruby, PHP, and Go SDKs accept the snake_case forms shown in their tabs
+and map them for you.)
 
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
@@ -166,9 +167,9 @@ print(cmp.id, cmp.status)
 ```ts
 const cmp = await bt.campaigns.create({
   name: 'Launch blast',
-  audience_id: 'aud_01h7...',
+  audienceId: 'aud_01h7...',
   text: 'Hey {first_name}! Your order ships today.',
-  on_missing_variable: 'fail',
+  onMissingVariable: 'fail',
 });
 ```
 
@@ -217,17 +218,18 @@ curl -X POST https://api.blueticks.co/v1/campaigns \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Launch blast",
-    "audience_id": "aud_01h7...",
+    "audienceId": "aud_01h7...",
     "text": "Hey {first_name}! Your order ships today.",
-    "on_missing_variable": "fail"
+    "onMissingVariable": "fail"
   }'
 ```
 
   </Tab>
 </Tabs>
 
-Response includes live counters (`sent_count`, `delivered_count`,
-`read_count`, `failed_count`) plus `status: "pending"`.
+The response `data` includes live counters (`sentCount`, `deliveredCount`,
+`readCount`, `failedCount`) plus `status: "pending"`. (SDKs expose these under
+their idiomatic names, e.g. Python's `cmp.sent_count`.)
 
 ## 3. Track progress
 
@@ -244,7 +246,7 @@ print(cmp.status, cmp.sent_count, cmp.delivered_count)
 
 ```ts
 const cmp = await bt.campaigns.get('cmp_01h7...');
-console.log(cmp.status, cmp.sent_count, cmp.delivered_count);
+console.log(cmp.status, cmp.sentCount, cmp.deliveredCount);
 ```
 
   </Tab>

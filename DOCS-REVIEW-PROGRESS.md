@@ -315,3 +315,112 @@ in `sdks/{ruby,go}`:
   (`mediaCaption`/`mediaUrl`) while campaigns use snake_case
   (`media_caption`/`media_url`) for the same concepts. Docs are correct as-is;
   consider normalizing the API surface in a future major.
+
+---
+
+## Docs delta pass (2026-07-06)
+
+Scope: only what changed since the June exhaustive pass. Dev docs on `:3500`
+(backend `:3310` is a stale mirror — ignored; backend/ source used as truth).
+
+### New reference pages — all in good shape
+Reviewed the pages added since June against `backend/src/services/api/v1/**`:
+`suno/*` (generate-song, get-song, get-suno-account, upload-reference-audio),
+`chats/archive-chat` + `unarchive-chat`, `messages/pin-message` + `unpin-message`,
+`contacts/get-common-groups`, `scheduled-messages/delete-scheduled-message`.
+- Every page has a real prose description, correct scope note, camelCase params
+  (`chatId`, `waMessageKey`, `uploadId`, `audioUrl`/`audioBase64`, …), sensible
+  bodies, and consistent status codes (`400/401/403/404/422/429/500`).
+- **SDK sample tabs:** Suno (4 pages) and `get-common-groups` render **cURL-only**
+  — CORRECT: no `suno` resource and no `common_groups`/`commonGroups` method
+  exists in any of the 5 SDKs (`sdks/{python,node,php,ruby,go}`), same pattern as
+  the pinned-messages page. archive/unarchive, pin/unpin, delete-scheduled all
+  resolve full SDK samples via `sdk-mapping.ts` (archive/unarchive/pin/unpin are
+  explicitly mapped; delete-scheduled falls through the DELETE convention).
+
+### Fixed (this pass)
+1. **`docs/messages` — 500 render error** (`<ApiExample>: unknown operation
+   "POST /v1/scheduled-messages" — not found in openapi.json`). The create op is
+   registered in the spec (and canonically in the backend) at
+   `POST /v1/scheduled-messages/{chatId}` — the bare path is a **removed legacy
+   route** (backend returns 400 "requires the recipient in the path"). Fixed both
+   `<ApiExample>` refs in `docs/content/docs/messages.mdx:37,41` →
+   `POST /v1/scheduled-messages/{chatId}`. Page now 200.
+2. **`docs/api/suno/generate-song` — 500 render error** (`id is not defined`).
+   The generated MDX body contained a bare `{id}` (from `GET /v1/suno/songs/{id}`
+   in the op description) which MDX evaluated as a JSX expression. Fixed at the
+   durable source `backend/src/services/api/v1/suno/suno.service.ts:143-144`
+   (wrapped the path in backticks → `` `GET /v1/suno/songs/{id}` ``), mirrored the
+   same one-char fix into the committed `docs/openapi.json` +
+   `docs/public/openapi.json`, and reran `generate:openapi`. Page now 200.
+3. **Suno sidebar order** — spec op order put `get-song` before `generate-song`
+   (reads backwards). Added `SUNO_PAGE_LEAD` to
+   `docs/scripts/generate-openapi-pages.ts` (mirrors `MESSAGES_PAGE_LEAD`) →
+   order is now generate-song → get-song → upload-reference-audio → get-suno-account.
+4. **`index.mdx`** — added one factual bullet linking to the Suno category (it was
+   otherwise invisible from the front door).
+5. Re-running `generate:openapi` also **synced several stale generated pages** to
+   the current committed `openapi.json` — these were pre-existing drift, not mine:
+   fixed literal `` it`s ``/`` haven`t `` backtick typos (delete-audience,
+   update-audience-contact, load-older-messages), completed truncated `e.g.`
+   descriptions (schedule-message, get-chat, add-member-to-group), and an
+   engines wording update. All benign, all now match the spec.
+
+### Verified-correct, deliberately NOT changed (flags)
+- **Webhook signing — already fully removed; nothing false remains.** The backend
+  has zero signing (`worker-logic.ts` delivery sets only `Content-Type` +
+  `Blueticks-Webhook-Id`; no `secret`/HMAC/signature/rotate anywhere in
+  `services/api/v1/webhooks` or `services/webhooks`). The docs already match:
+  `webhooks.mdx` §4 explicitly says "Blueticks does **not** sign webhook
+  payloads" and recommends a secret-in-URL; the create-webhook body has only
+  `url`/`events`/`description` (no `secret`); there is **no** rotate-secret
+  endpoint/page; no `verify`/HMAC/`WebhookVerification` text survives in any
+  guide or reference. (The only `secret` in the spec is the unrelated message
+  **correlation-token** body field on send/schedule.) → No restore-vs-remove
+  needed; the signing content the task worried about is already gone.
+- **send-message "201 vs 200" — the 201 is CORRECT; do not change it.** The
+  backend deliberately returns 201: `chats.service.ts:1288` passes `201` to
+  `withV1Auth`, whose doc comment (`lib/v1-auth.ts:40-46`) states creates emit
+  201 "with the OpenAPI spec." Spec (`POST /v1/messages/{chatId}`) and the docs
+  agree on 201. The "200" observation almost certainly came from the **stale
+  :3310 mirror** (predates commits b65aaca9 / 3e86c4bb). Changing the docs to 200
+  would make them wrong. Left as-is.
+
+### Flags for the team (no doc change made)
+- **MCP: a 10th tool (`suno`) exists in backend source but is NOT in the shipped
+  server.** `backend/src/mcp-tool-defs/index.ts TOOL_DEFS` now includes `sunoTool`
+  (added 2026-07-03), but the published `@blueticks/mcp` **v1.1.0** (`sdks/mcp`,
+  no "suno" anywhere in src/dist) does not expose it. So `mcp.mdx`'s "9 tools"
+  list is **correct for the current release** — deliberately left unchanged.
+  Update `mcp.mdx` (tool list + "9 tools" → "10") and add a changelog entry when
+  the MCP server ships suno.
+- **Changelog has no entry for the post-v2.0.0 additions.** The API spec version
+  is still `2.0.0` (`openapi-emit.ts:20`), but archive/unarchive, pin/unpin,
+  common-groups, delete-scheduled, and the whole Suno category were added after
+  it (~2026-07-03) with no version bump. No clean version to attach — team
+  should decide on a `2.1.0`-style additive entry.
+- **`messages.mdx` was rewritten by another actor mid-session and now contradicts
+  the send contract.** Its cURL examples POST to the bare
+  `https://api.blueticks.co/v1/scheduled-messages` with `"to"` in the JSON body,
+  and its SDK examples pass `to=`/`to:`. Both are wrong vs the backend: the
+  recipient is a **required URL path segment** (`/v1/scheduled-messages/{chatId}`,
+  `params.chatId = req.params.chatId`), there is **no `to` body field**, and the
+  shipped SDKs use `chat_id`/`chatId` (e.g. `bt.scheduled_messages.create(chat_id=…)`,
+  "recipient is the URL path, not a body field"). I left the body examples alone
+  (concurrent edit in progress) — my only edits there are the two `<ApiExample>`
+  op-path fixes. **Needs a follow-up correction pass.**
+- **Stale comment in `sdk-mapping.ts`** (lines ~41-46) still calls the
+  `{chatId}` scheduled-messages create path a "spurious spec-gen artifact … the
+  backend + all SDKs POST to the bare `/v1/scheduled-messages`" and says to remove
+  the `{chatId}` variant "once the spec path is corrected to bare." That is now
+  inverted: `{chatId}` is canonical and the bare path is removed. Harmless (both
+  keys are mapped, so samples resolve), but the guidance is misleading — the bare
+  `POST /v1/scheduled-messages` key (line 40) is the vestigial one. Also note
+  `sdk-mapping.ts` carried **pre-existing uncommitted changes** (not from this
+  pass).
+
+### Render-walk verdict
+HTTP-swept all **73** docs pages on `:3500`. Started with **2 failing** (both
+above); after the fixes: **73/73 → 200, 0 failures**. No page has an empty
+description or template/`undefined`/TODO leakage (scanned all generated `api/**`
+frontmatter + bodies); no bare-brace MDX-expression hazards remain.

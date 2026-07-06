@@ -27,6 +27,16 @@ export default function Layout({ children }: LayoutProps<'/'>) {
       suppressHydrationWarning
     >
       <body className="flex flex-col min-h-screen font-sans">
+        {/* Debug gate: before hydration/paint, stamp html[data-bt-debug="true"]
+            when the visitor opted in via localStorage. CSS in global.css keys
+            off this attribute to reveal the otherwise-hidden Suno API section
+            (sidebar folder + pages). Inline + pre-hydration so there's no flash
+            and no hydration mismatch (html already has suppressHydrationWarning). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(window.localStorage.getItem('bt-debug')==='true'){document.documentElement.setAttribute('data-bt-debug','true')}}catch(e){}})();`,
+          }}
+        />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}
           strategy="afterInteractive"

@@ -37,7 +37,13 @@ const SAMPLE_METHODS: Record<string, Record<SdkLang, string | null>> = {
   'GET /v1/engines':                                { python: 'retrieve',        node: 'status',         php: 'retrieve',        ruby: 'status',            go: 'Status' },
   'GET /v1/newsletters/{id}':                       { python: 'retrieve',        node: 'retrieve',       php: 'retrieve',        ruby: 'retrieve',          go: 'Retrieve' },
   'GET /v1/scheduled-messages/{id}':                { python: 'retrieve',        node: 'retrieve',       php: 'retrieve',        ruby: 'retrieve',          go: 'Retrieve' },
-  'POST /v1/scheduled-messages':                    { python: 'create',          node: 'create',         php: 'create',          ruby: 'create',            go: 'Create' },
+  // Recipient migrated into the path: `POST /v1/scheduled-messages/{chatId}` is
+  // now the canonical create op (the bare `POST /v1/scheduled-messages` was
+  // removed — the bare path keeps only GET/list). ALL five SDKs (Python, Node,
+  // PHP, Ruby, Go) take chatId as the leading path argument and drop `to` from
+  // the body. The inverse map resolves `scheduled_messages.create` through this
+  // `{chatId}` entry for validate-examples.
+  'POST /v1/scheduled-messages/{chatId}':           { python: 'create',          node: 'create',         php: 'create',          ruby: 'create',            go: 'Create' },
   // Campaign transitions.
   'POST /v1/campaigns/{id}/pause':                  { python: 'pause',           node: 'pause',          php: 'pause',           ruby: 'pause',             go: 'Pause' },
   'POST /v1/campaigns/{id}/resume':                 { python: 'resume',          node: 'resume',         php: 'resume',          ruby: 'resume',            go: 'Resume' },
@@ -53,26 +59,41 @@ const SAMPLE_METHODS: Record<string, Record<SdkLang, string | null>> = {
   'POST /v1/groups/{id}/members/{chatId}/admin':    { python: 'promote_admin',   node: 'promoteAdmin',   php: 'promoteAdmin',    ruby: 'promote_admin',     go: 'PromoteAdmin' },
   'DELETE /v1/groups/{id}/members/{chatId}/admin':  { python: 'demote_admin',    node: 'demoteAdmin',    php: 'demoteAdmin',     ruby: 'demote_admin',      go: 'DemoteAdmin' },
   'PUT /v1/groups/{id}/picture':                    { python: 'set_picture',     node: 'setPicture',     php: 'setPicture',      ruby: 'set_picture',       go: 'SetPicture' },
-  // Chat reads.
-  'GET /v1/chats/{chat_id}/participants':           { python: 'list_participants', node: 'listParticipants', php: 'listParticipants', ruby: 'list_participants', go: 'ListParticipants' },
-  'POST /v1/chats/{chat_id}/mark_read':             { python: 'mark_read',       node: 'markRead',       php: 'markRead',        ruby: 'mark_read',         go: 'MarkRead' },
-  'POST /v1/chats/{chat_id}/archive':               { python: 'archive',         node: 'archive',        php: 'archive',         ruby: 'archive',           go: 'Archive' },
-  'POST /v1/chats/{chat_id}/unarchive':             { python: 'unarchive',       node: 'unarchive',      php: 'unarchive',       ruby: 'unarchive',         go: 'Unarchive' },
-  'POST /v1/chats/{chat_id}/open':                  { python: 'open',            node: 'open',           php: 'open',            ruby: 'open',              go: 'Open' },
+  // Chat reads. Path params use the live spec's camelCase `{chatId}`
+  // (migrated from the retired `{chat_id}`); keys MUST match `${verb} ${specPath}`
+  // exactly or resolveSampleCall falls back to cURL-only.
+  'GET /v1/chats/{chatId}/participants':            { python: 'list_participants', node: 'listParticipants', php: 'listParticipants', ruby: 'list_participants', go: 'ListParticipants' },
+  'POST /v1/chats/{chatId}/mark_read':              { python: 'mark_read',       node: 'markRead',       php: 'markRead',        ruby: 'mark_read',         go: 'MarkRead' },
+  'POST /v1/chats/{chatId}/archive':                { python: 'archive',         node: 'archive',        php: 'archive',         ruby: 'archive',           go: 'Archive' },
+  'POST /v1/chats/{chatId}/unarchive':              { python: 'unarchive',       node: 'unarchive',      php: 'unarchive',       ruby: 'unarchive',         go: 'Unarchive' },
+  'POST /v1/chats/{chatId}/open':                   { python: 'open',            node: 'open',           php: 'open',            ruby: 'open',              go: 'Open' },
   // Message family — resource is `messages` in Node, `chats` elsewhere (see
-  // sampleResource). Method names diverge per language; verified 1:1.
+  // sampleResource). Method names diverge per language; verified 1:1. The
+  // per-message read/action routes now take the COMPLETE serialized key as a
+  // single `{waMessageKey}` path param (the old two-param `{chat_id}/{key}`
+  // forms were retired in the camelCase migration).
   'GET /v1/messages':                               { python: 'list_messages',         node: 'list',        php: 'listMessages',        ruby: 'list_messages',         go: 'ListMessages' },
-  'POST /v1/messages/{chat_id}':                    { python: 'send_message',          node: 'send',        php: 'sendMessage',         ruby: 'send_message',          go: 'SendMessage' },
-  'GET /v1/messages/{chat_id}/{key}':               { python: 'get_message',           node: 'get',         php: 'getMessage',          ruby: 'get_message',           go: 'GetMessage' },
-  'GET /v1/messages/ack/{chat_id}/{key}':           { python: 'get_message_ack',       node: 'getAck',      php: 'getMessageAck',       ruby: 'get_message_ack',       go: 'GetMessageAck' },
-  'POST /v1/messages/reactions/{chat_id}/{key}':    { python: 'react',                 node: 'react',       php: 'react',               ruby: 'react',                 go: 'React' },
-  'POST /v1/messages/load_older/{chat_id}':         { python: 'load_older_messages',   node: 'loadOlder',   php: 'loadOlderMessages',   ruby: 'load_older_messages',   go: 'LoadOlderMessages' },
-  'GET /v1/messages/media/{chat_id}/{key}':         { python: 'get_media',             node: 'getMedia',    php: 'getMedia',            ruby: 'get_media',             go: 'GetMedia' },
+  'POST /v1/messages/{chatId}':                     { python: 'send_message',          node: 'send',        php: 'sendMessage',         ruby: 'send_message',          go: 'SendMessage' },
+  'GET /v1/messages/{waMessageKey}':                { python: 'get_message',           node: 'get',         php: 'getMessage',          ruby: 'get_message',           go: 'GetMessage' },
+  'GET /v1/messages/ack/{waMessageKey}':            { python: 'get_message_ack',       node: 'getAck',      php: 'getMessageAck',       ruby: 'get_message_ack',       go: 'GetMessageAck' },
+  'POST /v1/messages/reactions/{waMessageKey}':     { python: 'react',                 node: 'react',       php: 'react',               ruby: 'react',                 go: 'React' },
+  'POST /v1/messages/load_older/{chatId}':          { python: 'load_older_messages',   node: 'loadOlder',   php: 'loadOlderMessages',   ruby: 'load_older_messages',   go: 'LoadOlderMessages' },
+  'GET /v1/messages/media/{waMessageKey}':          { python: 'get_media',             node: 'getMedia',    php: 'getMedia',            ruby: 'get_media',             go: 'GetMedia' },
   'POST /v1/messages/acks':                         { python: 'batch_message_acks',    node: 'batchAcks',   php: 'batchMessageAcks',    ruby: 'batch_message_acks',    go: 'BatchMessageAcks' },
   // Pinned messages exist only on the Node SDK so far → others emit no sample.
-  'GET /v1/messages/pinned/{chat_id}':              { python: null,                    node: 'listPinned',  php: null,                  ruby: null,                    go: null },
+  'GET /v1/messages/pinned/{chatId}':               { python: null,                    node: 'listPinned',  php: null,                  ruby: null,                    go: null },
   'POST /v1/messages/pin/{waMessageKey}':           { python: 'pin',                   node: 'pin',         php: 'pin',                 ruby: 'pin',                   go: 'Pin' },
   'POST /v1/messages/unpin/{waMessageKey}':         { python: 'unpin',                 node: 'unpin',       php: 'unpin',               ruby: 'unpin',                 go: 'Unpin' },
+  // Suno song generation (/v1/suno/*). Method names diverge per language,
+  // verified against sdks/*/…/suno.*: Python uses the terse
+  // generate/retrieve/upload/account; Node & PHP use
+  // generateSong/getSong/uploadAudio/getAccount; Ruby mixes
+  // generate_song/get_song/upload/get_account; Go uses PascalCase
+  // Generate/GetSong/Upload/GetAccount. Resource is `suno` (Go `Suno`).
+  'POST /v1/suno/songs':                            { python: 'generate',              node: 'generateSong', php: 'generateSong',       ruby: 'generate_song',         go: 'Generate' },
+  'GET /v1/suno/songs/{id}':                        { python: 'retrieve',              node: 'getSong',      php: 'getSong',            ruby: 'get_song',              go: 'GetSong' },
+  'POST /v1/suno/uploads':                          { python: 'upload',                node: 'uploadAudio',  php: 'uploadAudio',        ruby: 'upload',                go: 'Upload' },
+  'GET /v1/suno/account':                           { python: 'account',               node: 'getAccount',   php: 'getAccount',         ruby: 'get_account',           go: 'GetAccount' },
 };
 
 /** PascalCase a hyphenated resource segment for Go (e.g. scheduled-messages → ScheduledMessages). */

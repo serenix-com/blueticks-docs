@@ -47,6 +47,11 @@ const TAG_ORDER = [
 // their generated order. (Page slugs derived from operation summaries.)
 const MESSAGES_PAGE_LEAD = ['send-message', 'list-messages', 'get-message'];
 
+// Within the Suno section: lead with the primary generate → poll flow before
+// the reference-audio upload and account lookup. (Spec op order otherwise puts
+// get-song first, which reads backwards for a new developer.)
+const SUNO_PAGE_LEAD = ['generate-song', 'get-song', 'upload-reference-audio'];
+
 async function main(): Promise<void> {
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
@@ -146,6 +151,7 @@ async function main(): Promise<void> {
   // section, lead with Send + List.
   await reorderMeta(join(OUTPUT_DIR, 'meta.json'), TAG_ORDER);
   await reorderMeta(join(OUTPUT_DIR, 'messages', 'meta.json'), MESSAGES_PAGE_LEAD);
+  await reorderMeta(join(OUTPUT_DIR, 'suno', 'meta.json'), SUNO_PAGE_LEAD);
 
   // Copy spec to public/ so /openapi.json is served verbatim for Postman etc.
   await fs.mkdir('public', { recursive: true });
@@ -163,9 +169,24 @@ async function main(): Promise<void> {
 function firstSentence(text: string | undefined): string {
   if (!text) return '';
   const trimmed = text.trim();
-  // First period followed by space/newline/EOS, or first newline.
-  const m = trimmed.match(/^(.+?[.!?])(?=\s|$)/s);
-  if (m) return m[1].trim();
+  // Common abbreviations whose trailing "." is NOT a sentence end. Without
+  // this, a description like "…in international format (e.g. +14155551234) or
+  // …" breaks at "e.g." — truncating the frontmatter and leaking the
+  // remainder ("+14155551234) or …") into the page body as a stray fragment.
+  // The leading (?:^|[\s(]) boundary keeps ordinals ("1st.") and words that
+  // merely end in these letters ("casino.", "forms.") from matching.
+  const ABBR =
+    /(?:^|[\s(])(?:e\.g|i\.e|etc|vs|cf|approx|no|al|inc|ltd|dr|mr|mrs|ms|jr|sr|st|a\.m|p\.m|u\.s)\.$/i;
+  // Scan each candidate terminator (a . ! ? followed by space/newline/EOS) and
+  // skip the ones that only close an abbreviation.
+  const re = /[.!?](?=\s|$)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(trimmed)) !== null) {
+    const candidate = trimmed.slice(0, m.index + 1);
+    if (ABBR.test(candidate)) continue;
+    return candidate.trim();
+  }
+  // No real terminator (or only abbreviations) → first line.
   return trimmed.split(/\r?\n/)[0]!.trim();
 }
 

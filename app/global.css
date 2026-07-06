@@ -85,6 +85,47 @@ select:not(:disabled),
   max-height: 500px;
 }
 
+/* ---------------------------------------------------------------------------
+   Suno API reference — debug-gated visibility.
+   The Suno section (sidebar folder + its operation pages) is hidden unless the
+   visitor opted into debug mode via  localStorage 'bt-debug' === 'true'.
+   A pre-hydration inline script in app/layout.tsx stamps
+   html[data-bt-debug="true"] before first paint, so these rules apply with no
+   flash and no hydration mismatch. Nothing here edits the generated
+   content/docs/api/suno/** files, so it survives `pnpm run generate:openapi`.
+   To toggle in the browser: localStorage.setItem('bt-debug','true') (or remove
+   the key) and reload. */
+
+/* Sidebar: hide the entire "Suno" collapsible folder (trigger + child links).
+   The folder wrapper is the <div data-state> that DIRECTLY holds the folder
+   <button> and contains the /docs/api/suno/* links — :has scopes the match to
+   exactly that node (ancestors have no direct-child button; the inner content
+   div has no direct-child button). */
+html:not([data-bt-debug='true'])
+  div[data-state]:has(> button):has(a[href^='/docs/api/suno/']) {
+  display: none !important;
+}
+
+/* Any other direct link to a Suno page (e.g. search-dialog results) stays
+   hidden too. No hand-written page links to Suno, so this is safe. */
+html:not([data-bt-debug='true']) a[href^='/docs/api/suno/'] {
+  display: none !important;
+}
+
+/* Direct URL access to /docs/api/suno/* : the page still renders (localStorage
+   is client-only, so we can't 404 server-side), but everything meaningful is
+   hidden and a short "not available" note is shown instead. The suno page body
+   is wrapped in [data-bt-suno-content] and the note in [data-bt-suno-fallback]
+   by app/docs/[[...slug]]/page.tsx. */
+html:not([data-bt-debug='true'])
+  article:has(> [data-bt-suno-content])
+  > *:not([data-bt-suno-fallback]) {
+  display: none !important;
+}
+html[data-bt-debug='true'] [data-bt-suno-fallback] {
+  display: none;
+}
+
 /* Brand primary: Blueticks blue (was teal). */
 :root {
   --color-fd-primary: #1d8ff7;

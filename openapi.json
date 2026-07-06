@@ -409,11 +409,20 @@
               "type": "string",
               "enum": [
                 "pending",
+                "before-wa-send",
+                "bt-sent",
+                "sending",
+                "sent",
+                "sent_pending_ack",
                 "confirmed",
+                "delivered",
                 "received",
                 "read",
                 "played",
-                "failed"
+                "cancelled",
+                "error",
+                "failed",
+                "expired"
               ]
             },
             "description": "Filter by lifecycle status: `pending` (accepted, waiting), `confirmed` (WhatsApp accepted — has waMessageKey), `received` (double grey tick), `read` (double blue tick), `played` (voice played), `failed`."
@@ -477,7 +486,8 @@
                         "type": "object",
                         "properties": {
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Primary handle for the message. Scheduled sends: the queue id (accepted by GET/cancel /v1/scheduled-messages/{id}). Direct sends: the serialized WhatsApp message key (== waMessageKey._serialized), accepted by GET /v1/messages/{id}."
                           },
                           "waMessageKey": {
                             "type": "object",
@@ -541,15 +551,37 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "pollOptions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "nullable": true,
+                            "description": "Poll option labels in order (type=poll). Null for non-poll messages."
+                          },
+                          "pollAllowMultiple": {
+                            "type": "boolean",
+                            "nullable": true,
+                            "description": "Whether the poll accepts multiple selections (type=poll). Null for non-poll messages."
+                          },
                           "status": {
                             "type": "string",
                             "enum": [
                               "pending",
+                              "before-wa-send",
+                              "bt-sent",
+                              "sending",
+                              "sent",
+                              "sent_pending_ack",
                               "confirmed",
+                              "delivered",
                               "received",
                               "read",
                               "played",
-                              "failed"
+                              "cancelled",
+                              "error",
+                              "failed",
+                              "expired"
                             ]
                           },
                           "sendAt": {
@@ -590,6 +622,11 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "secret": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Opaque correlation token carried on the message. Echoes the `secret` you sent (or the engine-encoded internal id when you omitted it), and is carried into WhatsApp's `messageSecret`. Null until a queued/scheduled send dispatches."
+                          },
                           "linkPreview": {
                             "type": "object",
                             "properties": {
@@ -628,6 +665,8 @@
                           "mediaUrl",
                           "mediaKind",
                           "pollQuestion",
+                          "pollOptions",
+                          "pollAllowMultiple",
                           "status",
                           "sendAt",
                           "createdAt",
@@ -636,7 +675,8 @@
                           "readAt",
                           "playedAt",
                           "failedAt",
-                          "failureReason"
+                          "failureReason",
+                          "secret"
                         ],
                         "additionalProperties": false
                       }
@@ -763,7 +803,8 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Primary handle for the message. Scheduled sends: the queue id (accepted by GET/cancel /v1/scheduled-messages/{id}). Direct sends: the serialized WhatsApp message key (== waMessageKey._serialized), accepted by GET /v1/messages/{id}."
                         },
                         "waMessageKey": {
                           "type": "object",
@@ -827,15 +868,37 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "pollOptions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "nullable": true,
+                          "description": "Poll option labels in order (type=poll). Null for non-poll messages."
+                        },
+                        "pollAllowMultiple": {
+                          "type": "boolean",
+                          "nullable": true,
+                          "description": "Whether the poll accepts multiple selections (type=poll). Null for non-poll messages."
+                        },
                         "status": {
                           "type": "string",
                           "enum": [
                             "pending",
+                            "before-wa-send",
+                            "bt-sent",
+                            "sending",
+                            "sent",
+                            "sent_pending_ack",
                             "confirmed",
+                            "delivered",
                             "received",
                             "read",
                             "played",
-                            "failed"
+                            "cancelled",
+                            "error",
+                            "failed",
+                            "expired"
                           ]
                         },
                         "sendAt": {
@@ -876,6 +939,11 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "secret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Opaque correlation token carried on the message. Echoes the `secret` you sent (or the engine-encoded internal id when you omitted it), and is carried into WhatsApp's `messageSecret`. Null until a queued/scheduled send dispatches."
+                        },
                         "linkPreview": {
                           "type": "object",
                           "properties": {
@@ -914,6 +982,8 @@
                         "mediaUrl",
                         "mediaKind",
                         "pollQuestion",
+                        "pollOptions",
+                        "pollAllowMultiple",
                         "status",
                         "sendAt",
                         "createdAt",
@@ -922,7 +992,8 @@
                         "readAt",
                         "playedAt",
                         "failedAt",
-                        "failureReason"
+                        "failureReason",
+                        "secret"
                       ],
                       "additionalProperties": false
                     }
@@ -1171,7 +1242,8 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Primary handle for the message. Scheduled sends: the queue id (accepted by GET/cancel /v1/scheduled-messages/{id}). Direct sends: the serialized WhatsApp message key (== waMessageKey._serialized), accepted by GET /v1/messages/{id}."
                         },
                         "waMessageKey": {
                           "type": "object",
@@ -1235,15 +1307,37 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "pollOptions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "nullable": true,
+                          "description": "Poll option labels in order (type=poll). Null for non-poll messages."
+                        },
+                        "pollAllowMultiple": {
+                          "type": "boolean",
+                          "nullable": true,
+                          "description": "Whether the poll accepts multiple selections (type=poll). Null for non-poll messages."
+                        },
                         "status": {
                           "type": "string",
                           "enum": [
                             "pending",
+                            "before-wa-send",
+                            "bt-sent",
+                            "sending",
+                            "sent",
+                            "sent_pending_ack",
                             "confirmed",
+                            "delivered",
                             "received",
                             "read",
                             "played",
-                            "failed"
+                            "cancelled",
+                            "error",
+                            "failed",
+                            "expired"
                           ]
                         },
                         "sendAt": {
@@ -1284,6 +1378,11 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "secret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Opaque correlation token carried on the message. Echoes the `secret` you sent (or the engine-encoded internal id when you omitted it), and is carried into WhatsApp's `messageSecret`. Null until a queued/scheduled send dispatches."
+                        },
                         "linkPreview": {
                           "type": "object",
                           "properties": {
@@ -1322,6 +1421,8 @@
                         "mediaUrl",
                         "mediaKind",
                         "pollQuestion",
+                        "pollOptions",
+                        "pollAllowMultiple",
                         "status",
                         "sendAt",
                         "createdAt",
@@ -1330,7 +1431,8 @@
                         "readAt",
                         "playedAt",
                         "failedAt",
-                        "failureReason"
+                        "failureReason",
+                        "secret"
                       ],
                       "additionalProperties": false
                     }
@@ -3242,7 +3344,7 @@
           "Audiences"
         ],
         "summary": "Delete audience",
-        "description": "Soft-delete an audience. 409 if it`s referenced by an active campaign. Returns the deleted ref. Requires `audiences:write`.",
+        "description": "Soft-delete an audience. 409 if it's referenced by an active campaign. Returns the deleted ref. Requires `audiences:write`.",
         "security": [
           {
             "BearerAuth": [
@@ -4176,11 +4278,13 @@
                         "type": "object",
                         "properties": {
                           "chatId": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "WhatsApp JID of the chat — `<number>@c.us` for a 1:1 contact, `<id>@g.us` for a group, `<id>@newsletter` for a channel."
                           },
                           "name": {
                             "type": "string",
-                            "nullable": true
+                            "nullable": true,
+                            "description": "Display name of the chat (contact name, group subject, or channel title). Null when WhatsApp has no name for it."
                           },
                           "chatType": {
                             "type": "string",
@@ -4188,26 +4292,32 @@
                               "contact",
                               "group",
                               "newsletter"
-                            ]
+                            ],
+                            "description": "Kind of chat: `contact` (1:1), `group`, or `newsletter` (WhatsApp Channel). The three are mutually exclusive."
                           },
                           "pinned": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "description": "True when the chat is pinned to the top of the chat list."
                           },
                           "archived": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "description": "True when the chat is archived. Excluded from list responses unless `includeArchive=true`."
                           },
                           "lastMessageAt": {
                             "type": "string",
                             "format": "date-time",
-                            "nullable": true
+                            "nullable": true,
+                            "description": "ISO-8601 timestamp of the most recent message in this chat. Null when the chat has no messages."
                           },
                           "unreadCount": {
                             "type": "integer",
                             "minimum": 0,
-                            "nullable": true
+                            "nullable": true,
+                            "description": "Count of unseen incoming messages (>= 0). Excludes the \"manually marked unread\" sentinel — see `markedUnread`."
                           },
                           "markedUnread": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "description": "True when the chat was manually flagged unread in WhatsApp (the dot badge), distinct from having N unread messages."
                           },
                           "lastMessageText": {
                             "type": "string",
@@ -4228,7 +4338,8 @@
                           "unreadCount",
                           "markedUnread"
                         ],
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "A WhatsApp chat (conversation) — a 1:1 contact, a group, or a channel — as seen by the connected engine."
                       }
                     },
                     "limit": {
@@ -4353,11 +4464,13 @@
                       "type": "object",
                       "properties": {
                         "chatId": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "WhatsApp JID of the chat — `<number>@c.us` for a 1:1 contact, `<id>@g.us` for a group, `<id>@newsletter` for a channel."
                         },
                         "name": {
                           "type": "string",
-                          "nullable": true
+                          "nullable": true,
+                          "description": "Display name of the chat (contact name, group subject, or channel title). Null when WhatsApp has no name for it."
                         },
                         "chatType": {
                           "type": "string",
@@ -4365,26 +4478,32 @@
                             "contact",
                             "group",
                             "newsletter"
-                          ]
+                          ],
+                          "description": "Kind of chat: `contact` (1:1), `group`, or `newsletter` (WhatsApp Channel). The three are mutually exclusive."
                         },
                         "pinned": {
-                          "type": "boolean"
+                          "type": "boolean",
+                          "description": "True when the chat is pinned to the top of the chat list."
                         },
                         "archived": {
-                          "type": "boolean"
+                          "type": "boolean",
+                          "description": "True when the chat is archived. Excluded from list responses unless `includeArchive=true`."
                         },
                         "lastMessageAt": {
                           "type": "string",
                           "format": "date-time",
-                          "nullable": true
+                          "nullable": true,
+                          "description": "ISO-8601 timestamp of the most recent message in this chat. Null when the chat has no messages."
                         },
                         "unreadCount": {
                           "type": "integer",
                           "minimum": 0,
-                          "nullable": true
+                          "nullable": true,
+                          "description": "Count of unseen incoming messages (>= 0). Excludes the \"manually marked unread\" sentinel — see `markedUnread`."
                         },
                         "markedUnread": {
-                          "type": "boolean"
+                          "type": "boolean",
+                          "description": "True when the chat was manually flagged unread in WhatsApp (the dot badge), distinct from having N unread messages."
                         },
                         "lastMessageText": {
                           "type": "string",
@@ -4405,7 +4524,8 @@
                         "unreadCount",
                         "markedUnread"
                       ],
-                      "additionalProperties": false
+                      "additionalProperties": false,
+                      "description": "A WhatsApp chat (conversation) — a 1:1 contact, a group, or a channel — as seen by the connected engine."
                     }
                   },
                   "required": [
@@ -5210,6 +5330,11 @@
                       },
                       "editInfoAdminsOnly": {
                         "type": "boolean"
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
                       }
                     },
                     "additionalProperties": false
@@ -6047,20 +6172,24 @@
                         "type": "object",
                         "properties": {
                           "chatId": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "WhatsApp JID of the contact (`<number>@c.us`)."
                           },
                           "name": {
                             "type": "string",
-                            "nullable": true
+                            "nullable": true,
+                            "description": "Saved/pushname of the contact. Null or absent when WhatsApp has no name for it."
                           },
                           "isBusiness": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "description": "True when the contact is a WhatsApp Business account. Absent when unknown."
                           }
                         },
                         "required": [
                           "chatId"
                         ],
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "A WhatsApp contact from the connected account's address book."
                       }
                     },
                     "limit": {
@@ -6158,7 +6287,7 @@
           "Engines"
         ],
         "summary": "List engines",
-        "description": "List the WhatsApp engines connected to this workspace — one entry per online engine (a workspace with two paired WhatsApp Web tabs returns two entries). Each entry carries its own `id` (the engine session's MQTT presence client id, same id space as ping's `whatsapp_connections[].id`), its `type` (`gateway` or `regular`), and its connectivity status. When no engine is connected, `data` is empty and `message` explains why — this is not an error.",
+        "description": "List the WhatsApp engines connected to this workspace — one entry per online engine (a workspace with two paired WhatsApp Web tabs returns two entries). Each entry carries its own `id` (the engine session's MQTT presence client id, same id space as ping's `whatsapp_connections[].id`), its `type` (`gateway` or `regular`), and its connectivity status. When no engine is connected, `data` is an empty array — this is not an error.",
         "security": [
           {
             "BearerAuth": [
@@ -6182,66 +6311,53 @@
                       "description": "Always `true` on success responses."
                     },
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "Stable id of this engine session (its MQTT presence client id). Same id space as ping's whatsapp_connections[].id."
-                              },
-                              "type": {
-                                "type": "string",
-                                "enum": [
-                                  "gateway",
-                                  "regular"
-                                ],
-                                "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
-                              },
-                              "connected": {
-                                "type": "boolean",
-                                "description": "Whether this engine is currently online and serving requests."
-                              },
-                              "state": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
-                              },
-                              "stream": {
-                                "type": "string",
-                                "nullable": true,
-                                "description": "Underlying WA stream state. Null when unknown."
-                              },
-                              "hasSynced": {
-                                "type": "boolean",
-                                "nullable": true,
-                                "description": "Whether the engine has completed its initial history sync."
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "type",
-                              "connected",
-                              "state",
-                              "stream",
-                              "hasSynced"
-                            ],
-                            "additionalProperties": false
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Stable id of this engine session (its MQTT presence client id). Same id space as ping's whatsapp_connections[].id."
                           },
-                          "description": "Engines connected to this workspace. Empty when no engine is paired."
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "gateway",
+                              "regular"
+                            ],
+                            "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
+                          },
+                          "connected": {
+                            "type": "boolean",
+                            "description": "Whether this engine is currently online and serving requests."
+                          },
+                          "state": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
+                          },
+                          "stream": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Underlying WA stream state. Null when unknown."
+                          },
+                          "hasSynced": {
+                            "type": "boolean",
+                            "nullable": true,
+                            "description": "Whether the engine has completed its initial history sync."
+                          }
                         },
-                        "message": {
-                          "type": "string",
-                          "description": "Human-readable note (e.g. why the array is empty). Present only when useful."
-                        }
+                        "required": [
+                          "id",
+                          "type",
+                          "connected",
+                          "state",
+                          "stream",
+                          "hasSynced"
+                        ],
+                        "additionalProperties": false
                       },
-                      "required": [
-                        "data"
-                      ],
-                      "additionalProperties": false
+                      "description": "Engines connected to this workspace. Empty when no engine is paired."
                     }
                   },
                   "required": [
@@ -6389,6 +6505,16 @@
                           "type": "string",
                           "nullable": true,
                           "description": "Model version that produced the clip (e.g. \"v5.5\")."
+                        },
+                        "errorType": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Failure class when status is \"error\" (e.g. \"moderation_failure\"). Omitted otherwise."
+                        },
+                        "errorMessage": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Human-readable reason a clip failed (e.g. \"Your lyrics contain copyrighted material\"). Only set when status is \"error\"."
                         }
                       },
                       "required": [
@@ -6502,7 +6628,7 @@
           "Suno"
         ],
         "summary": "Generate song",
-        "description": "Submit a song generation to Suno from `lyrics` + `style`, optionally steering `vocalGender`, `weirdness`, `styleInfluence`, and a reference recording (`uploadId` from POST /v1/suno/uploads). Returns two clip variants — poll each with GET /v1/suno/songs/{id} until `status` is `complete`. Requires `suno:write`.",
+        "description": "Submit a song generation to Suno from `lyrics` + `style`, optionally steering `vocalGender`, `weirdness`, `styleInfluence`, and a reference recording (`uploadId` from POST /v1/suno/uploads, with `audioInfluence` controlling how closely the cover follows it). Returns two clip variants — poll each with `GET /v1/suno/songs/{id}` until `status` is `complete`. Requires `suno:write`.",
         "security": [
           {
             "BearerAuth": [
@@ -6553,6 +6679,12 @@
                     "maximum": 1,
                     "description": "How strongly the style is applied, 0–1 (Suno \"Style Influence\"). Maps to `control_sliders.style_weight`."
                   },
+                  "audioInfluence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "How closely a cover follows the reference recording, 0–1 (Suno \"Audio Influence\"). Only meaningful when `uploadId` is set. Maps to `control_sliders.audio_weight`."
+                  },
                   "instrumental": {
                     "type": "boolean",
                     "description": "Generate without vocals. Maps to Suno `make_instrumental`."
@@ -6597,7 +6729,8 @@
                   "value": {
                     "lyrics": "[Verse]\nMy own words here",
                     "style": "lo-fi hip hop",
-                    "uploadId": "00000000-0000-0000-0000-000000000000"
+                    "uploadId": "00000000-0000-0000-0000-000000000000",
+                    "audioInfluence": 0.8
                   }
                 }
               }
@@ -6671,6 +6804,16 @@
                                 "type": "string",
                                 "nullable": true,
                                 "description": "Model version that produced the clip (e.g. \"v5.5\")."
+                              },
+                              "errorType": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Failure class when status is \"error\" (e.g. \"moderation_failure\"). Omitted otherwise."
+                              },
+                              "errorMessage": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Human-readable reason a clip failed (e.g. \"Your lyrics contain copyrighted material\"). Only set when status is \"error\"."
                               }
                             },
                             "required": [
@@ -7246,7 +7389,7 @@
           "Audiences"
         ],
         "summary": "Update audience contact",
-        "description": "Edit a contact`s phone or variables. Requires `audiences:write`.",
+        "description": "Edit a contact's phone or variables. Requires `audiences:write`.",
         "security": [
           {
             "BearerAuth": [
@@ -8407,6 +8550,48 @@
                               }
                             },
                             "additionalProperties": false
+                          },
+                          "quotedMessage": {
+                            "type": "object",
+                            "properties": {
+                              "waMessageKey": {
+                                "type": "object",
+                                "properties": {
+                                  "fromMe": {
+                                    "type": "boolean"
+                                  },
+                                  "remote": {
+                                    "type": "string"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "_serialized": {
+                                    "type": "string"
+                                  },
+                                  "participant": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "fromMe"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "text": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "author": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "waMessageKey"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -8653,7 +8838,8 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Primary handle for the message. Scheduled sends: the queue id (accepted by GET/cancel /v1/scheduled-messages/{id}). Direct sends: the serialized WhatsApp message key (== waMessageKey._serialized), accepted by GET /v1/messages/{id}."
                         },
                         "waMessageKey": {
                           "type": "object",
@@ -8717,15 +8903,37 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "pollOptions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "nullable": true,
+                          "description": "Poll option labels in order (type=poll). Null for non-poll messages."
+                        },
+                        "pollAllowMultiple": {
+                          "type": "boolean",
+                          "nullable": true,
+                          "description": "Whether the poll accepts multiple selections (type=poll). Null for non-poll messages."
+                        },
                         "status": {
                           "type": "string",
                           "enum": [
                             "pending",
+                            "before-wa-send",
+                            "bt-sent",
+                            "sending",
+                            "sent",
+                            "sent_pending_ack",
                             "confirmed",
+                            "delivered",
                             "received",
                             "read",
                             "played",
-                            "failed"
+                            "cancelled",
+                            "error",
+                            "failed",
+                            "expired"
                           ]
                         },
                         "sendAt": {
@@ -8766,6 +8974,11 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "secret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Opaque correlation token carried on the message. Echoes the `secret` you sent (or the engine-encoded internal id when you omitted it), and is carried into WhatsApp's `messageSecret`. Null until a queued/scheduled send dispatches."
+                        },
                         "linkPreview": {
                           "type": "object",
                           "properties": {
@@ -8804,6 +9017,8 @@
                         "mediaUrl",
                         "mediaKind",
                         "pollQuestion",
+                        "pollOptions",
+                        "pollAllowMultiple",
                         "status",
                         "sendAt",
                         "createdAt",
@@ -8812,7 +9027,8 @@
                         "readAt",
                         "playedAt",
                         "failedAt",
-                        "failureReason"
+                        "failureReason",
+                        "secret"
                       ],
                       "additionalProperties": false
                     }
@@ -9107,7 +9323,8 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Primary handle for the message. Scheduled sends: the queue id (accepted by GET/cancel /v1/scheduled-messages/{id}). Direct sends: the serialized WhatsApp message key (== waMessageKey._serialized), accepted by GET /v1/messages/{id}."
                         },
                         "waMessageKey": {
                           "type": "object",
@@ -9171,15 +9388,37 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "pollOptions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "nullable": true,
+                          "description": "Poll option labels in order (type=poll). Null for non-poll messages."
+                        },
+                        "pollAllowMultiple": {
+                          "type": "boolean",
+                          "nullable": true,
+                          "description": "Whether the poll accepts multiple selections (type=poll). Null for non-poll messages."
+                        },
                         "status": {
                           "type": "string",
                           "enum": [
                             "pending",
+                            "before-wa-send",
+                            "bt-sent",
+                            "sending",
+                            "sent",
+                            "sent_pending_ack",
                             "confirmed",
+                            "delivered",
                             "received",
                             "read",
                             "played",
-                            "failed"
+                            "cancelled",
+                            "error",
+                            "failed",
+                            "expired"
                           ]
                         },
                         "sendAt": {
@@ -9220,6 +9459,11 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "secret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Opaque correlation token carried on the message. Echoes the `secret` you sent (or the engine-encoded internal id when you omitted it), and is carried into WhatsApp's `messageSecret`. Null until a queued/scheduled send dispatches."
+                        },
                         "linkPreview": {
                           "type": "object",
                           "properties": {
@@ -9258,6 +9502,8 @@
                         "mediaUrl",
                         "mediaKind",
                         "pollQuestion",
+                        "pollOptions",
+                        "pollAllowMultiple",
                         "status",
                         "sendAt",
                         "createdAt",
@@ -9266,7 +9512,8 @@
                         "readAt",
                         "playedAt",
                         "failedAt",
-                        "failureReason"
+                        "failureReason",
+                        "secret"
                       ],
                       "additionalProperties": false
                     }
@@ -9298,7 +9545,8 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Primary handle for the message. Scheduled sends: the queue id (accepted by GET/cancel /v1/scheduled-messages/{id}). Direct sends: the serialized WhatsApp message key (== waMessageKey._serialized), accepted by GET /v1/messages/{id}."
                         },
                         "waMessageKey": {
                           "type": "object",
@@ -9362,15 +9610,37 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "pollOptions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "nullable": true,
+                          "description": "Poll option labels in order (type=poll). Null for non-poll messages."
+                        },
+                        "pollAllowMultiple": {
+                          "type": "boolean",
+                          "nullable": true,
+                          "description": "Whether the poll accepts multiple selections (type=poll). Null for non-poll messages."
+                        },
                         "status": {
                           "type": "string",
                           "enum": [
                             "pending",
+                            "before-wa-send",
+                            "bt-sent",
+                            "sending",
+                            "sent",
+                            "sent_pending_ack",
                             "confirmed",
+                            "delivered",
                             "received",
                             "read",
                             "played",
-                            "failed"
+                            "cancelled",
+                            "error",
+                            "failed",
+                            "expired"
                           ]
                         },
                         "sendAt": {
@@ -9411,6 +9681,11 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "secret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Opaque correlation token carried on the message. Echoes the `secret` you sent (or the engine-encoded internal id when you omitted it), and is carried into WhatsApp's `messageSecret`. Null until a queued/scheduled send dispatches."
+                        },
                         "linkPreview": {
                           "type": "object",
                           "properties": {
@@ -9449,6 +9724,8 @@
                         "mediaUrl",
                         "mediaKind",
                         "pollQuestion",
+                        "pollOptions",
+                        "pollAllowMultiple",
                         "status",
                         "sendAt",
                         "createdAt",
@@ -9457,7 +9734,8 @@
                         "readAt",
                         "playedAt",
                         "failedAt",
-                        "failureReason"
+                        "failureReason",
+                        "secret"
                       ],
                       "additionalProperties": false
                     }
@@ -9671,6 +9949,48 @@
                               "type": "string"
                             }
                           },
+                          "additionalProperties": false
+                        },
+                        "quotedMessage": {
+                          "type": "object",
+                          "properties": {
+                            "waMessageKey": {
+                              "type": "object",
+                              "properties": {
+                                "fromMe": {
+                                  "type": "boolean"
+                                },
+                                "remote": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                },
+                                "_serialized": {
+                                  "type": "string"
+                                },
+                                "participant": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "fromMe"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "text": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "author": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "waMessageKey"
+                          ],
                           "additionalProperties": false
                         }
                       },
@@ -11255,7 +11575,8 @@
                         "type": "object",
                         "properties": {
                           "chatId": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "WhatsApp JID (`<number>@c.us`) of this group participant."
                           },
                           "name": {
                             "type": "string",
@@ -11263,17 +11584,20 @@
                             "description": "Participant's display name, or null when the engine couldn't resolve one."
                           },
                           "isAdmin": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "description": "True when this participant is a group admin."
                           },
                           "isSuperAdmin": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "description": "True when this participant is the group creator / super-admin."
                           }
                         },
                         "required": [
                           "chatId",
                           "isAdmin"
                         ],
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "One member of a WhatsApp group, with their admin standing."
                       }
                     },
                     "limit": {
@@ -12111,7 +12435,7 @@
           "Messages"
         ],
         "summary": "Load older messages",
-        "description": "Asks the engine to pull older history from the connected phone for chats that haven`t been fully synced yet. Use this once before paginating with `since` if you need messages older than what`s already cached. Requires `chats:read`.",
+        "description": "Asks the engine to pull older history from the connected phone for chats that haven't been fully synced yet. Use this once before paginating with `since` if you need messages older than what's already cached. Requires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -13519,11 +13843,13 @@
         "type": "object",
         "properties": {
           "chatId": {
-            "type": "string"
+            "type": "string",
+            "description": "WhatsApp JID of the chat — `<number>@c.us` for a 1:1 contact, `<id>@g.us` for a group, `<id>@newsletter` for a channel."
           },
           "name": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "Display name of the chat (contact name, group subject, or channel title). Null when WhatsApp has no name for it."
           },
           "chatType": {
             "type": "string",
@@ -13531,26 +13857,32 @@
               "contact",
               "group",
               "newsletter"
-            ]
+            ],
+            "description": "Kind of chat: `contact` (1:1), `group`, or `newsletter` (WhatsApp Channel). The three are mutually exclusive."
           },
           "pinned": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "True when the chat is pinned to the top of the chat list."
           },
           "archived": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "True when the chat is archived. Excluded from list responses unless `includeArchive=true`."
           },
           "lastMessageAt": {
             "type": "string",
             "nullable": true,
-            "format": "date-time"
+            "format": "date-time",
+            "description": "ISO-8601 timestamp of the most recent message in this chat. Null when the chat has no messages."
           },
           "unreadCount": {
             "type": "integer",
             "nullable": true,
-            "minimum": 0
+            "minimum": 0,
+            "description": "Count of unseen incoming messages (>= 0). Excludes the \"manually marked unread\" sentinel — see `markedUnread`."
           },
           "markedUnread": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "True when the chat was manually flagged unread in WhatsApp (the dot badge), distinct from having N unread messages."
           },
           "lastMessageText": {
             "type": "string",
@@ -13571,7 +13903,8 @@
           "unreadCount",
           "markedUnread"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "A WhatsApp chat (conversation) — a 1:1 contact, a group, or a channel — as seen by the connected engine."
       },
       "ChatId": {
         "type": "string",
@@ -13928,7 +14261,8 @@
         "type": "object",
         "properties": {
           "chatId": {
-            "type": "string"
+            "type": "string",
+            "description": "WhatsApp JID (`<number>@c.us`) of this group participant."
           },
           "name": {
             "type": "string",
@@ -13936,17 +14270,20 @@
             "description": "Participant's display name, or null when the engine couldn't resolve one."
           },
           "isAdmin": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "True when this participant is a group admin."
           },
           "isSuperAdmin": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "True when this participant is the group creator / super-admin."
           }
         },
         "required": [
           "chatId",
           "isAdmin"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "One member of a WhatsApp group, with their admin standing."
       },
       "PinMessageRequest": {
         "type": "object",
@@ -14057,6 +14394,48 @@
                 "type": "string"
               }
             }
+          },
+          "quotedMessage": {
+            "type": "object",
+            "properties": {
+              "waMessageKey": {
+                "type": "object",
+                "properties": {
+                  "fromMe": {
+                    "type": "boolean"
+                  },
+                  "remote": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "_serialized": {
+                    "type": "string"
+                  },
+                  "participant": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fromMe"
+                ],
+                "additionalProperties": false
+              },
+              "text": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "author": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "waMessageKey"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -14065,6 +14444,48 @@
           "from",
           "type",
           "fromMe"
+        ],
+        "additionalProperties": false
+      },
+      "PublicQuotedMessage": {
+        "type": "object",
+        "properties": {
+          "waMessageKey": {
+            "type": "object",
+            "properties": {
+              "fromMe": {
+                "type": "boolean"
+              },
+              "remote": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "_serialized": {
+                "type": "string"
+              },
+              "participant": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "fromMe"
+            ],
+            "additionalProperties": false
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "waMessageKey"
         ],
         "additionalProperties": false
       },
@@ -14203,66 +14624,53 @@
         "additionalProperties": false
       },
       "EngineListResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "description": "Stable id of this engine session (its MQTT presence client id). Same id space as ping's whatsapp_connections[].id."
-                },
-                "type": {
-                  "type": "string",
-                  "enum": [
-                    "gateway",
-                    "regular"
-                  ],
-                  "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
-                },
-                "connected": {
-                  "type": "boolean",
-                  "description": "Whether this engine is currently online and serving requests."
-                },
-                "state": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
-                },
-                "stream": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Underlying WA stream state. Null when unknown."
-                },
-                "hasSynced": {
-                  "type": "boolean",
-                  "nullable": true,
-                  "description": "Whether the engine has completed its initial history sync."
-                }
-              },
-              "required": [
-                "id",
-                "type",
-                "connected",
-                "state",
-                "stream",
-                "hasSynced"
-              ],
-              "additionalProperties": false
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Stable id of this engine session (its MQTT presence client id). Same id space as ping's whatsapp_connections[].id."
             },
-            "description": "Engines connected to this workspace. Empty when no engine is paired."
+            "type": {
+              "type": "string",
+              "enum": [
+                "gateway",
+                "regular"
+              ],
+              "description": "Engine kind. \"gateway\" = a remote, server-side engine (Blueticks 24/7 gateway / baileys pod). \"regular\" = the user's own WhatsApp Web browser extension."
+            },
+            "connected": {
+              "type": "boolean",
+              "description": "Whether this engine is currently online and serving requests."
+            },
+            "state": {
+              "type": "string",
+              "nullable": true,
+              "description": "Engine-side connection state (e.g. CONNECTED, OPENING, PAIRING). Null when unknown."
+            },
+            "stream": {
+              "type": "string",
+              "nullable": true,
+              "description": "Underlying WA stream state. Null when unknown."
+            },
+            "hasSynced": {
+              "type": "boolean",
+              "nullable": true,
+              "description": "Whether the engine has completed its initial history sync."
+            }
           },
-          "message": {
-            "type": "string",
-            "description": "Human-readable note (e.g. why the array is empty). Present only when useful."
-          }
+          "required": [
+            "id",
+            "type",
+            "connected",
+            "state",
+            "stream",
+            "hasSynced"
+          ],
+          "additionalProperties": false
         },
-        "required": [
-          "data"
-        ],
-        "additionalProperties": false
+        "description": "Engines connected to this workspace. Empty when no engine is paired."
       },
       "EngineStatus": {
         "type": "object",
@@ -14602,6 +15010,11 @@
               },
               "editInfoAdminsOnly": {
                 "type": "boolean"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
               }
             },
             "additionalProperties": false
@@ -15121,11 +15534,20 @@
             "type": "string",
             "enum": [
               "pending",
+              "before-wa-send",
+              "bt-sent",
+              "sending",
+              "sent",
+              "sent_pending_ack",
               "confirmed",
+              "delivered",
               "received",
               "read",
               "played",
-              "failed"
+              "cancelled",
+              "error",
+              "failed",
+              "expired"
             ],
             "description": "Filter by lifecycle status: `pending` (accepted, waiting), `confirmed` (WhatsApp accepted — has waMessageKey), `received` (double grey tick), `read` (double blue tick), `played` (voice played), `failed`."
           },
@@ -15167,7 +15589,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Primary handle for the message. Scheduled sends: the queue id (accepted by GET/cancel /v1/scheduled-messages/{id}). Direct sends: the serialized WhatsApp message key (== waMessageKey._serialized), accepted by GET /v1/messages/{id}."
           },
           "waMessageKey": {
             "type": "object",
@@ -15231,15 +15654,37 @@
             "type": "string",
             "nullable": true
           },
+          "pollOptions": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            },
+            "description": "Poll option labels in order (type=poll). Null for non-poll messages."
+          },
+          "pollAllowMultiple": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the poll accepts multiple selections (type=poll). Null for non-poll messages."
+          },
           "status": {
             "type": "string",
             "enum": [
               "pending",
+              "before-wa-send",
+              "bt-sent",
+              "sending",
+              "sent",
+              "sent_pending_ack",
               "confirmed",
+              "delivered",
               "received",
               "read",
               "played",
-              "failed"
+              "cancelled",
+              "error",
+              "failed",
+              "expired"
             ]
           },
           "sendAt": {
@@ -15280,6 +15725,11 @@
             "type": "string",
             "nullable": true
           },
+          "secret": {
+            "type": "string",
+            "nullable": true,
+            "description": "Opaque correlation token carried on the message. Echoes the `secret` you sent (or the engine-encoded internal id when you omitted it), and is carried into WhatsApp's `messageSecret`. Null until a queued/scheduled send dispatches."
+          },
           "linkPreview": {
             "type": "object",
             "nullable": true,
@@ -15318,6 +15768,8 @@
           "mediaUrl",
           "mediaKind",
           "pollQuestion",
+          "pollOptions",
+          "pollAllowMultiple",
           "status",
           "sendAt",
           "createdAt",
@@ -15326,7 +15778,8 @@
           "readAt",
           "playedAt",
           "failedAt",
-          "failureReason"
+          "failureReason",
+          "secret"
         ],
         "additionalProperties": false
       },
@@ -15334,11 +15787,20 @@
         "type": "string",
         "enum": [
           "pending",
+          "before-wa-send",
+          "bt-sent",
+          "sending",
+          "sent",
+          "sent_pending_ack",
           "confirmed",
+          "delivered",
           "received",
           "read",
           "played",
-          "failed"
+          "cancelled",
+          "error",
+          "failed",
+          "expired"
         ]
       },
       "PatchMessageRequest": {
@@ -15794,6 +16256,16 @@
                   "type": "string",
                   "nullable": true,
                   "description": "Model version that produced the clip (e.g. \"v5.5\")."
+                },
+                "errorType": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Failure class when status is \"error\" (e.g. \"moderation_failure\"). Omitted otherwise."
+                },
+                "errorMessage": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Human-readable reason a clip failed (e.g. \"Your lyrics contain copyrighted material\"). Only set when status is \"error\"."
                 }
               },
               "required": [
@@ -15857,6 +16329,16 @@
             "type": "string",
             "nullable": true,
             "description": "Model version that produced the clip (e.g. \"v5.5\")."
+          },
+          "errorType": {
+            "type": "string",
+            "nullable": true,
+            "description": "Failure class when status is \"error\" (e.g. \"moderation_failure\"). Omitted otherwise."
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true,
+            "description": "Human-readable reason a clip failed (e.g. \"Your lyrics contain copyrighted material\"). Only set when status is \"error\"."
           }
         },
         "required": [
@@ -15912,6 +16394,16 @@
             "type": "string",
             "nullable": true,
             "description": "Model version that produced the clip (e.g. \"v5.5\")."
+          },
+          "errorType": {
+            "type": "string",
+            "nullable": true,
+            "description": "Failure class when status is \"error\" (e.g. \"moderation_failure\"). Omitted otherwise."
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true,
+            "description": "Human-readable reason a clip failed (e.g. \"Your lyrics contain copyrighted material\"). Only set when status is \"error\"."
           }
         },
         "required": [

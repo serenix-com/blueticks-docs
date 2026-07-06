@@ -21,8 +21,16 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const MDX = page.data.body;
   const markdownUrl = getPageMarkdownUrl(page).url;
 
-  return (
-    <DocsPage toc={page.data.toc} full={page.data.full}>
+  // Suno reference pages are debug-gated: they only show when the visitor set
+  // localStorage 'bt-debug' === 'true' (a pre-hydration script in the root
+  // layout stamps html[data-bt-debug="true"]). We can't 404 server-side since
+  // the flag is client-only, so we render the page but wrap its meaningful
+  // content in [data-bt-suno-content] and add a [data-bt-suno-fallback] note;
+  // CSS in global.css hides one or the other based on the debug attribute.
+  const isSuno = page.slugs[0] === 'api' && page.slugs[1] === 'suno';
+
+  const body = (
+    <>
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription className="mb-0">{page.data.description}</DocsDescription>
       <div className="flex flex-row gap-2 items-center border-b pb-6">
@@ -40,6 +48,21 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
           })}
         />
       </DocsBody>
+    </>
+  );
+
+  return (
+    <DocsPage toc={page.data.toc} full={page.data.full}>
+      {isSuno ? (
+        <>
+          <div data-bt-suno-fallback className="text-fd-muted-foreground">
+            This section isn’t available.
+          </div>
+          <div data-bt-suno-content>{body}</div>
+        </>
+      ) : (
+        body
+      )}
     </DocsPage>
   );
 }
