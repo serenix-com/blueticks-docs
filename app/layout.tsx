@@ -26,7 +26,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="flex flex-col min-h-screen font-sans">
+      <body className="flex flex-col min-h-screen font-sans" suppressHydrationWarning>
         {/* Debug gate: before hydration/paint, stamp html[data-bt-debug="true"]
             when the visitor opted in via localStorage. CSS in global.css keys
             off this attribute to reveal the otherwise-hidden Suno API section

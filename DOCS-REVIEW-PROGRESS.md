@@ -424,3 +424,25 @@ HTTP-swept all **73** docs pages on `:3500`. Started with **2 failing** (both
 above); after the fixes: **73/73 → 200, 0 failures**. No page has an empty
 description or template/`undefined`/TODO leakage (scanned all generated `api/**`
 frontmatter + bodies); no bare-brace MDX-expression hazards remain.
+
+---
+
+## Null-strip alignment (2026-07-07)
+
+The backend now deep-strips null properties from every /v1 2xx response
+(`stripNulls` in backend `lib/success-envelope.ts`). Docs surface synced:
+
+- **Spec:** `openapi.json` + `public/openapi.json` — 291 response-schema props
+  changed from `nullable`+required to optional (absent-when-null). Same
+  transform added durably to backend `openapi-emit.ts`
+  (`relaxNullableResponseFields`) so `export:openapi` reproduces it. Request
+  schemas untouched. `generate:openapi` re-run; playground schema tables render
+  the relaxed shape (verified on get-scheduled-message) without a docs restart.
+- **messages.mdx:** immediate-send response example de-nulled (9 fields removed,
+  presence-check note added); bare `POST /v1/scheduled-messages` shorthands →
+  `/{chatId}`; "minus `to`" phrasing corrected (recipient is a path segment on
+  both send endpoints). Renders 200.
+- **errors.mdx:** already documented `success: false` on error bodies — the
+  runtime had drifted (emitted no `success`); backend fixed to match the docs
+  (error-envelope.ts), so the guide is accurate again with no doc change.
+- Guides swept for null-bearing JSON examples: only messages.mdx had them.

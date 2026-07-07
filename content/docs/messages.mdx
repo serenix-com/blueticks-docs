@@ -14,12 +14,12 @@ tracked record:
 
 | Endpoint | When to use it | Tracked? |
 | --- | --- | --- |
-| [`POST /v1/scheduled-messages`](/docs/api/scheduled-messages/schedule-message) | **The default for almost everything.** Send right now *or* schedule for later. | **Yes** — returns a record you can list, poll for status, and edit. |
+| [`POST /v1/scheduled-messages/{chatId}`](/docs/api/scheduled-messages/schedule-message) | **The default for almost everything.** Send right now *or* schedule for later. | **Yes** — returns a record you can list, poll for status, and edit. |
 | [`POST /v1/messages/{chatId}`](/docs/api/messages/send-message) | A lightweight, fire-and-forget send into one chat. | No — dispatched directly, no record kept. |
 
 <Callout type="info">
-Despite the name, **`POST /v1/scheduled-messages` is the main "send a message"
-endpoint** — not just for scheduling. Omit `sendAt` and the message goes out
+Despite the name, **`POST /v1/scheduled-messages/{chatId}` is the main "send a
+message" endpoint** — not just for scheduling. Omit `sendAt` and the message goes out
 immediately; add `sendAt` and it's scheduled for later. This guide uses it for
 every example below.
 </Callout>
@@ -695,8 +695,9 @@ The second send path from the top of this guide. `POST /v1/messages/{chatId}`
 posts straight into one conversation and returns the WhatsApp wire `key`. It's
 fire-and-forget — no record is created, so there's nothing to list, poll, or
 edit afterwards. Reach for it only when you don't need tracking; otherwise
-use `POST /v1/scheduled-messages` (above). The body is the same flat `text` /
-`media` / `poll` shape, minus `to` (it's in the URL) and `sendAt`. It also
+use `POST /v1/scheduled-messages/{chatId}` (above). The body is the same flat
+`text` / `media` / `poll` shape, minus `sendAt` (the recipient is a URL path
+segment on both endpoints, never a body field). It also
 accepts `multipart/form-data` with the file in a `mediaFile` part, for media
 sends without a public URL:
 
@@ -721,21 +722,16 @@ under `data.waMessageKey` (its `_serialized` form is mirrored on `data.id`):
     "to": "972501234567@c.us",
     "type": "text",
     "text": "Got it 👍",
-    "mediaUrl": null,
-    "mediaKind": null,
-    "pollQuestion": null,
     "status": "confirmed",
-    "sendAt": null,
     "createdAt": "2026-06-12T09:00:00.000Z",
-    "confirmedAt": "2026-06-12T09:00:01.000Z",
-    "receivedAt": null,
-    "readAt": null,
-    "playedAt": null,
-    "failedAt": null,
-    "failureReason": null
+    "confirmedAt": "2026-06-12T09:00:01.000Z"
   }
 }
 ```
+
+Fields that would be `null` (e.g. `mediaUrl` on a text send, `readAt` before
+the message is read) are omitted from responses entirely — check with
+`if ("readAt" in data)`-style presence tests, not null comparisons.
 
 ## Beyond sending: read, groups & channels
 
