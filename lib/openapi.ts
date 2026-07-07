@@ -297,7 +297,17 @@ function reorderQueryParameters(spec: {
 //     props stay omitted → inactive.
 //
 // Curated examples (create-group / create-audience / create-webhook, which carry
-// an `examples` map) are left untouched. Display-only: the downloadable
+// an `examples` map) keep their example entries, but we blank the free-text
+// `text` field of the DEFAULT (first) example so the playground's text box opens
+// EMPTY (placeholder) rather than pre-filled with a canned message. fumadocs
+// seeds the form from the first example's `value` (get-example-requests:
+// `result.body = examples[firstKey].value`) and always auto-selects
+// `examples.at(0)`, so a pre-filled "Hello from Blueticks!" both looked like a
+// prefilled value (not a placeholder) AND was a live-send footgun in the "Try
+// it" panel. The displayed code snippets come from `x-codeSamples` (injected
+// above) and are independent of the examples map, so they are unaffected; the
+// other example entries (link / poll / media / reply) are left intact so
+// selecting them still populates the form. Display-only: the downloadable
 // public/openapi.json keeps its original form.
 function stripSampleSeeds(spec: {
   paths?: Record<string, Record<string, {
@@ -306,7 +316,7 @@ function stripSampleSeeds(spec: {
       content?: Record<string, {
         schema?: { properties?: Record<string, { type?: unknown; enum?: unknown; example?: unknown; default?: unknown }>; required?: unknown };
         example?: unknown;
-        examples?: unknown;
+        examples?: Record<string, { value?: Record<string, unknown> }>;
       }>
     };
   }>>;
@@ -326,10 +336,24 @@ function stripSampleSeeds(spec: {
       }
 
       // Body: blank required string props on uncurated bodies; leave optional
-      // props unseeded (sample omits them → inactive) and curated examples intact.
+      // props unseeded (sample omits them → inactive).
       for (const media of Object.values(op.requestBody?.content ?? {})) {
         if (!media || typeof media !== 'object') continue;
-        if (media.example !== undefined || media.examples !== undefined) continue;
+
+        // Curated body (carries an `examples` map): fumadocs seeds the form from
+        // the first example and auto-selects it, so blank that default example's
+        // free-text `text` field → the text box opens empty (placeholder). Other
+        // examples are left intact so selecting them still fills the form.
+        if (media.examples !== undefined) {
+          const first = Object.values(media.examples)[0];
+          if (first && typeof first === 'object' && first.value && typeof first.value === 'object' &&
+            typeof first.value.text === 'string') {
+            first.value.text = '';
+          }
+          continue;
+        }
+        if (media.example !== undefined) continue;
+
         const props = media.schema?.properties;
         const required = Array.isArray(media.schema?.required) ? media.schema.required : [];
         if (!props || typeof props !== 'object') continue;
