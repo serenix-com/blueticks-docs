@@ -113,3 +113,14 @@ When a command is detected the **LLM turn is skipped entirely**. Realm decided b
 - Backend integration: `handleTurn` skips LLM on command; existing conversation reads config from record; new conversation seeds/defaults; `PATCH` updates fields.
 - WA: poll send stores `pendingSetting`; matching poll-vote applies + clears + confirms; non-matching vote falls through.
 - btgpt UI: opening conversation hydrates controls; New-Chat inheritance; fresh defaults; picker click PATCHes; `settings-changed` updates control.
+
+---
+
+## Addendum (2026-07-13): Per-conversation language + transcription skip
+
+A fourth per-conversation setting, `language`, plus a `languageLocked` flag.
+
+- **Default & lock:** seeded conceptually from the user's `preferredLanguage`; on the FIRST real turn it locks to the message's detected script (Hebrew/Arabic → `he`/`ar`; Latin is ambiguous → fall back to `preferredLanguage`, else `en`). `languageLocked` distinguishes seed from locked. Locked value is exposed by `/btgpt/wa-conversations`.
+- **Reply consistency:** `buildBtgptSystemPrompt({conversationLanguage})` injects "reply in <language>". Reinforces the core rule (a lone name/group/command is not a language switch).
+- **Change on request (agent directive):** the surface `identity` has no conversationId, so a full MCP tool is impractical; instead the agent emits `[set-language: xx]` on an explicit request, which the turn parses + strips (`parseSetLanguageDirective`) and persists. The web view also strips it from the streamed bubble.
+- **Transcription skip (client):** transcription is on-device (extension `offscreen.ts`, local Whisper) with a detect→transcribe two-phase that already skips detection when a language is passed. The ai-linked-chats-registry carries each chat's locked language (from the list endpoint + an optimistic record of the first voice's detected language); `TranscribeMessageThunks` feeds it as the language hint above the local sticky heuristic. Decision: **auto-detect the first voice, then lock and skip from voice #2** (chosen over seeding voice #1 from the user pref).
