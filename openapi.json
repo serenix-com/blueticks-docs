@@ -20,6 +20,10 @@
       "description": "Reusable contact lists used as targets for messages and campaigns."
     },
     {
+      "name": "Boards",
+      "description": "AI-managed memory boards (Tasks, Leads). Each board is a normal Blueticks board with an AI agent config; items are board tasks with status/priority cells plus AI dedupe/provenance metadata."
+    },
+    {
       "name": "Campaigns",
       "description": "Schedule audiences for paced bulk delivery with pause/resume/cancel controls."
     },
@@ -2716,7 +2720,7 @@
                       "properties": {
                         "to": {
                           "type": "string",
-                          "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
+                          "description": "Recipient. A phone number (+E164), or a WhatsApp JID — individual (…@c.us), group (…@g.us), or newsletter (…@newsletter). Individual recipients are stored in international format; group/newsletter ids are stored verbatim."
                         },
                         "variables": {
                           "type": "object",
@@ -3343,6 +3347,673 @@
           }
         },
         "operationId": "audiences.delete"
+      }
+    },
+    "/v1/boards": {
+      "get": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "List boards",
+        "description": "List boards, newest first. Filter by `domain` or `agent_managed`. Requires `boards:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "boards:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Page size (default 50, max 200)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "boards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "board_id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "domain": {
+                            "type": "string"
+                          },
+                          "agent_managed": {
+                            "type": "boolean"
+                          },
+                          "memory_retention_days": {
+                            "type": "integer"
+                          },
+                          "item_count": {
+                            "type": "integer"
+                          },
+                          "web_url": {
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updated_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "board_id",
+                          "name",
+                          "agent_managed",
+                          "web_url",
+                          "created_at",
+                          "updated_at"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Page size echoed back from the request."
+                    },
+                    "skip": {
+                      "type": "integer",
+                      "description": "Offset echoed back from the request."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of items matching the query, across all pages."
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "limit",
+                    "skip",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "boards.list"
+      },
+      "post": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "Create or find board",
+        "description": "Find-or-create the agent memory board for (`agent_id`, `domain`). Returns the existing board if one exists, else provisions it from the domain template. Requires `boards:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "boards:write"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Memory domain id for a built-in board — `tasks`, `leads` or `invoices`. Omit and pass `entity_kind` to open a board for a NEW entity type."
+                  },
+                  "entity_kind": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "description": "The kind of entity this board tracks (e.g. `reminders`, `orders`, `follow-ups`). Opens a NEW dynamic board with a generic Status/Priority/Date/Source template. Slug-ified server-side; a `custom:<slug>` domain is derived unless the slug already names a built-in domain. `description` is REQUIRED for custom boards."
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "Board name; defaults to the domain label (custom: `🤖 <entity_kind>`)."
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "description": "One-line purpose of the board (subtitle + board directory). Optional for built-in domains (falls back to the domain default); REQUIRED for custom `entity_kind` boards (422 if missing)."
+                  },
+                  "agent_id": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Owning agent id for memory isolation (e.g. `btgpt:<userId>` or `bot:<botId>`). Defaults to `user`."
+                  },
+                  "memory_retention_days": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3650,
+                    "description": "Retention window in days (default 30; 0 = never expires)."
+                  }
+                },
+                "additionalProperties": false
+              },
+              "examples": {
+                "tasks": {
+                  "summary": "Tasks board for btgpt",
+                  "value": {
+                    "domain": "tasks",
+                    "agent_id": "btgpt:USER_ID"
+                  }
+                },
+                "leads": {
+                  "summary": "Leads board, 90-day retention",
+                  "value": {
+                    "domain": "leads",
+                    "agent_id": "bot:BOT_ID",
+                    "memory_retention_days": 90
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "board",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "board_id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "domain": {
+                          "type": "string"
+                        },
+                        "agent_managed": {
+                          "type": "boolean"
+                        },
+                        "memory_retention_days": {
+                          "type": "integer"
+                        },
+                        "item_count": {
+                          "type": "integer"
+                        },
+                        "web_url": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "columns": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "column_id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "options": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "bgcolor": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "label",
+                                    "bgcolor"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "description": "Selectable options (status/priority columns); empty otherwise."
+                              }
+                            },
+                            "required": [
+                              "column_id",
+                              "title",
+                              "type",
+                              "options"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "board_id",
+                        "name",
+                        "agent_managed",
+                        "web_url",
+                        "created_at",
+                        "updated_at",
+                        "columns"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "boards.create"
+      }
+    },
+    "/v1/boards/{id}": {
+      "get": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "Get board",
+        "description": "Retrieve a board with its columns, options and item count. Requires `boards:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "boards:read"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "board",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "board_id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "domain": {
+                          "type": "string"
+                        },
+                        "agent_managed": {
+                          "type": "boolean"
+                        },
+                        "memory_retention_days": {
+                          "type": "integer"
+                        },
+                        "item_count": {
+                          "type": "integer"
+                        },
+                        "web_url": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "columns": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "column_id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "options": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "bgcolor": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "label",
+                                    "bgcolor"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "description": "Selectable options (status/priority columns); empty otherwise."
+                              }
+                            },
+                            "required": [
+                              "column_id",
+                              "title",
+                              "type",
+                              "options"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "board_id",
+                        "name",
+                        "agent_managed",
+                        "web_url",
+                        "created_at",
+                        "updated_at",
+                        "columns"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "boards.get"
       }
     },
     "/v1/campaigns": {
@@ -4043,6 +4714,34 @@
               ]
             },
             "description": "Restrict to one chat kind."
+          },
+          {
+            "name": "kinds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "contact",
+                  "group",
+                  "newsletter"
+                ]
+              },
+              "minItems": 1
+            },
+            "description": "Keep only these chat kinds (INCLUDE semantics). Comma-separated or repeated."
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Keep only chats whose last message is at/after this ISO 8601 instant (offset allowed; approximate — see sinceApplied)."
           },
           {
             "name": "includeLastMessage",
@@ -6928,7 +7627,7 @@
                       "properties": {
                         "to": {
                           "type": "string",
-                          "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
+                          "description": "Recipient. A phone number (+E164), or a WhatsApp JID — individual (…@c.us), group (…@g.us), or newsletter (…@newsletter). Individual recipients are stored in international format; group/newsletter ids are stored verbatim."
                         },
                         "variables": {
                           "type": "object",
@@ -8044,7 +8743,7 @@
               "type": "string",
               "format": "date-time"
             },
-            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
+            "description": "Lower bound (ISO 8601, offset allowed). Only messages with timestamp >= since."
           },
           {
             "name": "until",
@@ -8054,7 +8753,7 @@
               "type": "string",
               "format": "date-time"
             },
-            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
+            "description": "Upper bound (ISO 8601, offset allowed). Only messages with timestamp <= until."
           },
           {
             "name": "messageTypes",
@@ -8084,6 +8783,60 @@
             "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here.",
             "style": "form",
             "explode": false
+          },
+          {
+            "name": "queryAny",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "maxItems": 24
+            },
+            "description": "Keyword-set OR search: match if body/caption/filename contains ANY term."
+          },
+          {
+            "name": "mime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "description": "MIME prefix filter, e.g. \"application/pdf\" or \"image/\"."
+          },
+          {
+            "name": "filenameContains",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "description": "Case-insensitive substring match on the document filename."
+          },
+          {
+            "name": "hasMedia",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "true = only messages with a media attachment; false = only non-media."
+          },
+          {
+            "name": "sender",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "description": "Case-insensitive substring match on the sender JID/phone."
           },
           {
             "name": "loadFromPhoneIfNeeded",
@@ -8291,6 +9044,21 @@
                     "hasMore": {
                       "type": "boolean",
                       "description": "True when more messages exist in the store beyond this page."
+                    },
+                    "coverage": {
+                      "type": "object",
+                      "properties": {
+                        "oldestLoadedTimestamp": {
+                          "type": "number",
+                          "description": "Epoch MILLISECONDS of the oldest currently-loaded message for this chat. Omitted when unknown (empty chat / probe unavailable)."
+                        },
+                        "oldestLoadedIso": {
+                          "type": "string",
+                          "description": "ISO 8601 form of `oldestLoadedTimestamp`. Use it to verify range coverage (\"did I reach a year back?\") deterministically."
+                        }
+                      },
+                      "additionalProperties": false,
+                      "description": "How far back this page reaches: oldest message timestamp in the returned page (epoch ms + ISO). Present when the page has at least one dated message."
                     }
                   },
                   "required": [
@@ -10932,6 +11700,2039 @@
         "operationId": "contacts.commongroups.list"
       }
     },
+    "/v1/boards/{boardId}/items": {
+      "get": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "List board items",
+        "description": "List a board's items (tasks). Pass `active_only=true` to return only items updated within the retention window whose status is non-terminal (the AI's \"active memory\" view). Filter by `status` label or `updated_since`. Requires `boards:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "boards:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by denormalized status label."
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
+          },
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "When true: only items updated within the retention window whose status is non-terminal and not deleted."
+          },
+          {
+            "name": "updated_since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ISO 8601 / epoch-ms cutoff; only items updated at or after this time."
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Page size (default 50, max 200)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "item_id": {
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "object",
+                            "properties": {
+                              "label": {
+                                "type": "string"
+                              },
+                              "bgcolor": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "label",
+                              "bgcolor"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "priority": {
+                            "type": "object",
+                            "properties": {
+                              "label": {
+                                "type": "string"
+                              },
+                              "bgcolor": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "label",
+                              "bgcolor"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "due_date": {
+                            "type": "string"
+                          },
+                          "cells": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                          },
+                          "source": {
+                            "type": "object",
+                            "properties": {
+                              "chat_id": {
+                                "type": "string",
+                                "description": "WhatsApp chat id the item was extracted from."
+                              },
+                              "chat_name": {
+                                "type": "string",
+                                "maxLength": 200,
+                                "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                              },
+                              "message_key": {
+                                "type": "string",
+                                "description": "WhatsApp message key the item was extracted from."
+                              },
+                              "excerpt": {
+                                "type": "string",
+                                "maxLength": 2000,
+                                "description": "Short verbatim source excerpt."
+                              },
+                              "extracted_at": {
+                                "type": "integer",
+                                "description": "Extraction time (epoch ms)."
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "confidence": {
+                            "type": "number"
+                          },
+                          "last_seen_at": {
+                            "type": "integer"
+                          },
+                          "web_url": {
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updated_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "item_id",
+                          "text",
+                          "web_url",
+                          "created_at",
+                          "updated_at"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Page size echoed back from the request."
+                    },
+                    "skip": {
+                      "type": "integer",
+                      "description": "Offset echoed back from the request."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of items matching the query, across all pages."
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "limit",
+                    "skip",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "boards.items.list"
+      },
+      "post": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "Create board item",
+        "description": "Create one item. `status`/`priority` are given as LABELS and resolved to the board's options server-side (unknown label → 422 with the valid labels). Dedupe fingerprint + provenance are stamped into aiMeta. Requires `boards:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "boards:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "description": "Item title."
+                  },
+                  "status": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "description": "Status LABEL (resolved to the board option; unknown label → 422)."
+                  },
+                  "priority": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "description": "Priority LABEL (resolved to the board option; unknown label → 422)."
+                  },
+                  "due_date": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "Due date (ISO 8601 or date string), stored on the Date column."
+                  },
+                  "cells": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                  },
+                  "source": {
+                    "type": "object",
+                    "properties": {
+                      "chat_id": {
+                        "type": "string",
+                        "description": "WhatsApp chat id the item was extracted from."
+                      },
+                      "chat_name": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                      },
+                      "message_key": {
+                        "type": "string",
+                        "description": "WhatsApp message key the item was extracted from."
+                      },
+                      "excerpt": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "description": "Short verbatim source excerpt."
+                      },
+                      "extracted_at": {
+                        "type": "integer",
+                        "description": "Extraction time (epoch ms)."
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Extraction confidence 0..1."
+                  },
+                  "allow_duplicate": {
+                    "type": "boolean",
+                    "description": "By default, creating an item that matches an existing active item (fingerprint or fuzzy title) MERGES into it instead of creating a duplicate (the response then carries `merged: true`). Pass `true` to force creation."
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "item_id": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "object",
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "bgcolor": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "bgcolor"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "priority": {
+                          "type": "object",
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "bgcolor": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "bgcolor"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "due_date": {
+                          "type": "string"
+                        },
+                        "cells": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                        },
+                        "source": {
+                          "type": "object",
+                          "properties": {
+                            "chat_id": {
+                              "type": "string",
+                              "description": "WhatsApp chat id the item was extracted from."
+                            },
+                            "chat_name": {
+                              "type": "string",
+                              "maxLength": 200,
+                              "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                            },
+                            "message_key": {
+                              "type": "string",
+                              "description": "WhatsApp message key the item was extracted from."
+                            },
+                            "excerpt": {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "description": "Short verbatim source excerpt."
+                            },
+                            "extracted_at": {
+                              "type": "integer",
+                              "description": "Extraction time (epoch ms)."
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "confidence": {
+                          "type": "number"
+                        },
+                        "last_seen_at": {
+                          "type": "integer"
+                        },
+                        "web_url": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "item_id",
+                        "text",
+                        "web_url",
+                        "created_at",
+                        "updated_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "boards.items.create"
+      }
+    },
+    "/v1/boards/{boardId}/items/{itemId}": {
+      "patch": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "Update board item",
+        "description": "Update cells, soft-delete (`deleted:true`) or restore (`deleted:false`) an item. `note` is recorded in aiMeta.history. Requires `boards:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "boards:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "status": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "priority": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "due_date": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "cells": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                  },
+                  "source": {
+                    "type": "object",
+                    "properties": {
+                      "chat_id": {
+                        "type": "string",
+                        "description": "WhatsApp chat id the item was extracted from."
+                      },
+                      "chat_name": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                      },
+                      "message_key": {
+                        "type": "string",
+                        "description": "WhatsApp message key the item was extracted from."
+                      },
+                      "excerpt": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "description": "Short verbatim source excerpt."
+                      },
+                      "extracted_at": {
+                        "type": "integer",
+                        "description": "Extraction time (epoch ms)."
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "deleted": {
+                    "type": "boolean",
+                    "description": "Soft-delete (`true`) or restore (`false`)."
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Note recorded in aiMeta.history for this change."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "item_id": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "object",
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "bgcolor": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "bgcolor"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "priority": {
+                          "type": "object",
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "bgcolor": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "bgcolor"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "due_date": {
+                          "type": "string"
+                        },
+                        "cells": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                        },
+                        "source": {
+                          "type": "object",
+                          "properties": {
+                            "chat_id": {
+                              "type": "string",
+                              "description": "WhatsApp chat id the item was extracted from."
+                            },
+                            "chat_name": {
+                              "type": "string",
+                              "maxLength": 200,
+                              "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                            },
+                            "message_key": {
+                              "type": "string",
+                              "description": "WhatsApp message key the item was extracted from."
+                            },
+                            "excerpt": {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "description": "Short verbatim source excerpt."
+                            },
+                            "extracted_at": {
+                              "type": "integer",
+                              "description": "Extraction time (epoch ms)."
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "confidence": {
+                          "type": "number"
+                        },
+                        "last_seen_at": {
+                          "type": "integer"
+                        },
+                        "web_url": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "item_id",
+                        "text",
+                        "web_url",
+                        "created_at",
+                        "updated_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "boards.items.update"
+      }
+    },
+    "/v1/boards/{boardId}/items/bulk": {
+      "post": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "Bulk upsert board items",
+        "description": "Create or merge many items in one call. Each item is fingerprinted and matched against the board's existing items — a match is patched (merging richer fields, bumping last-seen), a miss is created. Keeps scan-merge token cost flat. Requires `boards:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "boards:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2000,
+                          "description": "Item title."
+                        },
+                        "status": {
+                          "type": "string",
+                          "maxLength": 120,
+                          "description": "Status LABEL (resolved to the board option; unknown label → 422)."
+                        },
+                        "priority": {
+                          "type": "string",
+                          "maxLength": 120,
+                          "description": "Priority LABEL (resolved to the board option; unknown label → 422)."
+                        },
+                        "due_date": {
+                          "type": "string",
+                          "maxLength": 64,
+                          "description": "Due date (ISO 8601 or date string), stored on the Date column."
+                        },
+                        "cells": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                        },
+                        "source": {
+                          "type": "object",
+                          "properties": {
+                            "chat_id": {
+                              "type": "string",
+                              "description": "WhatsApp chat id the item was extracted from."
+                            },
+                            "chat_name": {
+                              "type": "string",
+                              "maxLength": 200,
+                              "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                            },
+                            "message_key": {
+                              "type": "string",
+                              "description": "WhatsApp message key the item was extracted from."
+                            },
+                            "excerpt": {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "description": "Short verbatim source excerpt."
+                            },
+                            "extracted_at": {
+                              "type": "integer",
+                              "description": "Extraction time (epoch ms)."
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "confidence": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "description": "Extraction confidence 0..1."
+                        },
+                        "allow_duplicate": {
+                          "type": "boolean",
+                          "description": "By default, creating an item that matches an existing active item (fingerprint or fuzzy title) MERGES into it instead of creating a duplicate (the response then carries `merged: true`). Pass `true` to force creation."
+                        }
+                      },
+                      "required": [
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 500
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "upsert"
+                    ],
+                    "default": "upsert",
+                    "description": "Merge strategy. `upsert` (default): fingerprint-match existing items → patch, else create."
+                  }
+                },
+                "required": [
+                  "items"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "merge report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "created": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "item_id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "bgcolor": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "label",
+                                  "bgcolor"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "priority": {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "bgcolor": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "label",
+                                  "bgcolor"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "due_date": {
+                                "type": "string"
+                              },
+                              "cells": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                },
+                                "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                              },
+                              "source": {
+                                "type": "object",
+                                "properties": {
+                                  "chat_id": {
+                                    "type": "string",
+                                    "description": "WhatsApp chat id the item was extracted from."
+                                  },
+                                  "chat_name": {
+                                    "type": "string",
+                                    "maxLength": 200,
+                                    "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                                  },
+                                  "message_key": {
+                                    "type": "string",
+                                    "description": "WhatsApp message key the item was extracted from."
+                                  },
+                                  "excerpt": {
+                                    "type": "string",
+                                    "maxLength": 2000,
+                                    "description": "Short verbatim source excerpt."
+                                  },
+                                  "extracted_at": {
+                                    "type": "integer",
+                                    "description": "Extraction time (epoch ms)."
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "confidence": {
+                                "type": "number"
+                              },
+                              "last_seen_at": {
+                                "type": "integer"
+                              },
+                              "web_url": {
+                                "type": "string"
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updated_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "item_id",
+                              "text",
+                              "web_url",
+                              "created_at",
+                              "updated_at"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "updated": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "item_id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "bgcolor": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "label",
+                                  "bgcolor"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "priority": {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "bgcolor": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "label",
+                                  "bgcolor"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "due_date": {
+                                "type": "string"
+                              },
+                              "cells": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                },
+                                "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                              },
+                              "source": {
+                                "type": "object",
+                                "properties": {
+                                  "chat_id": {
+                                    "type": "string",
+                                    "description": "WhatsApp chat id the item was extracted from."
+                                  },
+                                  "chat_name": {
+                                    "type": "string",
+                                    "maxLength": 200,
+                                    "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                                  },
+                                  "message_key": {
+                                    "type": "string",
+                                    "description": "WhatsApp message key the item was extracted from."
+                                  },
+                                  "excerpt": {
+                                    "type": "string",
+                                    "maxLength": 2000,
+                                    "description": "Short verbatim source excerpt."
+                                  },
+                                  "extracted_at": {
+                                    "type": "integer",
+                                    "description": "Extraction time (epoch ms)."
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "confidence": {
+                                "type": "number"
+                              },
+                              "last_seen_at": {
+                                "type": "integer"
+                              },
+                              "web_url": {
+                                "type": "string"
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updated_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "item_id",
+                              "text",
+                              "web_url",
+                              "created_at",
+                              "updated_at"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "unchanged": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "board": {
+                          "type": "object",
+                          "properties": {
+                            "board_id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "domain": {
+                              "type": "string"
+                            },
+                            "web_url": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "board_id",
+                            "name",
+                            "web_url"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "created",
+                        "updated",
+                        "unchanged",
+                        "board"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "boards.items.bulk.create"
+      }
+    },
+    "/v1/boards/{boardId}/items/find-similar": {
+      "post": {
+        "tags": [
+          "Boards"
+        ],
+        "summary": "Find similar board items",
+        "description": "Server-side dedupe: match each candidate text against the board's items by normalized fingerprint + fuzzy token overlap, returning match pairs (and the misses). Use before creating to avoid duplicates. Requires `boards:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "boards:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "candidates": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2000
+                        }
+                      },
+                      "required": [
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "candidates"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "matches",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "matches": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "candidate_index": {
+                                "type": "integer"
+                              },
+                              "item_id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              },
+                              "score": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "candidate_index",
+                              "item_id",
+                              "text",
+                              "score"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "misses": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "required": [
+                        "matches",
+                        "misses"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "boards.items.findsimilar.create"
+      }
+    },
+    "/v1/latest-chats": {
+      "get": {
+        "tags": [
+          "Chats"
+        ],
+        "summary": "Get latest chats & messages",
+        "description": "Returns the most-recent non-archived chats (pinned first), each with its latest messages (newest-first). One call — no per-chat round-trips. Requires `chats:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "chats:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "numberOfChats",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "description": "Total chats to return, pinned first then most-recent (1-200, default 50)."
+          },
+          {
+            "name": "numberOfMessages",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Latest messages to include per chat, newest-first (0-100, default 20)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "latest chats with messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "chats": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "chatId": {
+                                "type": "string",
+                                "description": "WhatsApp JID of the chat — `<number>@c.us` for a 1:1 contact, `<id>@g.us` for a group, `<id>@newsletter` for a channel."
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "Display name of the chat (contact name, group subject, or channel title). Null when WhatsApp has no name for it."
+                              },
+                              "chatType": {
+                                "type": "string",
+                                "enum": [
+                                  "contact",
+                                  "group",
+                                  "newsletter"
+                                ],
+                                "description": "Kind of chat: `contact` (1:1), `group`, or `newsletter` (WhatsApp Channel). The three are mutually exclusive."
+                              },
+                              "pinned": {
+                                "type": "boolean",
+                                "description": "True when the chat is pinned to the top of the chat list."
+                              },
+                              "archived": {
+                                "type": "boolean",
+                                "description": "True when the chat is archived. Excluded from list responses unless `includeArchive=true`."
+                              },
+                              "lastMessageAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "ISO-8601 timestamp of the most recent message in this chat. Null when the chat has no messages."
+                              },
+                              "unreadCount": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Count of unseen incoming messages (>= 0). Excludes the \"manually marked unread\" sentinel — see `markedUnread`."
+                              },
+                              "markedUnread": {
+                                "type": "boolean",
+                                "description": "True when the chat was manually flagged unread in WhatsApp (the dot badge), distinct from having N unread messages."
+                              },
+                              "lastMessageText": {
+                                "type": "string",
+                                "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+                              },
+                              "lastMessageFromMe": {
+                                "type": "boolean",
+                                "description": "True if the last message was sent by the connected account. Present only when includeLastMessage=true."
+                              },
+                              "messages": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "waMessageKey": {
+                                      "type": "object",
+                                      "properties": {
+                                        "fromMe": {
+                                          "type": "boolean"
+                                        },
+                                        "remote": {
+                                          "type": "string"
+                                        },
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "_serialized": {
+                                          "type": "string"
+                                        },
+                                        "participant": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "fromMe"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "chatId": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": "string"
+                                    },
+                                    "author": {
+                                      "type": "string"
+                                    },
+                                    "senderName": {
+                                      "type": "string"
+                                    },
+                                    "timestamp": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "fromMe": {
+                                      "type": "boolean"
+                                    },
+                                    "ack": {
+                                      "type": "integer"
+                                    },
+                                    "mediaUrl": {
+                                      "type": "string"
+                                    },
+                                    "filename": {
+                                      "type": "string"
+                                    },
+                                    "linkPreview": {
+                                      "type": "object",
+                                      "properties": {
+                                        "title": {
+                                          "type": "string"
+                                        },
+                                        "description": {
+                                          "type": "string"
+                                        },
+                                        "canonicalUrl": {
+                                          "type": "string"
+                                        },
+                                        "thumbnail": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    },
+                                    "quotedMessage": {
+                                      "type": "object",
+                                      "properties": {
+                                        "waMessageKey": {
+                                          "type": "object",
+                                          "properties": {
+                                            "fromMe": {
+                                              "type": "boolean"
+                                            },
+                                            "remote": {
+                                              "type": "string"
+                                            },
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "_serialized": {
+                                              "type": "string"
+                                            },
+                                            "participant": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": [
+                                            "fromMe"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "text": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "author": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "waMessageKey"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "waMessageKey",
+                                    "chatId",
+                                    "from",
+                                    "type",
+                                    "fromMe"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "description": "Latest messages in this chat, newest-first (up to numberOfMessages)."
+                              }
+                            },
+                            "required": [
+                              "chatId",
+                              "chatType",
+                              "markedUnread",
+                              "messages"
+                            ],
+                            "additionalProperties": false,
+                            "description": "A WhatsApp chat with its most recent messages attached."
+                          }
+                        },
+                        "totalChats": {
+                          "type": "integer",
+                          "description": "Non-archived, titled chat count before the numberOfChats slice."
+                        },
+                        "numberOfChats": {
+                          "type": "integer",
+                          "description": "Effective chats cap applied."
+                        },
+                        "numberOfMessages": {
+                          "type": "integer",
+                          "description": "Effective per-chat messages cap applied."
+                        }
+                      },
+                      "required": [
+                        "chats",
+                        "totalChats",
+                        "numberOfChats",
+                        "numberOfMessages"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Most-recent non-archived chats (pinned first), each with their latest messages."
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "latest-chats.list"
+      }
+    },
     "/v1/chats/{chatId}/participants": {
       "get": {
         "tags": [
@@ -11865,7 +14666,7 @@
           "Messages"
         ],
         "summary": "Load older messages",
-        "description": "Asks the engine to pull older history from the connected phone for chats that haven't been fully synced yet. Use this once before paginating with `since` if you need messages older than what's already cached. Requires `chats:read`.",
+        "description": "Asks the engine to pull older history from the connected phone for chats that haven't been fully synced yet. Use this before paginating with `since` if you need messages older than what's already cached. Optionally pull several pages in one call via `pages` (WA-paced ~2.5s apart) and/or stop at a target depth via `until_date`; the response reports how far back the chat is now loaded under `coverage`. Requires `chats:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -11883,6 +14684,36 @@
             }
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pages": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How many older pages to pull in one call (1-10, default 1). Pages are WA-paced ~2.5s apart. Stops early on exhaustion, error, or reaching `until_date`."
+                  },
+                  "until_date": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "description": "Stop once the oldest loaded message is at/before this date (ISO 8601 string or epoch seconds/ms). Lets you page back to a target depth deterministically."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "load result",
@@ -11905,10 +14736,12 @@
                           "type": "integer"
                         },
                         "added": {
-                          "type": "integer"
+                          "type": "integer",
+                          "description": "Total messages added to the store across the pages this call executed (sum). `0` with `canLoadMore:true` is a transient hiccup worth retrying; `canLoadMore:false` means genuinely exhausted."
                         },
                         "canLoadMore": {
-                          "type": "boolean"
+                          "type": "boolean",
+                          "description": "From the LAST executed page: true = the engine believes more history may still be pulled; false = genuinely exhausted (stop paging)."
                         },
                         "historyUnavailable": {
                           "type": "boolean",
@@ -11916,12 +14749,33 @@
                         },
                         "error": {
                           "type": "string",
-                          "description": "Human-readable reason older messages could not be loaded from the phone; null when the pull succeeded or the chat is already fully synced."
+                          "description": "Human-readable reason older messages could not be loaded from the phone; null when the pull succeeded or the chat is already fully synced. First fatal error across the executed pages."
+                        },
+                        "pagesExecuted": {
+                          "type": "integer",
+                          "description": "How many older pages this call actually pulled (1..pages). Fewer than requested when the loop stopped early on exhaustion, error, or reaching `until_date`."
+                        },
+                        "coverage": {
+                          "type": "object",
+                          "properties": {
+                            "oldestLoadedTimestamp": {
+                              "type": "number",
+                              "description": "Epoch MILLISECONDS of the oldest currently-loaded message for this chat. Omitted when unknown (empty chat / probe unavailable)."
+                            },
+                            "oldestLoadedIso": {
+                              "type": "string",
+                              "description": "ISO 8601 form of `oldestLoadedTimestamp`. Use it to verify range coverage (\"did I reach a year back?\") deterministically."
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "How far back the chat is now loaded. `coverage.oldestLoadedIso` is the deterministic answer to \"have I reached far enough back?\"."
                         }
                       },
                       "required": [
                         "canLoadMore",
-                        "historyUnavailable"
+                        "historyUnavailable",
+                        "pagesExecuted",
+                        "coverage"
                       ],
                       "additionalProperties": false
                     }
@@ -12887,7 +15741,7 @@
               "properties": {
                 "to": {
                   "type": "string",
-                  "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
+                  "description": "Recipient. A phone number (+E164), or a WhatsApp JID — individual (…@c.us), group (…@g.us), or newsletter (…@newsletter). Individual recipients are stored in international format; group/newsletter ids are stored verbatim."
                 },
                 "variables": {
                   "type": "object",
@@ -12943,7 +15797,7 @@
         "properties": {
           "to": {
             "type": "string",
-            "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
+            "description": "Recipient. A phone number (+E164), or a WhatsApp JID — individual (…@c.us), group (…@g.us), or newsletter (…@newsletter). Individual recipients are stored in international format; group/newsletter ids are stored verbatim."
           },
           "variables": {
             "type": "object",
@@ -13002,7 +15856,7 @@
               "properties": {
                 "to": {
                   "type": "string",
-                  "description": "Recipient. Either a phone number in international format (e.g. +14155551234) or a WhatsApp JID (e.g. 14155551234@c.us). Stored in international format."
+                  "description": "Recipient. A phone number (+E164), or a WhatsApp JID — individual (…@c.us), group (…@g.us), or newsletter (…@newsletter). Individual recipients are stored in international format; group/newsletter ids are stored verbatim."
                 },
                 "variables": {
                   "type": "object",
@@ -13053,6 +15907,1122 @@
               "maxLength": 1024
             },
             "description": "Per-contact substitution values used by campaign templates.\nEach key becomes a token usable as `{key}` in a campaign `text`. Lookup is case-insensitive (e.g. `{firstName}` resolves `firstname`).\nBuilt-in tokens always available regardless of variables: `{whatsappname}`, `{displayname}`, `{phone}`, `{mobile}`. Setting a variable with the same name overrides the built-in.\nStorage: keys are persisted as text-cell column titles on the audience board, so values flow back via audiences.get under the same names.\nLimits: at most 32 keys per contact; values up to 1024 chars; keys must match /^[A-Za-z_][A-Za-z0-9_]{0,31}$/."
+          }
+        },
+        "additionalProperties": false
+      },
+      "BoardColumn": {
+        "type": "object",
+        "properties": {
+          "column_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "bgcolor": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "bgcolor"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Selectable options (status/priority columns); empty otherwise."
+          }
+        },
+        "required": [
+          "column_id",
+          "title",
+          "type",
+          "options"
+        ],
+        "additionalProperties": false
+      },
+      "BoardDetail": {
+        "type": "object",
+        "properties": {
+          "board_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "description": "One-line board purpose (subtitle + agent board-directory line)."
+          },
+          "domain": {
+            "type": "string"
+          },
+          "agent_managed": {
+            "type": "boolean"
+          },
+          "memory_retention_days": {
+            "type": "integer"
+          },
+          "item_count": {
+            "type": "integer"
+          },
+          "web_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column_id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "label": {
+                        "type": "string"
+                      },
+                      "bgcolor": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "label",
+                      "bgcolor"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "description": "Selectable options (status/priority columns); empty otherwise."
+                }
+              },
+              "required": [
+                "column_id",
+                "title",
+                "type",
+                "options"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "board_id",
+          "name",
+          "agent_managed",
+          "web_url",
+          "created_at",
+          "updated_at",
+          "columns"
+        ],
+        "additionalProperties": false
+      },
+      "BoardItem": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "status": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "bgcolor": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "bgcolor"
+            ],
+            "additionalProperties": false
+          },
+          "priority": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "bgcolor": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "bgcolor"
+            ],
+            "additionalProperties": false
+          },
+          "due_date": {
+            "type": "string"
+          },
+          "cells": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "chat_id": {
+                "type": "string",
+                "description": "WhatsApp chat id the item was extracted from."
+              },
+              "chat_name": {
+                "type": "string",
+                "maxLength": 200,
+                "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+              },
+              "message_key": {
+                "type": "string",
+                "description": "WhatsApp message key the item was extracted from."
+              },
+              "excerpt": {
+                "type": "string",
+                "maxLength": 2000,
+                "description": "Short verbatim source excerpt."
+              },
+              "extracted_at": {
+                "type": "integer",
+                "description": "Extraction time (epoch ms)."
+              }
+            },
+            "additionalProperties": false
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "last_seen_at": {
+            "type": "integer"
+          },
+          "web_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "item_id",
+          "text",
+          "status",
+          "priority",
+          "web_url",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "BoardRef": {
+        "type": "object",
+        "properties": {
+          "board_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "web_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "board_id",
+          "name",
+          "web_url"
+        ],
+        "additionalProperties": false
+      },
+      "BoardRow": {
+        "type": "object",
+        "properties": {
+          "board_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "description": "One-line board purpose (subtitle + agent board-directory line)."
+          },
+          "domain": {
+            "type": "string"
+          },
+          "agent_managed": {
+            "type": "boolean"
+          },
+          "memory_retention_days": {
+            "type": "integer"
+          },
+          "item_count": {
+            "type": "integer"
+          },
+          "web_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "board_id",
+          "name",
+          "agent_managed",
+          "web_url",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "BulkItemsRequest": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "description": "Item title."
+                },
+                "status": {
+                  "type": "string",
+                  "maxLength": 120,
+                  "description": "Status LABEL (resolved to the board option; unknown label → 422)."
+                },
+                "priority": {
+                  "type": "string",
+                  "maxLength": 120,
+                  "description": "Priority LABEL (resolved to the board option; unknown label → 422)."
+                },
+                "due_date": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "description": "Due date (ISO 8601 or date string), stored on the Date column."
+                },
+                "cells": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "chat_id": {
+                      "type": "string",
+                      "description": "WhatsApp chat id the item was extracted from."
+                    },
+                    "chat_name": {
+                      "type": "string",
+                      "maxLength": 200,
+                      "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                    },
+                    "message_key": {
+                      "type": "string",
+                      "description": "WhatsApp message key the item was extracted from."
+                    },
+                    "excerpt": {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "description": "Short verbatim source excerpt."
+                    },
+                    "extracted_at": {
+                      "type": "integer",
+                      "description": "Extraction time (epoch ms)."
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Extraction confidence 0..1."
+                },
+                "allow_duplicate": {
+                  "type": "boolean",
+                  "description": "By default, creating an item that matches an existing active item (fingerprint or fuzzy title) MERGES into it instead of creating a duplicate (the response then carries `merged: true`). Pass `true` to force creation."
+                }
+              },
+              "required": [
+                "text"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 500
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "upsert"
+            ],
+            "default": "upsert",
+            "description": "Merge strategy. `upsert` (default): fingerprint-match existing items → patch, else create."
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "BulkItemsResponse": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item_id": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "bgcolor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "bgcolor"
+                  ],
+                  "additionalProperties": false
+                },
+                "priority": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "bgcolor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "bgcolor"
+                  ],
+                  "additionalProperties": false
+                },
+                "due_date": {
+                  "type": "string"
+                },
+                "cells": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "chat_id": {
+                      "type": "string",
+                      "description": "WhatsApp chat id the item was extracted from."
+                    },
+                    "chat_name": {
+                      "type": "string",
+                      "maxLength": 200,
+                      "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                    },
+                    "message_key": {
+                      "type": "string",
+                      "description": "WhatsApp message key the item was extracted from."
+                    },
+                    "excerpt": {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "description": "Short verbatim source excerpt."
+                    },
+                    "extracted_at": {
+                      "type": "integer",
+                      "description": "Extraction time (epoch ms)."
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "confidence": {
+                  "type": "number"
+                },
+                "last_seen_at": {
+                  "type": "integer"
+                },
+                "web_url": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updated_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "item_id",
+                "text",
+                "status",
+                "priority",
+                "web_url",
+                "created_at",
+                "updated_at"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "updated": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item_id": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "bgcolor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "bgcolor"
+                  ],
+                  "additionalProperties": false
+                },
+                "priority": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "bgcolor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "bgcolor"
+                  ],
+                  "additionalProperties": false
+                },
+                "due_date": {
+                  "type": "string"
+                },
+                "cells": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+                },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "chat_id": {
+                      "type": "string",
+                      "description": "WhatsApp chat id the item was extracted from."
+                    },
+                    "chat_name": {
+                      "type": "string",
+                      "maxLength": 200,
+                      "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+                    },
+                    "message_key": {
+                      "type": "string",
+                      "description": "WhatsApp message key the item was extracted from."
+                    },
+                    "excerpt": {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "description": "Short verbatim source excerpt."
+                    },
+                    "extracted_at": {
+                      "type": "integer",
+                      "description": "Extraction time (epoch ms)."
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "confidence": {
+                  "type": "number"
+                },
+                "last_seen_at": {
+                  "type": "integer"
+                },
+                "web_url": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updated_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "item_id",
+                "text",
+                "status",
+                "priority",
+                "web_url",
+                "created_at",
+                "updated_at"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "unchanged": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "board": {
+            "type": "object",
+            "properties": {
+              "board_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "domain": {
+                "type": "string"
+              },
+              "web_url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "board_id",
+              "name",
+              "web_url"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "created",
+          "updated",
+          "unchanged",
+          "board"
+        ],
+        "additionalProperties": false
+      },
+      "CellsMap": {
+        "type": "object",
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+      },
+      "CreateBoardRequest": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Memory domain id for a built-in board — `tasks`, `leads` or `invoices`. Omit and pass `entity_kind` to open a board for a NEW entity type."
+          },
+          "entity_kind": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "description": "The kind of entity this board tracks (e.g. `reminders`, `orders`, `follow-ups`). Opens a NEW dynamic board with a generic Status/Priority/Date/Source template. Slug-ified server-side; a `custom:<slug>` domain is derived unless the slug already names a built-in domain. `description` is REQUIRED for custom boards."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Board name; defaults to the domain label (custom: `🤖 <entity_kind>`)."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "One-line purpose of the board (subtitle + board directory). Optional for built-in domains (falls back to the domain default); REQUIRED for custom `entity_kind` boards (422 if missing)."
+          },
+          "agent_id": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Owning agent id for memory isolation (e.g. `btgpt:<userId>` or `bot:<botId>`). Defaults to `user`."
+          },
+          "memory_retention_days": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650,
+            "description": "Retention window in days (default 30; 0 = never expires)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateItemRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "Item title."
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Status LABEL (resolved to the board option; unknown label → 422)."
+          },
+          "priority": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Priority LABEL (resolved to the board option; unknown label → 422)."
+          },
+          "due_date": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Due date (ISO 8601 or date string), stored on the Date column."
+          },
+          "cells": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "chat_id": {
+                "type": "string",
+                "description": "WhatsApp chat id the item was extracted from."
+              },
+              "chat_name": {
+                "type": "string",
+                "maxLength": 200,
+                "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+              },
+              "message_key": {
+                "type": "string",
+                "description": "WhatsApp message key the item was extracted from."
+              },
+              "excerpt": {
+                "type": "string",
+                "maxLength": 2000,
+                "description": "Short verbatim source excerpt."
+              },
+              "extracted_at": {
+                "type": "integer",
+                "description": "Extraction time (epoch ms)."
+              }
+            },
+            "additionalProperties": false
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Extraction confidence 0..1."
+          },
+          "allow_duplicate": {
+            "type": "boolean",
+            "description": "By default, creating an item that matches an existing active item (fingerprint or fuzzy title) MERGES into it instead of creating a duplicate (the response then carries `merged: true`). Pass `true` to force creation."
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "FindSimilarRequest": {
+        "type": "object",
+        "properties": {
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              },
+              "required": [
+                "text"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "candidates"
+        ],
+        "additionalProperties": false
+      },
+      "FindSimilarResponse": {
+        "type": "object",
+        "properties": {
+          "matches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "candidate_index": {
+                  "type": "integer"
+                },
+                "item_id": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "candidate_index",
+                "item_id",
+                "text",
+                "score"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "misses": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "matches",
+          "misses"
+        ],
+        "additionalProperties": false
+      },
+      "ItemSource": {
+        "type": "object",
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "description": "WhatsApp chat id the item was extracted from."
+          },
+          "chat_name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+          },
+          "message_key": {
+            "type": "string",
+            "description": "WhatsApp message key the item was extracted from."
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Short verbatim source excerpt."
+          },
+          "extracted_at": {
+            "type": "integer",
+            "description": "Extraction time (epoch ms)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListBoardsQuery": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Page size (default 50, max 200)."
+          },
+          "skip": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "desc",
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
+          },
+          "domain": {
+            "type": "string",
+            "description": "Filter by memory domain id."
+          },
+          "agent_managed": {
+            "type": "boolean",
+            "description": "When true, only boards with an `agentConfig` (agent-managed)."
+          }
+        }
+      },
+      "ListItemsQuery": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Page size (default 50, max 200)."
+          },
+          "skip": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "desc",
+            "description": "Sort direction by timestamp: `asc` (oldest first) or `desc` (newest first, default)."
+          },
+          "active_only": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true: only items updated within the retention window whose status is non-terminal and not deleted."
+          },
+          "status": {
+            "type": "string",
+            "description": "Filter by denormalized status label."
+          },
+          "updated_since": {
+            "type": "string",
+            "description": "ISO 8601 / epoch-ms cutoff; only items updated at or after this time."
+          }
+        }
+      },
+      "OptionRef": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "bgcolor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "bgcolor"
+        ],
+        "additionalProperties": false
+      },
+      "PatchItemRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "priority": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "due_date": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "cells": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "description": "Custom cell values keyed by column title (e.g. `Source`, `Company`, `Value`)."
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "chat_id": {
+                "type": "string",
+                "description": "WhatsApp chat id the item was extracted from."
+              },
+              "chat_name": {
+                "type": "string",
+                "maxLength": 200,
+                "description": "Human-readable chat/contact name the item was extracted from (surfaced on the board Source cell)."
+              },
+              "message_key": {
+                "type": "string",
+                "description": "WhatsApp message key the item was extracted from."
+              },
+              "excerpt": {
+                "type": "string",
+                "maxLength": 2000,
+                "description": "Short verbatim source excerpt."
+              },
+              "extracted_at": {
+                "type": "integer",
+                "description": "Extraction time (epoch ms)."
+              }
+            },
+            "additionalProperties": false
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "Soft-delete (`true`) or restore (`false`)."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Note recorded in aiMeta.history for this change."
           }
         },
         "additionalProperties": false
@@ -13420,6 +17390,458 @@
         },
         "additionalProperties": false
       },
+      "LatestChatWithMessages": {
+        "type": "object",
+        "properties": {
+          "chatId": {
+            "type": "string",
+            "description": "WhatsApp JID of the chat — `<number>@c.us` for a 1:1 contact, `<id>@g.us` for a group, `<id>@newsletter` for a channel."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the chat (contact name, group subject, or channel title). Null when WhatsApp has no name for it."
+          },
+          "chatType": {
+            "type": "string",
+            "enum": [
+              "contact",
+              "group",
+              "newsletter"
+            ],
+            "description": "Kind of chat: `contact` (1:1), `group`, or `newsletter` (WhatsApp Channel). The three are mutually exclusive."
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "True when the chat is pinned to the top of the chat list."
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "True when the chat is archived. Excluded from list responses unless `includeArchive=true`."
+          },
+          "lastMessageAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "ISO-8601 timestamp of the most recent message in this chat. Null when the chat has no messages."
+          },
+          "unreadCount": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "description": "Count of unseen incoming messages (>= 0). Excludes the \"manually marked unread\" sentinel — see `markedUnread`."
+          },
+          "markedUnread": {
+            "type": "boolean",
+            "description": "True when the chat was manually flagged unread in WhatsApp (the dot badge), distinct from having N unread messages."
+          },
+          "lastMessageText": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+          },
+          "lastMessageFromMe": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "True if the last message was sent by the connected account. Present only when includeLastMessage=true."
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "waMessageKey": {
+                  "type": "object",
+                  "properties": {
+                    "fromMe": {
+                      "type": "boolean"
+                    },
+                    "remote": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "_serialized": {
+                      "type": "string"
+                    },
+                    "participant": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "fromMe"
+                  ],
+                  "additionalProperties": false
+                },
+                "chatId": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "senderName": {
+                  "type": "string"
+                },
+                "timestamp": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "fromMe": {
+                  "type": "boolean"
+                },
+                "ack": {
+                  "type": "integer"
+                },
+                "mediaUrl": {
+                  "type": "string"
+                },
+                "filename": {
+                  "type": "string"
+                },
+                "linkPreview": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "canonicalUrl": {
+                      "type": "string"
+                    },
+                    "thumbnail": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "quotedMessage": {
+                  "type": "object",
+                  "properties": {
+                    "waMessageKey": {
+                      "type": "object",
+                      "properties": {
+                        "fromMe": {
+                          "type": "boolean"
+                        },
+                        "remote": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "_serialized": {
+                          "type": "string"
+                        },
+                        "participant": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fromMe"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "author": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "waMessageKey"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "waMessageKey",
+                "chatId",
+                "from",
+                "type",
+                "fromMe"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Latest messages in this chat, newest-first (up to numberOfMessages)."
+          }
+        },
+        "required": [
+          "chatId",
+          "name",
+          "chatType",
+          "lastMessageAt",
+          "unreadCount",
+          "markedUnread",
+          "messages"
+        ],
+        "additionalProperties": false,
+        "description": "A WhatsApp chat with its most recent messages attached."
+      },
+      "LatestChatsQuery": {
+        "type": "object",
+        "properties": {
+          "numberOfChats": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Total chats to return, pinned first then most-recent (1-200, default 50)."
+          },
+          "numberOfMessages": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 100,
+            "default": 20,
+            "description": "Latest messages to include per chat, newest-first (0-100, default 20)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "LatestChatsResponse": {
+        "type": "object",
+        "properties": {
+          "chats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "chatId": {
+                  "type": "string",
+                  "description": "WhatsApp JID of the chat — `<number>@c.us` for a 1:1 contact, `<id>@g.us` for a group, `<id>@newsletter` for a channel."
+                },
+                "name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Display name of the chat (contact name, group subject, or channel title). Null when WhatsApp has no name for it."
+                },
+                "chatType": {
+                  "type": "string",
+                  "enum": [
+                    "contact",
+                    "group",
+                    "newsletter"
+                  ],
+                  "description": "Kind of chat: `contact` (1:1), `group`, or `newsletter` (WhatsApp Channel). The three are mutually exclusive."
+                },
+                "pinned": {
+                  "type": "boolean",
+                  "description": "True when the chat is pinned to the top of the chat list."
+                },
+                "archived": {
+                  "type": "boolean",
+                  "description": "True when the chat is archived. Excluded from list responses unless `includeArchive=true`."
+                },
+                "lastMessageAt": {
+                  "type": "string",
+                  "nullable": true,
+                  "format": "date-time",
+                  "description": "ISO-8601 timestamp of the most recent message in this chat. Null when the chat has no messages."
+                },
+                "unreadCount": {
+                  "type": "integer",
+                  "nullable": true,
+                  "minimum": 0,
+                  "description": "Count of unseen incoming messages (>= 0). Excludes the \"manually marked unread\" sentinel — see `markedUnread`."
+                },
+                "markedUnread": {
+                  "type": "boolean",
+                  "description": "True when the chat was manually flagged unread in WhatsApp (the dot badge), distinct from having N unread messages."
+                },
+                "lastMessageText": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+                },
+                "lastMessageFromMe": {
+                  "type": "boolean",
+                  "nullable": true,
+                  "description": "True if the last message was sent by the connected account. Present only when includeLastMessage=true."
+                },
+                "messages": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "waMessageKey": {
+                        "type": "object",
+                        "properties": {
+                          "fromMe": {
+                            "type": "boolean"
+                          },
+                          "remote": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "_serialized": {
+                            "type": "string"
+                          },
+                          "participant": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fromMe"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "chatId": {
+                        "type": "string"
+                      },
+                      "from": {
+                        "type": "string"
+                      },
+                      "author": {
+                        "type": "string"
+                      },
+                      "senderName": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "text": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "fromMe": {
+                        "type": "boolean"
+                      },
+                      "ack": {
+                        "type": "integer"
+                      },
+                      "mediaUrl": {
+                        "type": "string"
+                      },
+                      "filename": {
+                        "type": "string"
+                      },
+                      "linkPreview": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "canonicalUrl": {
+                            "type": "string"
+                          },
+                          "thumbnail": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "quotedMessage": {
+                        "type": "object",
+                        "properties": {
+                          "waMessageKey": {
+                            "type": "object",
+                            "properties": {
+                              "fromMe": {
+                                "type": "boolean"
+                              },
+                              "remote": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "_serialized": {
+                                "type": "string"
+                              },
+                              "participant": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "fromMe"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "author": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "waMessageKey"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "waMessageKey",
+                      "chatId",
+                      "from",
+                      "type",
+                      "fromMe"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "description": "Latest messages in this chat, newest-first (up to numberOfMessages)."
+                }
+              },
+              "required": [
+                "chatId",
+                "name",
+                "chatType",
+                "lastMessageAt",
+                "unreadCount",
+                "markedUnread",
+                "messages"
+              ],
+              "additionalProperties": false,
+              "description": "A WhatsApp chat with its most recent messages attached."
+            }
+          },
+          "totalChats": {
+            "type": "integer",
+            "description": "Non-archived, titled chat count before the numberOfChats slice."
+          },
+          "numberOfChats": {
+            "type": "integer",
+            "description": "Effective chats cap applied."
+          },
+          "numberOfMessages": {
+            "type": "integer",
+            "description": "Effective per-chat messages cap applied."
+          }
+        },
+        "required": [
+          "chats",
+          "totalChats",
+          "numberOfChats",
+          "numberOfMessages"
+        ],
+        "description": "Most-recent non-archived chats (pinned first), each with their latest messages."
+      },
       "ListChatsQuery": {
         "type": "object",
         "properties": {
@@ -13451,6 +17873,24 @@
             ],
             "description": "Restrict to one chat kind."
           },
+          "kinds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contact",
+                "group",
+                "newsletter"
+              ]
+            },
+            "minItems": 1,
+            "description": "Keep only these chat kinds (INCLUDE semantics). Comma-separated or repeated."
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Keep only chats whose last message is at/after this ISO 8601 instant (offset allowed; approximate — see sinceApplied)."
+          },
           "includeLastMessage": {
             "type": "boolean",
             "description": "Include the last message snippet on each chat row."
@@ -13470,6 +17910,43 @@
         },
         "additionalProperties": false
       },
+      "LoadCoverage": {
+        "type": "object",
+        "properties": {
+          "oldestLoadedTimestamp": {
+            "type": "number",
+            "description": "Epoch MILLISECONDS of the oldest currently-loaded message for this chat. Omitted when unknown (empty chat / probe unavailable)."
+          },
+          "oldestLoadedIso": {
+            "type": "string",
+            "description": "ISO 8601 form of `oldestLoadedTimestamp`. Use it to verify range coverage (\"did I reach a year back?\") deterministically."
+          }
+        },
+        "additionalProperties": false
+      },
+      "LoadOlderRequest": {
+        "type": "object",
+        "properties": {
+          "pages": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "How many older pages to pull in one call (1-10, default 1). Pages are WA-paced ~2.5s apart. Stops early on exhaustion, error, or reaching `until_date`."
+          },
+          "until_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Stop once the oldest loaded message is at/before this date (ISO 8601 string or epoch seconds/ms). Lets you page back to a target depth deterministically."
+          }
+        },
+        "additionalProperties": false
+      },
       "LoadOlderResult": {
         "type": "object",
         "properties": {
@@ -13479,10 +17956,12 @@
           },
           "added": {
             "type": "integer",
-            "nullable": true
+            "nullable": true,
+            "description": "Total messages added to the store across the pages this call executed (sum). `0` with `canLoadMore:true` is a transient hiccup worth retrying; `canLoadMore:false` means genuinely exhausted."
           },
           "canLoadMore": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "From the LAST executed page: true = the engine believes more history may still be pulled; false = genuinely exhausted (stop paging)."
           },
           "historyUnavailable": {
             "type": "boolean",
@@ -13491,7 +17970,26 @@
           "error": {
             "type": "string",
             "nullable": true,
-            "description": "Human-readable reason older messages could not be loaded from the phone; null when the pull succeeded or the chat is already fully synced."
+            "description": "Human-readable reason older messages could not be loaded from the phone; null when the pull succeeded or the chat is already fully synced. First fatal error across the executed pages."
+          },
+          "pagesExecuted": {
+            "type": "integer",
+            "description": "How many older pages this call actually pulled (1..pages). Fewer than requested when the loop stopped early on exhaustion, error, or reaching `until_date`."
+          },
+          "coverage": {
+            "type": "object",
+            "properties": {
+              "oldestLoadedTimestamp": {
+                "type": "number",
+                "description": "Epoch MILLISECONDS of the oldest currently-loaded message for this chat. Omitted when unknown (empty chat / probe unavailable)."
+              },
+              "oldestLoadedIso": {
+                "type": "string",
+                "description": "ISO 8601 form of `oldestLoadedTimestamp`. Use it to verify range coverage (\"did I reach a year back?\") deterministically."
+              }
+            },
+            "additionalProperties": false,
+            "description": "How far back the chat is now loaded. `coverage.oldestLoadedIso` is the deterministic answer to \"have I reached far enough back?\"."
           }
         },
         "required": [
@@ -13499,7 +17997,9 @@
           "added",
           "canLoadMore",
           "historyUnavailable",
-          "error"
+          "error",
+          "pagesExecuted",
+          "coverage"
         ],
         "additionalProperties": false
       },
@@ -13588,12 +18088,12 @@
           "since": {
             "type": "string",
             "format": "date-time",
-            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
+            "description": "Lower bound (ISO 8601, offset allowed). Only messages with timestamp >= since."
           },
           "until": {
             "type": "string",
             "format": "date-time",
-            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
+            "description": "Upper bound (ISO 8601, offset allowed). Only messages with timestamp <= until."
           },
           "messageTypes": {
             "type": "array",
@@ -13616,6 +18116,35 @@
               ]
             },
             "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
+          },
+          "queryAny": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "maxItems": 24,
+            "description": "Keyword-set OR search: match if body/caption/filename contains ANY term."
+          },
+          "mime": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "MIME prefix filter, e.g. \"application/pdf\" or \"image/\"."
+          },
+          "filenameContains": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Case-insensitive substring match on the document filename."
+          },
+          "hasMedia": {
+            "type": "boolean",
+            "description": "true = only messages with a media attachment; false = only non-media."
+          },
+          "sender": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Case-insensitive substring match on the sender JID/phone."
           },
           "loadFromPhoneIfNeeded": {
             "type": "boolean",
@@ -13966,12 +18495,12 @@
           "since": {
             "type": "string",
             "format": "date-time",
-            "description": "Lower bound (ISO 8601). Only messages with timestamp >= since."
+            "description": "Lower bound (ISO 8601, offset allowed). Only messages with timestamp >= since."
           },
           "until": {
             "type": "string",
             "format": "date-time",
-            "description": "Upper bound (ISO 8601). Only messages with timestamp <= until."
+            "description": "Upper bound (ISO 8601, offset allowed). Only messages with timestamp <= until."
           },
           "messageTypes": {
             "type": "array",
@@ -13994,6 +18523,35 @@
               ]
             },
             "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
+          },
+          "queryAny": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "maxItems": 24,
+            "description": "Keyword-set OR search: match if body/caption/filename contains ANY term."
+          },
+          "mime": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "MIME prefix filter, e.g. \"application/pdf\" or \"image/\"."
+          },
+          "filenameContains": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Case-insensitive substring match on the document filename."
+          },
+          "hasMedia": {
+            "type": "boolean",
+            "description": "true = only messages with a media attachment; false = only non-media."
+          },
+          "sender": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Case-insensitive substring match on the sender JID/phone."
           },
           "loadFromPhoneIfNeeded": {
             "type": "boolean",

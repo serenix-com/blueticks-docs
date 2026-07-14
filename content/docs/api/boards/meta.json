@@ -1,0 +1,14 @@
+{
+  "title": "Boards",
+  "description": "AI-managed memory boards (Tasks, Leads). Each board is a normal Blueticks board with an AI agent config; items are board tasks with status/priority cells plus AI dedupe/provenance metadata.",
+  "pages": [
+    "list-boards",
+    "create-or-find-board",
+    "get-board",
+    "list-board-items",
+    "create-board-item",
+    "update-board-item",
+    "bulk-upsert-board-items",
+    "find-similar-board-items"
+  ]
+}

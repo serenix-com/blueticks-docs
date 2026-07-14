@@ -67,6 +67,9 @@ const SAMPLE_METHODS: Record<string, Record<SdkLang, string | null>> = {
   'POST /v1/chats/{chatId}/archive':                { python: 'archive',         node: 'archive',        php: 'archive',         ruby: 'archive',           go: 'Archive' },
   'POST /v1/chats/{chatId}/unarchive':              { python: 'unarchive',       node: 'unarchive',      php: 'unarchive',       ruby: 'unarchive',         go: 'Unarchive' },
   'POST /v1/chats/{chatId}/open':                   { python: 'open',            node: 'open',           php: 'open',            ruby: 'open',              go: 'Open' },
+  // Latest chats + messages. No hand-written SDK method yet in any language →
+  // cURL-only sample (the resource client `latest-chats` doesn't exist either).
+  'GET /v1/latest-chats':                           { python: null,              node: null,             php: null,              ruby: null,                go: null },
   // Message family — resource is `messages` in Node, `chats` elsewhere (see
   // sampleResource). Method names diverge per language; verified 1:1. The
   // per-message read/action routes now take the COMPLETE serialized key as a

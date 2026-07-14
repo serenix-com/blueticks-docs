@@ -4,6 +4,7 @@
   "pages": [
     "list-chats",
     "get-chat",
+    "get-latest-chats-messages",
     "list-chat-participants",
     "mark-chat-as-read",
     "archive-chat",
