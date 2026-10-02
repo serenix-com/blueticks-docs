@@ -12039,7 +12039,7 @@
               "minimum": 0,
               "default": 0
             },
-            "description": "Number of groups to skip before the page (default 0)."
+            "description": "Number of items to skip before the page (default 0)."
           },
           {
             "name": "limit",
@@ -12049,9 +12049,9 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 500,
-              "default": 100
+              "default": 500
             },
-            "description": "Page size (default 100, max 500)."
+            "description": "Page size (default and max 500 — the whole set in one page)."
           }
         ],
         "responses": {
@@ -20205,19 +20205,19 @@
       "CommonGroupsQuery": {
         "type": "object",
         "properties": {
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 500,
-            "default": 100,
-            "description": "Page size (default 100, max 500)."
-          },
           "skip": {
             "type": "integer",
             "nullable": true,
             "minimum": 0,
             "default": 0,
-            "description": "Number of groups to skip before the page (default 0)."
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 500,
+            "description": "Page size (default and max 500 — the whole set in one page)."
           }
         }
       },
