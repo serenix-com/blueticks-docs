@@ -1,0 +1,70 @@
+---
+title: ChatGPT
+description: Connect Blueticks to ChatGPT as a custom MCP connector. Read tools and write tools are separate, so ChatGPT asks you before it sends or changes anything.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+ChatGPT connects to the same hosted MCP server as Claude:
+
+```
+https://api.blueticks.co/mcp
+```
+
+<Callout type="info">
+**Today:** add Blueticks as a custom connector in ChatGPT **developer mode**
+(steps below). **Coming soon:** an official Blueticks listing in ChatGPT's app
+directory, so you can add it without developer mode.
+</Callout>
+
+## Add the connector
+
+1. In ChatGPT settings, turn on **developer mode** (under the advanced
+   connector settings).
+2. Create a new connector, name it (for example `Blueticks`), and set the MCP
+   server URL to `https://api.blueticks.co/mcp` with **OAuth** authentication.
+3. ChatGPT opens the Blueticks consent screen — sign in to Blueticks if asked
+   and click **Authorize**.
+4. Enable the connector in a chat and ask, for example, *"Which WhatsApp chats
+   have unread messages?"*.
+
+## Read tools and write tools
+
+ChatGPT decides whether to ask for confirmation from how each tool is labeled.
+So that every label is honest, Blueticks shows ChatGPT each mixed tool as **two
+tools**: a read-only one, and a `_write` one that holds every action that
+creates, changes, sends, or deletes something.
+
+- **Read tools** (`chats`, `contacts`, …) are marked read-only and run without
+  a prompt.
+- **`*_write` tools** are marked as writes, so **ChatGPT asks you to confirm
+  before any message is sent or anything is changed.** A send can't be routed
+  through a read tool — the server rejects a write action called on the
+  read-only half.
+
+| Read tool → actions | Write tool → actions |
+| --- | --- |
+| `chats` → `list`, `get_latest`, `search`, `get`, `list_messages`, `get_media`, `get_participants` | `chats_write` → `send_message_text`, `send_message_media`, `send_message_poll`, `mark_read`, `archive`, `unarchive`, `load_more_history` |
+| `scheduled_messages` → `list`, `get`, `ack` | `scheduled_messages_write` → `send`, `update`, `cancel` |
+| `groups` → `get` | `groups_write` → `create`, `update`, `leave` |
+| `audiences` → `list`, `get` | `audiences_write` → `create`, `update`, `delete`, `append_contacts`, `update_contact`, `remove_contact` |
+| `campaigns` → `list`, `get` | `campaigns_write` → `create`, `pause`, `resume`, `cancel` |
+| `webhooks` → `list`, `get` | `webhooks_write` → `create`, `update`, `delete` |
+| `engine` → `status` | `engine_write` → `logout`, `reload` |
+| `contacts` → `list`, `get_profile_picture` | — |
+| `utils` → `validate_phone`, `link_preview`, `current_date_time` | — |
+
+If the connection was granted read-only access, the `_write` tools are not
+offered at all.
+
+## Things to try
+
+- *"What did +1 555 010 0123 send me yesterday?"* (read — no prompt)
+- *"Reply to her: confirmed for 10am."* (write — ChatGPT asks first)
+- *"List my scheduled messages that haven't gone out yet."*
+
+## Limits
+
+On the **free plan**, the MCP server and the REST API share one quota of
+**5 requests per 6-hour window**; every tool call counts once. Paid plans are
+unlimited. See [Troubleshooting](/docs/integrations/make#troubleshooting).

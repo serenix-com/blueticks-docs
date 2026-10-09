@@ -1,0 +1,76 @@
+---
+title: n8n & Zapier
+description: Use Blueticks from n8n or Zapier with the generic HTTP request and webhook building blocks.
+---
+
+n8n and Zapier both work with Blueticks through two generic pieces: an **HTTP
+request** to send messages (or call any other endpoint), and a **webhook
+trigger** that Blueticks POSTs events to. You need a Blueticks API key
+(`bt_live_…`) — see [Authentication](/docs/authentication).
+
+## Send a WhatsApp message
+
+| | n8n | Zapier |
+| --- | --- | --- |
+| Step | **HTTP Request** node | **Webhooks by Zapier → Custom Request** action |
+| Method | `POST` | `POST` |
+| URL | `https://api.blueticks.co/v1/scheduled-messages/+15550100123` | same |
+| Header | `Authorization: Bearer bt_live_…` | same |
+| Body | JSON (below) | Data: JSON (below) |
+
+```json
+{
+  "type": "text",
+  "text": "Your appointment is confirmed for Tuesday at 10:00."
+}
+```
+
+The last URL segment is the recipient: a phone number in international format
+with a leading `+`, or a chat id (`15550100123@c.us` for a person, `…@g.us` for a
+group). Add `"sendAt"` (ISO 8601) to schedule instead of sending now. Media and
+polls: see [Sending messages](/docs/messages).
+
+Store the API key in your tool's credential store (n8n *Header Auth*
+credential, Zapier hidden field) rather than pasting it into every step.
+
+## Trigger on WhatsApp events
+
+1. Create the trigger and copy its URL:
+   - **n8n:** a **Webhook** node, method `POST` (use the production URL once the
+     workflow is active).
+   - **Zapier:** **Webhooks by Zapier → Catch Hook**.
+2. Register the URL with Blueticks, subscribing to the events you need:
+
+```bash
+curl -X POST https://api.blueticks.co/v1/webhooks \
+  -H "Authorization: Bearer bt_live_…" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-n8n.example.com/webhook/bt-incoming",
+    "events": ["new_message_received_webhook", "message.failed"]
+  }'
+```
+
+3. Every event arrives as `{ "id", "type", "created_at", "data" }`; the event's
+   fields are under `data`. Dedupe on `id` — a retry can deliver the same event
+   twice.
+
+The create response includes a `signingSecret`. If your workflow can run code
+over the **raw** request body, verify the `Blueticks-Webhook-Signature` header —
+the algorithm and snippets are in
+[Receiving webhooks](/docs/webhooks#4-verify-requests-really-came-from-blueticks).
+
+The full event list, retry schedule, and auto-disable rules are in
+[Receiving webhooks](/docs/webhooks).
+
+## Limits & troubleshooting
+
+- **Free plan:** 5 requests per 6-hour window, shared across the REST API and
+  the MCP server; calls past it return `429`. Paid plans are unlimited.
+- **WhatsApp not connected:** calls that need a live connection return `503`.
+  Check `GET /v1/ping` (`whatsappConnections`).
+- **Phone format:** `+` and country code required; bare digits are rejected
+  with `400`.
+
+More detail in the [Make troubleshooting section](/docs/integrations/make#troubleshooting) — it
+applies to every HTTP-based integration.
