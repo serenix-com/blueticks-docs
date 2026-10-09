@@ -7,6 +7,40 @@ The API and each official SDK track versions independently.
 
 ## API specification
 
+### 2026-10-09 — spec re-synced with production (no version bump)
+
+The published spec had drifted behind the live API. It is now regenerated from
+the production backend, and every route in it was probed on `api.blueticks.co`.
+
+- **New endpoints:** `POST /v1/realtime/token` (MQTT credentials for receiving
+  messages without a webhook), `POST /v1/identity/resolve` and
+  `GET /v1/identity/{id}` (resolve `@lid` / phone identities), and the
+  WhatsApp Business label endpoints `GET /v1/wa-labels`,
+  `GET /v1/chats/{chatId}/wa-labels`, `PATCH /v1/chats/{chatId}/wa-labels`
+  (scopes `wa-labels:read` / `wa-labels:write`).
+- **List endpoints may also return `nextCursor`.** Offset pagination
+  (`limit` / `skip` / `total`) is unchanged; some lists (audiences, campaigns,
+  scheduled messages, boards, chats, contacts, newsletters) add an optional
+  `nextCursor` string when more results exist. `GET /v1/messages/pinned/{chatId}`
+  and `POST /v1/messages/acks` return only `{ success, data }` (no
+  `limit` / `skip` / `total`).
+- **Send and schedule bodies** accept `mentions`, `mediaMimeType`,
+  `buttonReply` and `waLabelIds`; `recipientName` can be set when scheduling.
+  Scheduled messages now return `recipientName` and `waLabels`.
+- **Webhooks** return `signingSecret`, and the spec's `events` enum now lists every
+  supported event (message, session, campaign and the `*_webhook` engine events
+  already described in [Webhooks](/docs/webhooks)).
+- **Query parameters** added to `GET /v1/chats`, `GET /v1/messages`,
+  `GET /v1/latest-chats`, `GET /v1/scheduled-messages`,
+  `GET /v1/chats/{chatId}/participants` and
+  `GET /v1/contacts/{id}/common_groups` (e.g. `engine`, `engineId`, `limit`,
+  `skip`); see each reference page.
+- **Errors** also carry `error.requestId` (camelCase) next to `error.request_id`,
+  and rate-limit/plan errors may include `error.upgrade`.
+- **`POST /v1/suno/songs`:** `lyrics` is no longer required (only `style`).
+- **Recipient in the path:** `POST /v1/scheduled-messages` without a chat id
+  returns `410`; use `POST /v1/scheduled-messages/{chatId}`.
+
 ### v2.0.0 — 2026-06-06 (breaking)
 
 - **Pagination switched from cursor to offset.** Every list endpoint now takes

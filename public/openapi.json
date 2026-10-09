@@ -44,6 +44,10 @@
       "description": "Create and manage WhatsApp groups via the connected engine."
     },
     {
+      "name": "Identity",
+      "description": "Resolve WhatsApp @lid and phone-number identities to their canonical form, in batch or one at a time."
+    },
+    {
       "name": "Messages",
       "description": "Send, list, search, react to, and fetch media for individual WhatsApp messages on the connected engine."
     },
@@ -56,12 +60,20 @@
       "description": "Connectivity probe for the Blueticks API and the account's WhatsApp engine(s)."
     },
     {
+      "name": "Realtime",
+      "description": "Receive inbound messages over a connection YOU open, instead of a webhook we call."
+    },
+    {
       "name": "Scheduled Messages",
       "description": "Send or schedule WhatsApp messages via the user-messages queue. Each request creates a queued send — set `sendAt` (RFC 3339) to defer delivery, omit it to send immediately. List, retrieve, edit, and cancel queued sends."
     },
     {
       "name": "Suno",
       "description": "Generate songs on Suno from lyrics + style, and poll their progress."
+    },
+    {
+      "name": "WA Labels",
+      "description": "Read and assign the WhatsApp Business app's own NATIVE labels on chats. WhatsApp Business accounts only — distinct from Blueticks-internal chat labels. On a non-Business account, list/read return an empty set and assignment returns 409 wa_business_required."
     },
     {
       "name": "Webhooks",
@@ -385,10 +397,9 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "pattern": "^[0-9]+(?:-[0-9]+)?@(?:c\\.us|g\\.us|newsletter)$"
+              "type": "string"
             },
-            "description": "Filter to messages addressed to this WhatsApp JID. Matches the recipient stored on the queued/scheduled doc — for sends to a phone number, the JID is `<phone>@c.us`."
+            "description": "Filter to messages addressed to this chat. Accepts +E164 / bare digits / any WhatsApp id; normalized to `<phone>@c.us` to match the recipient stored on the queued/scheduled doc."
           },
           {
             "name": "searchToken",
@@ -426,6 +437,26 @@
               ]
             },
             "description": "Filter by lifecycle status: `pending` (accepted, waiting), `confirmed` (WhatsApp accepted — has waMessageKey), `received` (double grey tick), `read` (double blue tick), `played` (voice played), `failed`."
+          },
+          {
+            "name": "includeSent",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include messages that were already SENT and therefore soft-deleted (default false). A cancelled message is never included. Pair with `chatId` to answer \"what has this contact already been sent?\"."
+          },
+          {
+            "name": "includePreview",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include the link-preview thumbnail image (default false). Title, description and url are always returned; only the embedded image is omitted."
           },
           {
             "name": "order",
@@ -514,7 +545,12 @@
                             "additionalProperties": false
                           },
                           "to": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "The recipient. For a send made through this API it is the caller's own raw `to`, echoed back; for a message created in the Blueticks UI it is the WhatsApp JID (e.g. 9725XXXXXXXX@c.us). Empty only when the message carries no recipient at all."
+                          },
+                          "recipientName": {
+                            "type": "string",
+                            "description": "The recipient's display name, or null when the message carries no name."
                           },
                           "type": {
                             "type": "string",
@@ -629,6 +665,28 @@
                               }
                             },
                             "additionalProperties": false
+                          },
+                          "waLabels": {
+                            "type": "object",
+                            "properties": {
+                              "requested": {
+                                "type": "integer",
+                                "description": "Number of label ids requested."
+                              },
+                              "applied": {
+                                "type": "boolean",
+                                "description": "Whether WhatsApp accepted the label change."
+                              },
+                              "error": {
+                                "type": "string",
+                                "description": "Reason the labels were not applied (e.g. `wa_business_required`), else null."
+                              }
+                            },
+                            "required": [
+                              "requested",
+                              "applied"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -651,6 +709,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -790,7 +852,12 @@
                           "additionalProperties": false
                         },
                         "to": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "The recipient. For a send made through this API it is the caller's own raw `to`, echoed back; for a message created in the Blueticks UI it is the WhatsApp JID (e.g. 9725XXXXXXXX@c.us). Empty only when the message carries no recipient at all."
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "description": "The recipient's display name, or null when the message carries no name."
                         },
                         "type": {
                           "type": "string",
@@ -904,6 +971,28 @@
                               "type": "string"
                             }
                           },
+                          "additionalProperties": false
+                        },
+                        "waLabels": {
+                          "type": "object",
+                          "properties": {
+                            "requested": {
+                              "type": "integer",
+                              "description": "Number of label ids requested."
+                            },
+                            "applied": {
+                              "type": "boolean",
+                              "description": "Whether WhatsApp accepted the label change."
+                            },
+                            "error": {
+                              "type": "string",
+                              "description": "Reason the labels were not applied (e.g. `wa_business_required`), else null."
+                            }
+                          },
+                          "required": [
+                            "requested",
+                            "applied"
+                          ],
                           "additionalProperties": false
                         }
                       },
@@ -1069,9 +1158,24 @@
                     "maxLength": 255,
                     "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
                   },
+                  "mediaMimeType": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "MIME type of the inline base64 media, e.g. `image/png` (type=media). Optional — only used when mediaBase64 is a bare base64 string without a data: prefix; a data: URL carries its own type, and mediaUrl reads it from the response."
+                  },
                   "sendAt": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "mentions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "maxItems": 256,
+                    "description": "Participant JIDs to @mention in a group (e.g. [\"12025550101@c.us\"]). Sets the real WhatsApp mention (highlight + notification); put the visible @name in `text` yourself."
                   },
                   "replyTo": {
                     "type": "string",
@@ -1188,7 +1292,12 @@
                           "additionalProperties": false
                         },
                         "to": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "The recipient. For a send made through this API it is the caller's own raw `to`, echoed back; for a message created in the Blueticks UI it is the WhatsApp JID (e.g. 9725XXXXXXXX@c.us). Empty only when the message carries no recipient at all."
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "description": "The recipient's display name, or null when the message carries no name."
                         },
                         "type": {
                           "type": "string",
@@ -1302,6 +1411,28 @@
                               "type": "string"
                             }
                           },
+                          "additionalProperties": false
+                        },
+                        "waLabels": {
+                          "type": "object",
+                          "properties": {
+                            "requested": {
+                              "type": "integer",
+                              "description": "Number of label ids requested."
+                            },
+                            "applied": {
+                              "type": "boolean",
+                              "description": "Whether WhatsApp accepted the label change."
+                            },
+                            "error": {
+                              "type": "string",
+                              "description": "Reason the labels were not applied (e.g. `wa_business_required`), else null."
+                            }
+                          },
+                          "required": [
+                            "requested",
+                            "applied"
+                          ],
                           "additionalProperties": false
                         }
                       },
@@ -1647,6 +1778,9 @@
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "signingSecret": {
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -1670,6 +1804,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -1789,6 +1927,7 @@
                         "campaign.completed",
                         "campaign.aborted",
                         "new_message_received_webhook",
+                        "new_message_received_from_me_webhook",
                         "message_reaction_webhook",
                         "ack_changed_webhook",
                         "participant_joined_via_link_webhook",
@@ -1890,6 +2029,9 @@
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "signingSecret": {
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -2032,6 +2174,9 @@
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "signingSecret": {
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -2189,6 +2334,7 @@
                         "campaign.completed",
                         "campaign.aborted",
                         "new_message_received_webhook",
+                        "new_message_received_from_me_webhook",
                         "message_reaction_webhook",
                         "ack_changed_webhook",
                         "participant_joined_via_link_webhook",
@@ -2268,6 +2414,9 @@
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "signingSecret": {
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -2611,6 +2760,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -3428,6 +3581,10 @@
                           "name": {
                             "type": "string"
                           },
+                          "description": {
+                            "type": "string",
+                            "description": "One-line board purpose (subtitle + agent board-directory line)."
+                          },
                           "domain": {
                             "type": "string"
                           },
@@ -3474,6 +3631,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -3556,7 +3717,7 @@
           "Boards"
         ],
         "summary": "Create or find board",
-        "description": "Find-or-create the agent memory board for (`agent_id`, `domain`). Returns the existing board if one exists, else provisions it from the domain template. Requires `boards:write`.",
+        "description": "Find-or-create the agent memory board for (`agent_id`, `domain`). Pass `domain` for a built-in board (`tasks`/`leads`/`invoices`) or `entity_kind` to open a NEW dynamic (`custom:<slug>`) board with a generic template — `description` is then required. Returns the existing board if one exists, else provisions it from the domain template. Requires `boards:write`.",
         "security": [
           {
             "BearerAuth": [
@@ -3651,6 +3812,10 @@
                         },
                         "name": {
                           "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "One-line board purpose (subtitle + agent board-directory line)."
                         },
                         "domain": {
                           "type": "string"
@@ -3842,6 +4007,10 @@
                         },
                         "name": {
                           "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "One-line board purpose (subtitle + agent board-directory line)."
                         },
                         "domain": {
                           "type": "string"
@@ -4172,6 +4341,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -4702,6 +4875,30 @@
             "description": "Search token; when set, only items whose name matches are returned."
           },
           {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gateway",
+                "regular"
+              ]
+            },
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          {
+            "name": "engineId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -4751,15 +4948,6 @@
               "type": "boolean"
             },
             "description": "Include the last message snippet on each chat row."
-          },
-          {
-            "name": "includeExtendedInfo",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            },
-            "description": "Include extended chat metadata (engine-side opt-in)."
           },
           {
             "name": "includeWithoutName",
@@ -4864,7 +5052,7 @@
                           },
                           "lastMessageText": {
                             "type": "string",
-                            "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+                            "description": "Preview text of the most recent message (its text or media caption; `[type]`, e.g. `[ptt]`, when it has none). Present only when includeLastMessage=true."
                           },
                           "lastMessageFromMe": {
                             "type": "boolean",
@@ -4891,6 +5079,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -5042,7 +5234,7 @@
                         },
                         "lastMessageText": {
                           "type": "string",
-                          "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+                          "description": "Preview text of the most recent message (its text or media caption; `[type]`, e.g. `[ptt]`, when it has none). Present only when includeLastMessage=true."
                         },
                         "lastMessageFromMe": {
                           "type": "boolean",
@@ -5149,6 +5341,158 @@
           }
         ],
         "operationId": "chats.get"
+      }
+    },
+    "/v1/realtime/token": {
+      "post": {
+        "tags": [
+          "Realtime"
+        ],
+        "summary": "Get MQTT credentials for receiving messages in real time",
+        "description": "Trades your API key for an MQTT credential. Useful when there is no public URL to deliver a webhook to — your process dials out and subscribes, so nothing needs to be exposed. The response carries the broker URL, the username and password to connect with, and the topic to subscribe to. The credential does not practically expire, so fetching it once at start-up is enough.",
+        "security": [
+          {
+            "BearerAuth": [
+              "chats:read"
+            ]
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "MQTT connection details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "brokerUrl": {
+                          "type": "string",
+                          "description": "MQTT-over-WebSocket URL to connect to, e.g. wss://mqtt.blueticks.co:443/mqtt"
+                        },
+                        "username": {
+                          "type": "string",
+                          "description": "MQTT username — your user id. Must be sent exactly as given: the topics you are allowed to read are derived from it."
+                        },
+                        "password": {
+                          "type": "string",
+                          "description": "JWT to send as the MQTT password. Fetch once and keep it — it does not practically expire; the broker closes the connection only if it ever does."
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "When the token stops being accepted (ISO 8601). Far in the future — present so a client can schedule a refresh if it wants one."
+                        },
+                        "expiresInSeconds": {
+                          "type": "integer",
+                          "description": "Lifetime in seconds, for schedulers that prefer a duration over a deadline."
+                        },
+                        "topics": {
+                          "type": "object",
+                          "properties": {
+                            "messages": {
+                              "type": "string",
+                              "description": "Topic carrying inbound WhatsApp messages for this account, in the same shape a `new_message_received_webhook` delivers. Accounts that enable the \"include my own sent messages\" preference also receive their outgoing messages here, in the shape a `new_message_received_from_me_webhook` delivers."
+                            }
+                          },
+                          "required": [
+                            "messages"
+                          ],
+                          "additionalProperties": false,
+                          "description": "The topics this token can subscribe to."
+                        }
+                      },
+                      "required": [
+                        "brokerUrl",
+                        "username",
+                        "password",
+                        "expiresAt",
+                        "expiresInSeconds",
+                        "topics"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "realtime.token"
       }
     },
     "/v1/groups": {
@@ -5275,6 +5619,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -5380,7 +5728,8 @@
                   "participants": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
                     },
                     "minItems": 1,
                     "maxItems": 256
@@ -6113,6 +6462,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -6628,6 +6981,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -7051,9 +7408,9 @@
                 "properties": {
                   "lyrics": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 5000,
-                    "description": "The song lyrics. Maps to Suno `prompt`. Ignored when `instrumental` is true."
+                    "default": "",
+                    "description": "The song lyrics. Maps to Suno `prompt`. Required unless `instrumental` is true, in which case it is ignored and may be omitted."
                   },
                   "style": {
                     "type": "string",
@@ -7115,7 +7472,6 @@
                   }
                 },
                 "required": [
-                  "lyrics",
                   "style"
                 ],
                 "additionalProperties": false
@@ -7812,7 +8168,8 @@
                 "type": "object",
                 "properties": {
                   "to": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
                   },
                   "variables": {
                     "type": "object",
@@ -8707,8 +9064,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "pattern": "^\\d+(?:-\\d+)?@(?:c\\.us|s\\.whatsapp\\.net|g\\.us|lid|broadcast|newsletter)$"
+              "type": "string"
             },
             "description": "Optional WhatsApp JID to scope results to a single chat. Omit to search across all chats."
           },
@@ -8721,6 +9077,30 @@
               "maxLength": 200
             },
             "description": "Search token; when set, only items whose name matches are returned."
+          },
+          {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gateway",
+                "regular"
+              ]
+            },
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          {
+            "name": "engineId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
           },
           {
             "name": "order",
@@ -8776,11 +9156,49 @@
                   "poll_creation",
                   "location",
                   "vcard",
-                  "revoked"
+                  "revoked",
+                  "multi_vcard",
+                  "protocol",
+                  "status_notification",
+                  "payment",
+                  "groups_v4_invite",
+                  "template_button_reply",
+                  "product",
+                  "order",
+                  "interactive",
+                  "interactive_response",
+                  "reaction",
+                  "reaction_enc",
+                  "comment",
+                  "pin_message",
+                  "poll_update",
+                  "keep_in_chat",
+                  "request_phone_number",
+                  "call_log",
+                  "newsletter_admin_invite",
+                  "newsletter_follower_invite",
+                  "event_creation",
+                  "sharable_event_invite",
+                  "event_response",
+                  "album",
+                  "music",
+                  "sticker-pack",
+                  "poll_result_snapshot",
+                  "rich_response",
+                  "group-history",
+                  "message_history_notice",
+                  "native_flow",
+                  "buttons_response",
+                  "list",
+                  "list_response",
+                  "event_edit_encrypted",
+                  "message_edit_encrypted",
+                  "poll_edit_encrypted",
+                  "poll_add_option_encrypted"
                 ]
               }
             },
-            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here.",
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Accepts BOTH the legacy v1 names and WhatsApp Web names (`waType`): the legacy `chat` still includes interactive menus/clicks, `buttons_response` selects only the clicks. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here.",
             "style": "form",
             "explode": false
           },
@@ -8944,7 +9362,66 @@
                             "type": "string"
                           },
                           "type": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "DEPRECATED: the legacy v1 message type (still emitted). Use `waType` (WhatsApp Web's own name). Interactive menus and clicks are `chat` here. Removal after a sunset date: blueticks-api#7.",
+                            "deprecated": true
+                          },
+                          "waType": {
+                            "type": "string",
+                            "description": "WhatsApp Web's own message type (canonical), e.g. `chat`, `image`, `buttons_response`. Replaces the deprecated `type`."
+                          },
+                          "interactive": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "buttons",
+                                  "native_flow",
+                                  "buttons_response",
+                                  "list",
+                                  "list_response",
+                                  "template",
+                                  "template_button_reply",
+                                  "interactive",
+                                  "interactive_response"
+                                ]
+                              },
+                              "options": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "title": {
+                                      "type": "string"
+                                    },
+                                    "description": {
+                                      "type": "string"
+                                    },
+                                    "section": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "selectedId": {
+                                "type": "string"
+                              },
+                              "selectedTitle": {
+                                "type": "string"
+                              },
+                              "quotedId": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
                           },
                           "fromMe": {
                             "type": "boolean"
@@ -9017,6 +9494,17 @@
                               "waMessageKey"
                             ],
                             "additionalProperties": false
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "vault",
+                              "backup"
+                            ]
+                          },
+                          "secret": {
+                            "type": "string",
+                            "description": "Correlation token the sender attached to this message (the `secret` given at send time). Present only on messages sent through this API; omitted for inbound and phone-sent messages. Use it to recognise your own messages on reads and webhooks."
                           }
                         },
                         "required": [
@@ -9041,6 +9529,10 @@
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
                     },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
+                    },
                     "hasMore": {
                       "type": "boolean",
                       "description": "True when more messages exist in the store beyond this page."
@@ -9050,15 +9542,50 @@
                       "properties": {
                         "oldestLoadedTimestamp": {
                           "type": "number",
-                          "description": "Epoch MILLISECONDS of the oldest currently-loaded message for this chat. Omitted when unknown (empty chat / probe unavailable)."
+                          "description": "Epoch MILLISECONDS. The local message store is loaded at least back to this point: the oldest engine-sourced message in the returned page, or the exact oldest loaded message when a `since` read-through ran. At/before your range start ⇒ that range was loaded. Omitted when the page has no engine-sourced dated message."
                         },
                         "oldestLoadedIso": {
                           "type": "string",
-                          "description": "ISO 8601 form of `oldestLoadedTimestamp`. Use it to verify range coverage (\"did I reach a year back?\") deterministically."
+                          "description": "ISO 8601 form of `oldestLoadedTimestamp`."
+                        },
+                        "messagesScanned": {
+                          "type": "integer",
+                          "description": "How many stored messages the engine evaluated the query against (0 = only the WhatsApp search index was consulted)."
+                        },
+                        "truncated": {
+                          "type": "boolean",
+                          "description": "True when the scan stopped at its cap before exhausting the store — older matches may exist."
+                        },
+                        "indexOnly": {
+                          "type": "boolean",
+                          "description": "True when no local scan ran and results came only from the WhatsApp search index (misses cold chats, captions, filenames) — an empty result is inconclusive."
+                        },
+                        "oldestScannedIso": {
+                          "type": "string",
+                          "description": "ISO 8601 timestamp of the oldest message the scan evaluated."
                         }
                       },
                       "additionalProperties": false,
-                      "description": "How far back this page reaches: oldest message timestamp in the returned page (epoch ms + ISO). Present when the page has at least one dated message."
+                      "description": "Retrieval coverage of this read: how far back the local store is known to be loaded (`oldestLoaded*`) plus the engine scan report when it scanned."
+                    },
+                    "autoLoadedPages": {
+                      "type": "integer",
+                      "description": "Set when a chat-scoped `since` read found an empty window and auto-paged older history from the phone before answering: how many pages were pulled (0 = the store already covered the window)."
+                    },
+                    "sinceReached": {
+                      "type": "boolean",
+                      "description": "Set alongside `autoLoadedPages`: true when the loaded history reaches back to `since` (an empty page is a genuine \"nothing since then\"); false when the page bound or time budget was hit first (older messages may exist)."
+                    },
+                    "sources": {
+                      "type": "object",
+                      "properties": {
+                        "backup": {
+                          "type": "integer",
+                          "description": "Messages in this page served from the server-side message backup."
+                        }
+                      },
+                      "additionalProperties": false,
+                      "description": "Present when some rows came from the server-side message backup instead of the live engine store (engine offline or its store exhausted)."
                     }
                   },
                   "required": [
@@ -9176,6 +9703,40 @@
                       "poll"
                     ]
                   },
+                  "buttonReply": {
+                    "type": "object",
+                    "properties": {
+                      "replyTo": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "The menu being answered: its message key (`waMessageKey`, e.g. `false_<chat>_<id>`), as returned by the messages read."
+                      },
+                      "buttonId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "The id of the menu button to press (`interactive.options[].id`). Exactly one of buttonId / rowId."
+                      },
+                      "rowId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "The id of the list row to select (`interactive.options[].id` of a list menu). Exactly one of buttonId / rowId."
+                      },
+                      "buttonTitle": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "description": "Ignored: the reply text is always taken from the menu itself (a caller cannot put different words on the button)."
+                      }
+                    },
+                    "required": [
+                      "replyTo"
+                    ],
+                    "additionalProperties": false,
+                    "description": "Reply to an interactive menu (buttons / list): press `buttonId` / select `rowId` of the menu `replyTo`. Exclusive with type/text/media/poll and sendAt. Gateway (Baileys) engines only for now; 409 `menu_not_found` when the menu is no longer in the engine store, 400 `unknown_option` when the id is not on the menu."
+                  },
                   "replyTo": {
                     "type": "string",
                     "maxLength": 256,
@@ -9215,6 +9776,11 @@
                     "maxLength": 255,
                     "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
                   },
+                  "mediaMimeType": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "MIME type of the inline base64 media, e.g. `image/png` (type=media). Optional — only used when mediaBase64 is a bare base64 string without a data: prefix; a data: URL carries its own type, and mediaUrl reads it from the response."
+                  },
                   "pollQuestion": {
                     "type": "string",
                     "minLength": 1,
@@ -9234,6 +9800,16 @@
                     "type": "boolean",
                     "description": "Allow selecting multiple poll options (type=poll). Default false."
                   },
+                  "mentions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "maxItems": 256,
+                    "description": "Participant JIDs to @mention in a group (e.g. [\"12025550101@c.us\"]). Sets the real WhatsApp mention (highlight + notification); put the visible @name in `text` yourself."
+                  },
                   "secret": {
                     "type": "string",
                     "minLength": 1,
@@ -9249,11 +9825,18 @@
                     "minimum": 0,
                     "maximum": 25,
                     "description": "Extra typing duration in seconds, added on top of the built-in 0.4–0.8s random jitter. Default 0. Capped at 25s (WhatsApp clears the indicator after ~25s)."
+                  },
+                  "waLabelIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "maxItems": 20,
+                    "description": "Native WhatsApp Business label ids to assign to the recipient chat immediately after this message sends. Ids come from GET /v1/wa-labels. At most 20. WhatsApp Business accounts only — on a non-Business account the message still sends and the labels are skipped (see the `waLabels` field on the response)."
                   }
                 },
-                "required": [
-                  "type"
-                ],
                 "additionalProperties": false
               }
             }
@@ -9306,7 +9889,12 @@
                           "additionalProperties": false
                         },
                         "to": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "The recipient. For a send made through this API it is the caller's own raw `to`, echoed back; for a message created in the Blueticks UI it is the WhatsApp JID (e.g. 9725XXXXXXXX@c.us). Empty only when the message carries no recipient at all."
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "description": "The recipient's display name, or null when the message carries no name."
                         },
                         "type": {
                           "type": "string",
@@ -9420,6 +10008,28 @@
                               "type": "string"
                             }
                           },
+                          "additionalProperties": false
+                        },
+                        "waLabels": {
+                          "type": "object",
+                          "properties": {
+                            "requested": {
+                              "type": "integer",
+                              "description": "Number of label ids requested."
+                            },
+                            "applied": {
+                              "type": "boolean",
+                              "description": "Whether WhatsApp accepted the label change."
+                            },
+                            "error": {
+                              "type": "string",
+                              "description": "Reason the labels were not applied (e.g. `wa_business_required`), else null."
+                            }
+                          },
+                          "required": [
+                            "requested",
+                            "applied"
+                          ],
                           "additionalProperties": false
                         }
                       },
@@ -9546,7 +10156,7 @@
               "type": "string",
               "maxLength": 64
             },
-            "description": "Optional key for safe retries — guarantees a request runs at most once, so a network timeout + retry never double-sends. Reuse the same key to retry: an identical body replays the original response (HTTP 200 instead of 201, no second message); a different body with the same key returns 409 Conflict. Keys are scoped per workspace (max 64 chars). This is the request-level dedup control — distinct from the body `secret` field, which is only a correlation tag and does NOT prevent duplicate sends."
+            "description": "Optional key for safe retries — guarantees a request runs at most once, so a network timeout + retry never double-sends. Reuse the same key to retry: an identical body replays the original response, returning the SAME status (201) and the same message id, and no second message is created. The status does NOT change on a replay — detect one by the returned message id, not by the status code. A different body under the same key returns 409 Conflict. Keys are scoped per workspace (max 64 chars). This is the request-level dedup control — distinct from the body `secret` field, which is only a correlation tag and does NOT prevent duplicate sends."
           }
         ],
         "requestBody": {
@@ -9563,6 +10173,40 @@
                       "media",
                       "poll"
                     ]
+                  },
+                  "buttonReply": {
+                    "type": "object",
+                    "properties": {
+                      "replyTo": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "The menu being answered: its message key (`waMessageKey`, e.g. `false_<chat>_<id>`), as returned by the messages read."
+                      },
+                      "buttonId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "The id of the menu button to press (`interactive.options[].id`). Exactly one of buttonId / rowId."
+                      },
+                      "rowId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "The id of the list row to select (`interactive.options[].id` of a list menu). Exactly one of buttonId / rowId."
+                      },
+                      "buttonTitle": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "description": "Ignored: the reply text is always taken from the menu itself (a caller cannot put different words on the button)."
+                      }
+                    },
+                    "required": [
+                      "replyTo"
+                    ],
+                    "additionalProperties": false,
+                    "description": "Reply to an interactive menu (buttons / list): press `buttonId` / select `rowId` of the menu `replyTo`. Exclusive with type/text/media/poll and sendAt. Gateway (Baileys) engines only for now; 409 `menu_not_found` when the menu is no longer in the engine store, 400 `unknown_option` when the id is not on the menu."
                   },
                   "replyTo": {
                     "type": "string",
@@ -9603,6 +10247,11 @@
                     "maxLength": 255,
                     "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
                   },
+                  "mediaMimeType": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "MIME type of the inline base64 media, e.g. `image/png` (type=media). Optional — only used when mediaBase64 is a bare base64 string without a data: prefix; a data: URL carries its own type, and mediaUrl reads it from the response."
+                  },
                   "pollQuestion": {
                     "type": "string",
                     "minLength": 1,
@@ -9622,6 +10271,16 @@
                     "type": "boolean",
                     "description": "Allow selecting multiple poll options (type=poll). Default false."
                   },
+                  "mentions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "maxItems": 256,
+                    "description": "Participant JIDs to @mention in a group (e.g. [\"12025550101@c.us\"]). Sets the real WhatsApp mention (highlight + notification); put the visible @name in `text` yourself."
+                  },
                   "secret": {
                     "type": "string",
                     "minLength": 1,
@@ -9631,11 +10290,24 @@
                   "sendAt": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "recipientName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "Display name for the recipient, shown next to the message in the scheduled-message list. Optional — when omitted the name is resolved automatically from the connected WhatsApp account shortly after the message is queued."
+                  },
+                  "waLabelIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "maxItems": 20,
+                    "description": "Native WhatsApp Business label ids to assign to the recipient chat immediately after this message sends. Ids come from GET /v1/wa-labels. At most 20. WhatsApp Business accounts only — on a non-Business account the message still sends and the labels are skipped (see the `waLabels` field on the response)."
                   }
                 },
-                "required": [
-                  "type"
-                ],
                 "additionalProperties": false
               },
               "examples": {
@@ -9750,7 +10422,12 @@
                           "additionalProperties": false
                         },
                         "to": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "The recipient. For a send made through this API it is the caller's own raw `to`, echoed back; for a message created in the Blueticks UI it is the WhatsApp JID (e.g. 9725XXXXXXXX@c.us). Empty only when the message carries no recipient at all."
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "description": "The recipient's display name, or null when the message carries no name."
                         },
                         "type": {
                           "type": "string",
@@ -9864,6 +10541,28 @@
                               "type": "string"
                             }
                           },
+                          "additionalProperties": false
+                        },
+                        "waLabels": {
+                          "type": "object",
+                          "properties": {
+                            "requested": {
+                              "type": "integer",
+                              "description": "Number of label ids requested."
+                            },
+                            "applied": {
+                              "type": "boolean",
+                              "description": "Whether WhatsApp accepted the label change."
+                            },
+                            "error": {
+                              "type": "string",
+                              "description": "Reason the labels were not applied (e.g. `wa_business_required`), else null."
+                            }
+                          },
+                          "required": [
+                            "requested",
+                            "applied"
+                          ],
                           "additionalProperties": false
                         }
                       },
@@ -9931,7 +10630,12 @@
                           "additionalProperties": false
                         },
                         "to": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "The recipient. For a send made through this API it is the caller's own raw `to`, echoed back; for a message created in the Blueticks UI it is the WhatsApp JID (e.g. 9725XXXXXXXX@c.us). Empty only when the message carries no recipient at all."
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "description": "The recipient's display name, or null when the message carries no name."
                         },
                         "type": {
                           "type": "string",
@@ -10045,6 +10749,28 @@
                               "type": "string"
                             }
                           },
+                          "additionalProperties": false
+                        },
+                        "waLabels": {
+                          "type": "object",
+                          "properties": {
+                            "requested": {
+                              "type": "integer",
+                              "description": "Number of label ids requested."
+                            },
+                            "applied": {
+                              "type": "boolean",
+                              "description": "Whether WhatsApp accepted the label change."
+                            },
+                            "error": {
+                              "type": "string",
+                              "description": "Reason the labels were not applied (e.g. `wa_business_required`), else null."
+                            }
+                          },
+                          "required": [
+                            "requested",
+                            "applied"
+                          ],
                           "additionalProperties": false
                         }
                       },
@@ -10236,7 +10962,66 @@
                           "type": "string"
                         },
                         "type": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "DEPRECATED: the legacy v1 message type (still emitted). Use `waType` (WhatsApp Web's own name). Interactive menus and clicks are `chat` here. Removal after a sunset date: blueticks-api#7.",
+                          "deprecated": true
+                        },
+                        "waType": {
+                          "type": "string",
+                          "description": "WhatsApp Web's own message type (canonical), e.g. `chat`, `image`, `buttons_response`. Replaces the deprecated `type`."
+                        },
+                        "interactive": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "buttons",
+                                "native_flow",
+                                "buttons_response",
+                                "list",
+                                "list_response",
+                                "template",
+                                "template_button_reply",
+                                "interactive",
+                                "interactive_response"
+                              ]
+                            },
+                            "options": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  },
+                                  "section": {
+                                    "type": "string"
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            },
+                            "selectedId": {
+                              "type": "string"
+                            },
+                            "selectedTitle": {
+                              "type": "string"
+                            },
+                            "quotedId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
                         },
                         "fromMe": {
                           "type": "boolean"
@@ -10309,6 +11094,17 @@
                             "waMessageKey"
                           ],
                           "additionalProperties": false
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "vault",
+                            "backup"
+                          ]
+                        },
+                        "secret": {
+                          "type": "string",
+                          "description": "Correlation token the sender attached to this message (the `secret` given at send time). Present only on messages sent through this API; omitted for inbound and phone-sent messages. Use it to recognise your own messages on reads and webhooks."
                         }
                       },
                       "required": [
@@ -10436,12 +11232,14 @@
                 "type": "object",
                 "properties": {
                   "chatId": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
                   },
                   "participants": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
                     },
                     "minItems": 1,
                     "maxItems": 256
@@ -11529,7 +12327,7 @@
           "Contacts"
         ],
         "summary": "Get common groups",
-        "description": "List the groups the connected WhatsApp account shares with this contact (WhatsApp’s \"groups in common\"). `id` is the contact’s JID (e.g. `12345@c.us`). Returns the same group list-item shape as `GET /v1/groups`. Requires `groups:read`.",
+        "description": "List the groups the connected WhatsApp account shares with this contact (WhatsApp’s \"groups in common\"). `id` is the contact’s JID (e.g. `12345@c.us`). Returns the same group list-item shape as `GET /v1/groups`, offset-paginated via `limit` + `skip`. Requires `groups:read`.",
         "security": [
           {
             "BearerAuth": [
@@ -11545,6 +12343,29 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 500
+            },
+            "description": "Page size (default and max 500 — the whole set in one page)."
           }
         ],
         "responses": {
@@ -11612,6 +12433,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -11931,6 +12756,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -13397,6 +14226,30 @@
         ],
         "parameters": [
           {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gateway",
+                "regular"
+              ]
+            },
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          {
+            "name": "engineId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          {
             "name": "numberOfChats",
             "in": "query",
             "required": false,
@@ -13485,7 +14338,7 @@
                               },
                               "lastMessageText": {
                                 "type": "string",
-                                "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+                                "description": "Preview text of the most recent message (its text or media caption; `[type]`, e.g. `[ptt]`, when it has none). Present only when includeLastMessage=true."
                               },
                               "lastMessageFromMe": {
                                 "type": "boolean",
@@ -13540,7 +14393,66 @@
                                       "type": "string"
                                     },
                                     "type": {
-                                      "type": "string"
+                                      "type": "string",
+                                      "description": "DEPRECATED: the legacy v1 message type (still emitted). Use `waType` (WhatsApp Web's own name). Interactive menus and clicks are `chat` here. Removal after a sunset date: blueticks-api#7.",
+                                      "deprecated": true
+                                    },
+                                    "waType": {
+                                      "type": "string",
+                                      "description": "WhatsApp Web's own message type (canonical), e.g. `chat`, `image`, `buttons_response`. Replaces the deprecated `type`."
+                                    },
+                                    "interactive": {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "buttons",
+                                            "native_flow",
+                                            "buttons_response",
+                                            "list",
+                                            "list_response",
+                                            "template",
+                                            "template_button_reply",
+                                            "interactive",
+                                            "interactive_response"
+                                          ]
+                                        },
+                                        "options": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "id": {
+                                                "type": "string"
+                                              },
+                                              "title": {
+                                                "type": "string"
+                                              },
+                                              "description": {
+                                                "type": "string"
+                                              },
+                                              "section": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "selectedId": {
+                                          "type": "string"
+                                        },
+                                        "selectedTitle": {
+                                          "type": "string"
+                                        },
+                                        "quotedId": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
                                     },
                                     "fromMe": {
                                       "type": "boolean"
@@ -13613,6 +14525,17 @@
                                         "waMessageKey"
                                       ],
                                       "additionalProperties": false
+                                    },
+                                    "source": {
+                                      "type": "string",
+                                      "enum": [
+                                        "vault",
+                                        "backup"
+                                      ]
+                                    },
+                                    "secret": {
+                                      "type": "string",
+                                      "description": "Correlation token the sender attached to this message (the `secret` given at send time). Present only on messages sent through this API; omitted for inbound and phone-sent messages. Use it to recognise your own messages on reads and webhooks."
                                     }
                                   },
                                   "required": [
@@ -13767,6 +14690,30 @@
             "description": "Search token; when set, only participants whose resolved name or phone/JID matches (case-insensitive substring) are returned, and `total` reflects the matched count."
           },
           {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gateway",
+                "regular"
+              ]
+            },
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          {
+            "name": "engineId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          {
             "name": "skip",
             "in": "query",
             "required": false,
@@ -13846,6 +14793,10 @@
                     "total": {
                       "type": "integer",
                       "description": "Total number of items matching the query, across all pages."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Token for the next page, or null when this is the last page. Pass it back as `cursor`. Equal to the next `skip`, so offset callers are unaffected."
                     }
                   },
                   "required": [
@@ -14346,6 +15297,439 @@
           }
         },
         "operationId": "chats.unarchive.create"
+      }
+    },
+    "/v1/wa-labels": {
+      "get": {
+        "tags": [
+          "WA Labels"
+        ],
+        "summary": "List native WhatsApp Business labels",
+        "description": "List ALL of the connected account's native WhatsApp Business labels. Use the returned `id`s with PATCH /v1/chats/{chatId}/wa-labels or the `waLabelIds` send field. WhatsApp Business accounts only — a non-Business account returns an empty list. Requires `wa-labels:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "wa-labels:read"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "labels",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "color": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "wa-labels.list"
+      }
+    },
+    "/v1/chats/{chatId}/wa-labels": {
+      "get": {
+        "tags": [
+          "WA Labels"
+        ],
+        "summary": "Get a chat's native labels",
+        "description": "Return the native WhatsApp Business labels currently assigned to the chat. WhatsApp Business accounts only — a non-Business account returns an empty list. Requires `wa-labels:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "wa-labels:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "labels",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "color": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "chats.walabels.list"
+      },
+      "patch": {
+        "tags": [
+          "WA Labels"
+        ],
+        "summary": "Set a chat's native labels",
+        "description": "Replace the chat's native WhatsApp Business label set with exactly `labelIds` (values from GET /v1/wa-labels). An empty array clears all labels. At most 20 (the WhatsApp Business ceiling). Requires a WhatsApp Business account — a non-Business account returns 409 `wa_business_required`. Requires `wa-labels:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "wa-labels:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "labelIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "maxItems": 20,
+                    "description": "Full replacement set of native WhatsApp Business label ids for this chat. Ids come from GET /v1/wa-labels. At most 20 (the WhatsApp Business ceiling). An empty array clears all native labels."
+                  }
+                },
+                "required": [
+                  "labelIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "labels updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "ok"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The connected account is not a WhatsApp Business account (`wa_business_required`)."
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "chats.walabels.patch"
       }
     },
     "/v1/messages/ack/{waMessageKey}": {
@@ -14908,7 +16292,7 @@
         },
         "responses": {
           "200": {
-            "description": "ack data",
+            "description": "ack data, one entry per requested key",
             "content": {
               "application/json": {
                 "schema": {
@@ -14944,26 +16328,11 @@
                         ],
                         "additionalProperties": false
                       }
-                    },
-                    "limit": {
-                      "type": "integer",
-                      "description": "Page size echoed back from the request."
-                    },
-                    "skip": {
-                      "type": "integer",
-                      "description": "Offset echoed back from the request."
-                    },
-                    "total": {
-                      "type": "integer",
-                      "description": "Total number of items matching the query, across all pages."
                     }
                   },
                   "required": [
                     "success",
-                    "data",
-                    "limit",
-                    "skip",
-                    "total"
+                    "data"
                   ],
                   "additionalProperties": false
                 }
@@ -15272,26 +16641,11 @@
                         ],
                         "additionalProperties": false
                       }
-                    },
-                    "limit": {
-                      "type": "integer",
-                      "description": "Page size echoed back from the request."
-                    },
-                    "skip": {
-                      "type": "integer",
-                      "description": "Offset echoed back from the request."
-                    },
-                    "total": {
-                      "type": "integer",
-                      "description": "Total number of items matching the query, across all pages."
                     }
                   },
                   "required": [
                     "success",
-                    "data",
-                    "limit",
-                    "skip",
-                    "total"
+                    "data"
                   ],
                   "additionalProperties": false
                 }
@@ -15685,6 +17039,377 @@
         },
         "operationId": "messages.unpin.create"
       }
+    },
+    "/v1/identity/resolve": {
+      "post": {
+        "tags": [
+          "Identity"
+        ],
+        "summary": "Resolve identities (batch)",
+        "description": "Resolve up to 100 WhatsApp JIDs to their canonical phone-form identities in one call. Order-preserving. Each element is the same object as `GET /v1/identity/{id}`. Requires `contacts:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "contacts:read"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "description": "WhatsApp JIDs to resolve. Order-preserving in the response. Max 100."
+                  }
+                },
+                "required": [
+                  "ids"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "resolved identities, one per input id (order-preserving)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "input": {
+                            "type": "string",
+                            "description": "The JID as received, echoed verbatim."
+                          },
+                          "resolved": {
+                            "type": "boolean",
+                            "description": "true = the engine/cache produced an authoritative canonical identity. false = unknown (fail closed)."
+                          },
+                          "canonical": {
+                            "type": "string",
+                            "description": "The phone-form JID (`<digits>@c.us`) — the value to canonicalize a chatId/sender to. Null when unresolved. For a group, the group JID itself."
+                          },
+                          "phone": {
+                            "type": "string",
+                            "description": "Digits only, no suffix. Null when unresolved or for a group."
+                          },
+                          "lid": {
+                            "type": "string",
+                            "description": "The `@lid` form when known. Null otherwise."
+                          },
+                          "aliases": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Every equivalent JID for this identity, INCLUDING `input` — the set a caller may match against."
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "user",
+                              "group",
+                              "unknown"
+                            ],
+                            "description": "`group` for `@g.us` (no phone); `user` for a resolved person; `unknown` for an unresolved identity."
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "engine",
+                              "cache",
+                              "unknown"
+                            ],
+                            "description": "Provenance of the mapping: `engine` (live lookup), `cache` (Redis or a structural phone-form/group), `unknown` (unresolved)."
+                          }
+                        },
+                        "required": [
+                          "input",
+                          "resolved",
+                          "aliases",
+                          "type",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "identity.resolve"
+      }
+    },
+    "/v1/identity/{id}": {
+      "get": {
+        "tags": [
+          "Identity"
+        ],
+        "summary": "Resolve an identity",
+        "description": "Resolve a single WhatsApp JID (URL-encoded) — `…@lid`, `…@c.us`, `…@s.whatsapp.net`, or `…@g.us` — to its canonical phone-form identity via the account engine store + cache, scoped to the API-key owner. An unknown identity returns 200 with `resolved:false` (fail closed), never 404; a malformed id returns 400. Requires `contacts:read`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "contacts:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "A single WhatsApp JID, URL-encoded (e.g. `120813554507870%40lid`).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "identity (resolved or fail-closed unresolved)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "input": {
+                          "type": "string",
+                          "description": "The JID as received, echoed verbatim."
+                        },
+                        "resolved": {
+                          "type": "boolean",
+                          "description": "true = the engine/cache produced an authoritative canonical identity. false = unknown (fail closed)."
+                        },
+                        "canonical": {
+                          "type": "string",
+                          "description": "The phone-form JID (`<digits>@c.us`) — the value to canonicalize a chatId/sender to. Null when unresolved. For a group, the group JID itself."
+                        },
+                        "phone": {
+                          "type": "string",
+                          "description": "Digits only, no suffix. Null when unresolved or for a group."
+                        },
+                        "lid": {
+                          "type": "string",
+                          "description": "The `@lid` form when known. Null otherwise."
+                        },
+                        "aliases": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Every equivalent JID for this identity, INCLUDING `input` — the set a caller may match against."
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "group",
+                            "unknown"
+                          ],
+                          "description": "`group` for `@g.us` (no phone); `user` for a resolved person; `unknown` for an unresolved identity."
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "engine",
+                            "cache",
+                            "unknown"
+                          ],
+                          "description": "Provenance of the mapping: `engine` (live lookup), `cache` (Redis or a structural phone-form/group), `unknown` (unresolved)."
+                        }
+                      },
+                      "required": [
+                        "input",
+                        "resolved",
+                        "aliases",
+                        "type",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "identity.get"
+      }
     }
   },
   "components": {
@@ -15898,7 +17623,8 @@
         "type": "object",
         "properties": {
           "to": {
-            "type": "string"
+            "type": "string",
+            "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
           },
           "variables": {
             "type": "object",
@@ -17277,7 +19003,7 @@
           "lastMessageText": {
             "type": "string",
             "nullable": true,
-            "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+            "description": "Preview text of the most recent message (its text or media caption; `[type]`, e.g. `[ptt]`, when it has none). Present only when includeLastMessage=true."
           },
           "lastMessageFromMe": {
             "type": "boolean",
@@ -17298,7 +19024,11 @@
       },
       "ChatId": {
         "type": "string",
-        "pattern": "^\\d+(?:-\\d+)?@(?:c\\.us|s\\.whatsapp\\.net|g\\.us|lid|broadcast|newsletter)$"
+        "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
+      },
+      "ChatIdSend": {
+        "type": "string",
+        "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
       },
       "ChatLabel": {
         "type": "object",
@@ -17365,9 +19095,30 @@
         ],
         "additionalProperties": false
       },
+      "EngineTargetEnum": {
+        "type": "string",
+        "enum": [
+          "gateway",
+          "regular"
+        ]
+      },
       "GetChatParticipantsQuery": {
         "type": "object",
         "properties": {
+          "engine": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          "engineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
           "searchToken": {
             "type": "string",
             "maxLength": 200,
@@ -17438,7 +19189,7 @@
           "lastMessageText": {
             "type": "string",
             "nullable": true,
-            "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+            "description": "Preview text of the most recent message (its text or media caption; `[type]`, e.g. `[ptt]`, when it has none). Present only when includeLastMessage=true."
           },
           "lastMessageFromMe": {
             "type": "boolean",
@@ -17494,7 +19245,72 @@
                   "type": "string"
                 },
                 "type": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "DEPRECATED: the legacy v1 message type (still emitted). Use `waType` (WhatsApp Web's own name). Interactive menus and clicks are `chat` here. Removal after a sunset date: blueticks-api#7.",
+                  "deprecated": true
+                },
+                "waType": {
+                  "type": "string",
+                  "description": "WhatsApp Web's own message type (canonical), e.g. `chat`, `image`, `buttons_response`. Replaces the deprecated `type`."
+                },
+                "interactive": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "buttons",
+                        "native_flow",
+                        "buttons_response",
+                        "list",
+                        "list_response",
+                        "template",
+                        "template_button_reply",
+                        "interactive",
+                        "interactive_response"
+                      ]
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "title": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "section": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "selectedId": {
+                      "type": "string"
+                    },
+                    "selectedTitle": {
+                      "type": "string"
+                    },
+                    "quotedId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
                 },
                 "fromMe": {
                   "type": "boolean"
@@ -17566,6 +19382,17 @@
                     "waMessageKey"
                   ],
                   "additionalProperties": false
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "vault",
+                    "backup"
+                  ]
+                },
+                "secret": {
+                  "type": "string",
+                  "description": "Correlation token the sender attached to this message (the `secret` given at send time). Present only on messages sent through this API; omitted for inbound and phone-sent messages. Use it to recognise your own messages on reads and webhooks."
                 }
               },
               "required": [
@@ -17595,6 +19422,20 @@
       "LatestChatsQuery": {
         "type": "object",
         "properties": {
+          "engine": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          "engineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
           "numberOfChats": {
             "type": "integer",
             "minimum": 1,
@@ -17666,7 +19507,7 @@
                 "lastMessageText": {
                   "type": "string",
                   "nullable": true,
-                  "description": "Preview text of the most recent message. Present only when includeLastMessage=true."
+                  "description": "Preview text of the most recent message (its text or media caption; `[type]`, e.g. `[ptt]`, when it has none). Present only when includeLastMessage=true."
                 },
                 "lastMessageFromMe": {
                   "type": "boolean",
@@ -17722,7 +19563,72 @@
                         "type": "string"
                       },
                       "type": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "DEPRECATED: the legacy v1 message type (still emitted). Use `waType` (WhatsApp Web's own name). Interactive menus and clicks are `chat` here. Removal after a sunset date: blueticks-api#7.",
+                        "deprecated": true
+                      },
+                      "waType": {
+                        "type": "string",
+                        "description": "WhatsApp Web's own message type (canonical), e.g. `chat`, `image`, `buttons_response`. Replaces the deprecated `type`."
+                      },
+                      "interactive": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "buttons",
+                              "native_flow",
+                              "buttons_response",
+                              "list",
+                              "list_response",
+                              "template",
+                              "template_button_reply",
+                              "interactive",
+                              "interactive_response"
+                            ]
+                          },
+                          "options": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "title": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "description": {
+                                  "type": "string"
+                                },
+                                "section": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "title"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "selectedId": {
+                            "type": "string"
+                          },
+                          "selectedTitle": {
+                            "type": "string"
+                          },
+                          "quotedId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": false
                       },
                       "fromMe": {
                         "type": "boolean"
@@ -17794,6 +19700,17 @@
                           "waMessageKey"
                         ],
                         "additionalProperties": false
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "vault",
+                          "backup"
+                        ]
+                      },
+                      "secret": {
+                        "type": "string",
+                        "description": "Correlation token the sender attached to this message (the `secret` given at send time). Present only on messages sent through this API; omitted for inbound and phone-sent messages. Use it to recognise your own messages on reads and webhooks."
                       }
                     },
                     "required": [
@@ -17845,6 +19762,20 @@
       "ListChatsQuery": {
         "type": "object",
         "properties": {
+          "engine": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          "engineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
           "searchToken": {
             "type": "string",
             "maxLength": 200,
@@ -17894,10 +19825,6 @@
           "includeLastMessage": {
             "type": "boolean",
             "description": "Include the last message snippet on each chat row."
-          },
-          "includeExtendedInfo": {
-            "type": "boolean",
-            "description": "Include extended chat metadata (engine-side opt-in)."
           },
           "includeWithoutName": {
             "type": "boolean",
@@ -18055,9 +19982,53 @@
         "minLength": 1,
         "maxLength": 512
       },
+      "MessageListCoverage": {
+        "type": "object",
+        "properties": {
+          "oldestLoadedTimestamp": {
+            "type": "number",
+            "description": "Epoch MILLISECONDS. The local message store is loaded at least back to this point: the oldest engine-sourced message in the returned page, or the exact oldest loaded message when a `since` read-through ran. At/before your range start ⇒ that range was loaded. Omitted when the page has no engine-sourced dated message."
+          },
+          "oldestLoadedIso": {
+            "type": "string",
+            "description": "ISO 8601 form of `oldestLoadedTimestamp`."
+          },
+          "messagesScanned": {
+            "type": "integer",
+            "description": "How many stored messages the engine evaluated the query against (0 = only the WhatsApp search index was consulted)."
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "True when the scan stopped at its cap before exhausting the store — older matches may exist."
+          },
+          "indexOnly": {
+            "type": "boolean",
+            "description": "True when no local scan ran and results came only from the WhatsApp search index (misses cold chats, captions, filenames) — an empty result is inconclusive."
+          },
+          "oldestScannedIso": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of the oldest message the scan evaluated."
+          }
+        },
+        "additionalProperties": false
+      },
       "MessagesQuery": {
         "type": "object",
         "properties": {
+          "engine": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          "engineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
           "order": {
             "type": "string",
             "enum": [
@@ -18112,10 +20083,48 @@
                 "poll_creation",
                 "location",
                 "vcard",
-                "revoked"
+                "revoked",
+                "multi_vcard",
+                "protocol",
+                "status_notification",
+                "payment",
+                "groups_v4_invite",
+                "template_button_reply",
+                "product",
+                "order",
+                "interactive",
+                "interactive_response",
+                "reaction",
+                "reaction_enc",
+                "comment",
+                "pin_message",
+                "poll_update",
+                "keep_in_chat",
+                "request_phone_number",
+                "call_log",
+                "newsletter_admin_invite",
+                "newsletter_follower_invite",
+                "event_creation",
+                "sharable_event_invite",
+                "event_response",
+                "album",
+                "music",
+                "sticker-pack",
+                "poll_result_snapshot",
+                "rich_response",
+                "group-history",
+                "message_history_notice",
+                "native_flow",
+                "buttons_response",
+                "list",
+                "list_response",
+                "event_edit_encrypted",
+                "message_edit_encrypted",
+                "poll_edit_encrypted",
+                "poll_add_option_encrypted"
               ]
             },
-            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Accepts BOTH the legacy v1 names and WhatsApp Web names (`waType`): the legacy `chat` still includes interactive menus/clicks, `buttons_response` selects only the clicks. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
           },
           "queryAny": {
             "type": "array",
@@ -18156,7 +20165,6 @@
           },
           "chatId": {
             "type": "string",
-            "pattern": "^\\d+(?:-\\d+)?@(?:c\\.us|s\\.whatsapp\\.net|g\\.us|lid|broadcast|newsletter)$",
             "description": "Optional WhatsApp JID to scope results to a single chat. Omit to search across all chats."
           }
         },
@@ -18313,7 +20321,72 @@
             "type": "string"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "description": "DEPRECATED: the legacy v1 message type (still emitted). Use `waType` (WhatsApp Web's own name). Interactive menus and clicks are `chat` here. Removal after a sunset date: blueticks-api#7.",
+            "deprecated": true
+          },
+          "waType": {
+            "type": "string",
+            "description": "WhatsApp Web's own message type (canonical), e.g. `chat`, `image`, `buttons_response`. Replaces the deprecated `type`."
+          },
+          "interactive": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "buttons",
+                  "native_flow",
+                  "buttons_response",
+                  "list",
+                  "list_response",
+                  "template",
+                  "template_button_reply",
+                  "interactive",
+                  "interactive_response"
+                ]
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "section": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "selectedId": {
+                "type": "string"
+              },
+              "selectedTitle": {
+                "type": "string"
+              },
+              "quotedId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false
           },
           "fromMe": {
             "type": "boolean"
@@ -18385,6 +20458,17 @@
               "waMessageKey"
             ],
             "additionalProperties": false
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "vault",
+              "backup"
+            ]
+          },
+          "secret": {
+            "type": "string",
+            "description": "Correlation token the sender attached to this message (the `secret` given at send time). Present only on messages sent through this API; omitted for inbound and phone-sent messages. Use it to recognise your own messages on reads and webhooks."
           }
         },
         "required": [
@@ -18465,6 +20549,20 @@
       "QueryMessagesQuery": {
         "type": "object",
         "properties": {
+          "engine": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          "engineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
           "order": {
             "type": "string",
             "enum": [
@@ -18519,10 +20617,48 @@
                 "poll_creation",
                 "location",
                 "vcard",
-                "revoked"
+                "revoked",
+                "multi_vcard",
+                "protocol",
+                "status_notification",
+                "payment",
+                "groups_v4_invite",
+                "template_button_reply",
+                "product",
+                "order",
+                "interactive",
+                "interactive_response",
+                "reaction",
+                "reaction_enc",
+                "comment",
+                "pin_message",
+                "poll_update",
+                "keep_in_chat",
+                "request_phone_number",
+                "call_log",
+                "newsletter_admin_invite",
+                "newsletter_follower_invite",
+                "event_creation",
+                "sharable_event_invite",
+                "event_response",
+                "album",
+                "music",
+                "sticker-pack",
+                "poll_result_snapshot",
+                "rich_response",
+                "group-history",
+                "message_history_notice",
+                "native_flow",
+                "buttons_response",
+                "list",
+                "list_response",
+                "event_edit_encrypted",
+                "message_edit_encrypted",
+                "poll_edit_encrypted",
+                "poll_add_option_encrypted"
               ]
             },
-            "description": "Filter to specific message kinds. Comma-separated or repeated. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
+            "description": "Filter to specific message kinds. Comma-separated or repeated. Accepts BOTH the legacy v1 names and WhatsApp Web names (`waType`): the legacy `chat` still includes interactive menus/clicks, `buttons_response` selects only the clicks. Useful for \"all PDFs\" (`document`) or \"images today\" (`image`). System events (gp2/revoked/newsletter_notification) are excluded by default unless explicitly listed here."
           },
           "queryAny": {
             "type": "array",
@@ -18581,6 +20717,20 @@
       "UnifiedSearchQuery": {
         "type": "object",
         "properties": {
+          "engine": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          "engineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
           "searchToken": {
             "type": "string",
             "maxLength": 200,
@@ -18699,18 +20849,39 @@
         "type": "object",
         "properties": {
           "chatId": {
-            "type": "string"
+            "type": "string",
+            "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
           },
           "participants": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
             },
             "minItems": 1,
             "maxItems": 256
           }
         },
         "additionalProperties": false
+      },
+      "CommonGroupsQuery": {
+        "type": "object",
+        "properties": {
+          "skip": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of items to skip before the page (default 0)."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 500,
+            "description": "Page size (default and max 500 — the whole set in one page)."
+          }
+        }
       },
       "CreateGroupRequest": {
         "type": "object",
@@ -18723,7 +20894,8 @@
           "participants": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
             },
             "minItems": 1,
             "maxItems": 256
@@ -18943,7 +21115,8 @@
         "additionalProperties": false
       },
       "MemberChatId": {
-        "type": "string"
+        "type": "string",
+        "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
       },
       "SetPictureRequest": {
         "type": "object",
@@ -19000,6 +21173,155 @@
         },
         "additionalProperties": false
       },
+      "Identity": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "The JID as received, echoed verbatim."
+          },
+          "resolved": {
+            "type": "boolean",
+            "description": "true = the engine/cache produced an authoritative canonical identity. false = unknown (fail closed)."
+          },
+          "canonical": {
+            "type": "string",
+            "nullable": true,
+            "description": "The phone-form JID (`<digits>@c.us`) — the value to canonicalize a chatId/sender to. Null when unresolved. For a group, the group JID itself."
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Digits only, no suffix. Null when unresolved or for a group."
+          },
+          "lid": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `@lid` form when known. Null otherwise."
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Every equivalent JID for this identity, INCLUDING `input` — the set a caller may match against."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "user",
+              "group",
+              "unknown"
+            ],
+            "description": "`group` for `@g.us` (no phone); `user` for a resolved person; `unknown` for an unresolved identity."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "engine",
+              "cache",
+              "unknown"
+            ],
+            "description": "Provenance of the mapping: `engine` (live lookup), `cache` (Redis or a structural phone-form/group), `unknown` (unresolved)."
+          }
+        },
+        "required": [
+          "input",
+          "resolved",
+          "canonical",
+          "phone",
+          "lid",
+          "aliases",
+          "type",
+          "source"
+        ],
+        "additionalProperties": false
+      },
+      "IdentityBatchRequest": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "WhatsApp JIDs to resolve. Order-preserving in the response. Max 100."
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "additionalProperties": false
+      },
+      "IdentityBatchResponse": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "input": {
+              "type": "string",
+              "description": "The JID as received, echoed verbatim."
+            },
+            "resolved": {
+              "type": "boolean",
+              "description": "true = the engine/cache produced an authoritative canonical identity. false = unknown (fail closed)."
+            },
+            "canonical": {
+              "type": "string",
+              "nullable": true,
+              "description": "The phone-form JID (`<digits>@c.us`) — the value to canonicalize a chatId/sender to. Null when unresolved. For a group, the group JID itself."
+            },
+            "phone": {
+              "type": "string",
+              "nullable": true,
+              "description": "Digits only, no suffix. Null when unresolved or for a group."
+            },
+            "lid": {
+              "type": "string",
+              "nullable": true,
+              "description": "The `@lid` form when known. Null otherwise."
+            },
+            "aliases": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Every equivalent JID for this identity, INCLUDING `input` — the set a caller may match against."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "user",
+                "group",
+                "unknown"
+              ],
+              "description": "`group` for `@g.us` (no phone); `user` for a resolved person; `unknown` for an unresolved identity."
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "engine",
+                "cache",
+                "unknown"
+              ],
+              "description": "Provenance of the mapping: `engine` (live lookup), `cache` (Redis or a structural phone-form/group), `unknown` (unresolved)."
+            }
+          },
+          "required": [
+            "input",
+            "resolved",
+            "canonical",
+            "phone",
+            "lid",
+            "aliases",
+            "type",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
       "Error": {
         "type": "object",
         "properties": {
@@ -19021,10 +21343,15 @@
                 "type": "string",
                 "description": "Human-readable description of what went wrong."
               },
-              "requestId": {
+              "request_id": {
                 "type": "string",
                 "nullable": true,
                 "description": "Server-assigned request id; pass this when filing support tickets so engineering can trace the failure."
+              },
+              "requestId": {
+                "type": "string",
+                "nullable": true,
+                "description": "Deprecated alias of `request_id` (same value), kept for existing clients."
               },
               "details": {
                 "type": "array",
@@ -19052,11 +21379,46 @@
                   "additionalProperties": false
                 },
                 "description": "Per-field validation issues. Present on 400/422 when the request body failed Zod parsing."
+              },
+              "upgrade": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "Where to upgrade the plan."
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "Call-to-action label for `url`."
+                  },
+                  "reset_time": {
+                    "type": "string",
+                    "description": "ISO 8601 time the current quota window resets."
+                  },
+                  "seconds_remaining": {
+                    "type": "number",
+                    "description": "Seconds until the quota window resets (also sent as `Retry-After`)."
+                  },
+                  "plan": {
+                    "type": "object",
+                    "properties": {},
+                    "description": "The current plan and its limits."
+                  }
+                },
+                "required": [
+                  "url",
+                  "text",
+                  "reset_time",
+                  "seconds_remaining",
+                  "plan"
+                ],
+                "description": "Present only on a plan-quota 429 (`rate_limited`): how to lift the limit and when it resets."
               }
             },
             "required": [
               "code",
               "message",
+              "request_id",
               "requestId"
             ],
             "additionalProperties": false
@@ -19090,10 +21452,15 @@
                 "type": "string",
                 "description": "Human-readable description of what went wrong."
               },
-              "requestId": {
+              "request_id": {
                 "type": "string",
                 "nullable": true,
                 "description": "Server-assigned request id; pass this when filing support tickets so engineering can trace the failure."
+              },
+              "requestId": {
+                "type": "string",
+                "nullable": true,
+                "description": "Deprecated alias of `request_id` (same value), kept for existing clients."
               },
               "details": {
                 "type": "array",
@@ -19121,11 +21488,46 @@
                   "additionalProperties": false
                 },
                 "description": "Per-field validation issues. Present on 400/422 when the request body failed Zod parsing."
+              },
+              "upgrade": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "Where to upgrade the plan."
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "Call-to-action label for `url`."
+                  },
+                  "reset_time": {
+                    "type": "string",
+                    "description": "ISO 8601 time the current quota window resets."
+                  },
+                  "seconds_remaining": {
+                    "type": "number",
+                    "description": "Seconds until the quota window resets (also sent as `Retry-After`)."
+                  },
+                  "plan": {
+                    "type": "object",
+                    "properties": {},
+                    "description": "The current plan and its limits."
+                  }
+                },
+                "required": [
+                  "url",
+                  "text",
+                  "reset_time",
+                  "seconds_remaining",
+                  "plan"
+                ],
+                "description": "Present only on a plan-quota 429 (`rate_limited`): how to lift the limit and when it resets."
               }
             },
             "required": [
               "code",
               "message",
+              "request_id",
               "requestId"
             ],
             "additionalProperties": false
@@ -19437,6 +21839,55 @@
         ],
         "additionalProperties": false
       },
+      "RealtimeTokenResponse": {
+        "type": "object",
+        "properties": {
+          "brokerUrl": {
+            "type": "string",
+            "description": "MQTT-over-WebSocket URL to connect to, e.g. wss://mqtt.blueticks.co:443/mqtt"
+          },
+          "username": {
+            "type": "string",
+            "description": "MQTT username — your user id. Must be sent exactly as given: the topics you are allowed to read are derived from it."
+          },
+          "password": {
+            "type": "string",
+            "description": "JWT to send as the MQTT password. Fetch once and keep it — it does not practically expire; the broker closes the connection only if it ever does."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the token stops being accepted (ISO 8601). Far in the future — present so a client can schedule a refresh if it wants one."
+          },
+          "expiresInSeconds": {
+            "type": "integer",
+            "description": "Lifetime in seconds, for schedulers that prefer a duration over a deadline."
+          },
+          "topics": {
+            "type": "object",
+            "properties": {
+              "messages": {
+                "type": "string",
+                "description": "Topic carrying inbound WhatsApp messages for this account, in the same shape a `new_message_received_webhook` delivers. Accounts that enable the \"include my own sent messages\" preference also receive their outgoing messages here, in the shape a `new_message_received_from_me_webhook` delivers."
+              }
+            },
+            "required": [
+              "messages"
+            ],
+            "additionalProperties": false,
+            "description": "The topics this token can subscribe to."
+          }
+        },
+        "required": [
+          "brokerUrl",
+          "username",
+          "password",
+          "expiresAt",
+          "expiresInSeconds",
+          "topics"
+        ],
+        "additionalProperties": false
+      },
       "DeletedMessageResponse": {
         "type": "object",
         "properties": {
@@ -19505,8 +21956,7 @@
           },
           "chatId": {
             "type": "string",
-            "pattern": "^[0-9]+(?:-[0-9]+)?@(?:c\\.us|g\\.us|newsletter)$",
-            "description": "Filter to messages addressed to this WhatsApp JID. Matches the recipient stored on the queued/scheduled doc — for sends to a phone number, the JID is `<phone>@c.us`."
+            "description": "Filter to messages addressed to this chat. Accepts +E164 / bare digits / any WhatsApp id; normalized to `<phone>@c.us` to match the recipient stored on the queued/scheduled doc."
           },
           "status": {
             "type": "string",
@@ -19528,6 +21978,16 @@
               "expired"
             ],
             "description": "Filter by lifecycle status: `pending` (accepted, waiting), `confirmed` (WhatsApp accepted — has waMessageKey), `received` (double grey tick), `read` (double blue tick), `played` (voice played), `failed`."
+          },
+          "includeSent": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include messages that were already SENT and therefore soft-deleted (default false). A cancelled message is never included. Pair with `chatId` to answer \"what has this contact already been sent?\"."
+          },
+          "includePreview": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include the link-preview thumbnail image (default false). Title, description and url are always returned; only the embedded image is omitted."
           },
           "searchToken": {
             "type": "string",
@@ -19596,7 +22056,13 @@
             "additionalProperties": false
           },
           "to": {
-            "type": "string"
+            "type": "string",
+            "description": "The recipient. For a send made through this API it is the caller's own raw `to`, echoed back; for a message created in the Blueticks UI it is the WhatsApp JID (e.g. 9725XXXXXXXX@c.us). Empty only when the message carries no recipient at all."
+          },
+          "recipientName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The recipient's display name, or null when the message carries no name."
           },
           "type": {
             "type": "string",
@@ -19736,11 +22202,36 @@
               "thumbnail"
             ],
             "additionalProperties": false
+          },
+          "waLabels": {
+            "type": "object",
+            "properties": {
+              "requested": {
+                "type": "integer",
+                "description": "Number of label ids requested."
+              },
+              "applied": {
+                "type": "boolean",
+                "description": "Whether WhatsApp accepted the label change."
+              },
+              "error": {
+                "type": "string",
+                "nullable": true,
+                "description": "Reason the labels were not applied (e.g. `wa_business_required`), else null."
+              }
+            },
+            "required": [
+              "requested",
+              "applied",
+              "error"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
           "waMessageKey",
           "to",
+          "recipientName",
           "type",
           "text",
           "mediaUrl",
@@ -19826,9 +22317,24 @@
             "maxLength": 255,
             "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
           },
+          "mediaMimeType": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "MIME type of the inline base64 media, e.g. `image/png` (type=media). Optional — only used when mediaBase64 is a bare base64 string without a data: prefix; a data: URL carries its own type, and mediaUrl reads it from the response."
+          },
           "sendAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "maxItems": 256,
+            "description": "Participant JIDs to @mention in a group (e.g. [\"12025550101@c.us\"]). Sets the real WhatsApp mention (highlight + notification); put the visible @name in `text` yourself."
           },
           "replyTo": {
             "type": "string",
@@ -19865,7 +22371,7 @@
       },
       "PhoneOrChatId": {
         "type": "string",
-        "description": "Recipient. Either an international phone number in E.164 format (e.g. +15551234567) for a 1:1 chat, or a WhatsApp chat id: `<id>@g.us` for a group, `<id>@newsletter` for a channel / newsletter, or `<phone>@c.us` for an individual."
+        "description": "Recipient / chat id. A phone number in E.164 format (e.g. +15551234567), or a WhatsApp id: `<phone>@c.us` / `<phone>@s.whatsapp.net` for an individual, `<id>@g.us` for a group, `<id>@newsletter` for a channel, `<id>@lid`. Normalized to `<phone>@c.us`."
       },
       "SendInChatRequest": {
         "type": "object",
@@ -19877,6 +22383,40 @@
               "media",
               "poll"
             ]
+          },
+          "buttonReply": {
+            "type": "object",
+            "properties": {
+              "replyTo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "The menu being answered: its message key (`waMessageKey`, e.g. `false_<chat>_<id>`), as returned by the messages read."
+              },
+              "buttonId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "The id of the menu button to press (`interactive.options[].id`). Exactly one of buttonId / rowId."
+              },
+              "rowId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "The id of the list row to select (`interactive.options[].id` of a list menu). Exactly one of buttonId / rowId."
+              },
+              "buttonTitle": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "description": "Ignored: the reply text is always taken from the menu itself (a caller cannot put different words on the button)."
+              }
+            },
+            "required": [
+              "replyTo"
+            ],
+            "additionalProperties": false,
+            "description": "Reply to an interactive menu (buttons / list): press `buttonId` / select `rowId` of the menu `replyTo`. Exclusive with type/text/media/poll and sendAt. Gateway (Baileys) engines only for now; 409 `menu_not_found` when the menu is no longer in the engine store, 400 `unknown_option` when the id is not on the menu."
           },
           "replyTo": {
             "type": "string",
@@ -19917,6 +22457,11 @@
             "maxLength": 255,
             "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
           },
+          "mediaMimeType": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "MIME type of the inline base64 media, e.g. `image/png` (type=media). Optional — only used when mediaBase64 is a bare base64 string without a data: prefix; a data: URL carries its own type, and mediaUrl reads it from the response."
+          },
           "pollQuestion": {
             "type": "string",
             "minLength": 1,
@@ -19935,6 +22480,16 @@
           "pollAllowMultiple": {
             "type": "boolean",
             "description": "Allow selecting multiple poll options (type=poll). Default false."
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "maxItems": 256,
+            "description": "Participant JIDs to @mention in a group (e.g. [\"12025550101@c.us\"]). Sets the real WhatsApp mention (highlight + notification); put the visible @name in `text` yourself."
           },
           "secret": {
             "type": "string",
@@ -19951,11 +22506,18 @@
             "minimum": 0,
             "maximum": 25,
             "description": "Extra typing duration in seconds, added on top of the built-in 0.4–0.8s random jitter. Default 0. Capped at 25s (WhatsApp clears the indicator after ~25s)."
+          },
+          "waLabelIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "maxItems": 20,
+            "description": "Native WhatsApp Business label ids to assign to the recipient chat immediately after this message sends. Ids come from GET /v1/wa-labels. At most 20. WhatsApp Business accounts only — on a non-Business account the message still sends and the labels are skipped (see the `waLabels` field on the response)."
           }
         },
-        "required": [
-          "type"
-        ],
         "additionalProperties": false
       },
       "SendMessageRequest": {
@@ -19968,6 +22530,40 @@
               "media",
               "poll"
             ]
+          },
+          "buttonReply": {
+            "type": "object",
+            "properties": {
+              "replyTo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "The menu being answered: its message key (`waMessageKey`, e.g. `false_<chat>_<id>`), as returned by the messages read."
+              },
+              "buttonId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "The id of the menu button to press (`interactive.options[].id`). Exactly one of buttonId / rowId."
+              },
+              "rowId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "The id of the list row to select (`interactive.options[].id` of a list menu). Exactly one of buttonId / rowId."
+              },
+              "buttonTitle": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "description": "Ignored: the reply text is always taken from the menu itself (a caller cannot put different words on the button)."
+              }
+            },
+            "required": [
+              "replyTo"
+            ],
+            "additionalProperties": false,
+            "description": "Reply to an interactive menu (buttons / list): press `buttonId` / select `rowId` of the menu `replyTo`. Exclusive with type/text/media/poll and sendAt. Gateway (Baileys) engines only for now; 409 `menu_not_found` when the menu is no longer in the engine store, 400 `unknown_option` when the id is not on the menu."
           },
           "replyTo": {
             "type": "string",
@@ -20008,6 +22604,11 @@
             "maxLength": 255,
             "description": "Filename shown on the attachment (type=media). Optional — derived from the URL / uploaded file when omitted."
           },
+          "mediaMimeType": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "MIME type of the inline base64 media, e.g. `image/png` (type=media). Optional — only used when mediaBase64 is a bare base64 string without a data: prefix; a data: URL carries its own type, and mediaUrl reads it from the response."
+          },
           "pollQuestion": {
             "type": "string",
             "minLength": 1,
@@ -20027,6 +22628,16 @@
             "type": "boolean",
             "description": "Allow selecting multiple poll options (type=poll). Default false."
           },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "maxItems": 256,
+            "description": "Participant JIDs to @mention in a group (e.g. [\"12025550101@c.us\"]). Sets the real WhatsApp mention (highlight + notification); put the visible @name in `text` yourself."
+          },
           "secret": {
             "type": "string",
             "minLength": 1,
@@ -20036,11 +22647,24 @@
           "sendAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "recipientName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Display name for the recipient, shown next to the message in the scheduled-message list. Optional — when omitted the name is resolved automatically from the connected WhatsApp account shortly after the message is queued."
+          },
+          "waLabelIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "maxItems": 20,
+            "description": "Native WhatsApp Business label ids to assign to the recipient chat immediately after this message sends. Ids come from GET /v1/wa-labels. At most 20. WhatsApp Business accounts only — on a non-Business account the message still sends and the labels are skipped (see the `waLabels` field on the response)."
           }
         },
-        "required": [
-          "type"
-        ],
         "additionalProperties": false
       },
       "AccountUsageResponse": {
@@ -20114,9 +22738,9 @@
         "properties": {
           "lyrics": {
             "type": "string",
-            "minLength": 1,
             "maxLength": 5000,
-            "description": "The song lyrics. Maps to Suno `prompt`. Ignored when `instrumental` is true."
+            "default": "",
+            "description": "The song lyrics. Maps to Suno `prompt`. Required unless `instrumental` is true, in which case it is ignored and may be omitted."
           },
           "style": {
             "type": "string",
@@ -20178,7 +22802,6 @@
           }
         },
         "required": [
-          "lyrics",
           "style"
         ]
       },
@@ -20394,6 +23017,47 @@
           "model"
         ]
       },
+      "WaLabel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
+        "additionalProperties": false
+      },
+      "WaLabelsChangeRequest": {
+        "type": "object",
+        "properties": {
+          "labelIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "maxItems": 20,
+            "description": "Full replacement set of native WhatsApp Business label ids for this chat. Ids come from GET /v1/wa-labels. At most 20 (the WhatsApp Business ceiling). An empty array clears all native labels."
+          }
+        },
+        "required": [
+          "labelIds"
+        ],
+        "additionalProperties": false
+      },
       "CreateWebhookRequest": {
         "type": "object",
         "properties": {
@@ -20420,6 +23084,7 @@
                 "campaign.completed",
                 "campaign.aborted",
                 "new_message_received_webhook",
+                "new_message_received_from_me_webhook",
                 "message_reaction_webhook",
                 "ack_changed_webhook",
                 "participant_joined_via_link_webhook",
@@ -20475,6 +23140,7 @@
                 "campaign.completed",
                 "campaign.aborted",
                 "new_message_received_webhook",
+                "new_message_received_from_me_webhook",
                 "message_reaction_webhook",
                 "ack_changed_webhook",
                 "participant_joined_via_link_webhook",
@@ -20537,6 +23203,9 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "signingSecret": {
+            "type": "string"
           }
         },
         "required": [

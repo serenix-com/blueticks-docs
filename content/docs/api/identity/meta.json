@@ -1,0 +1,8 @@
+{
+  "title": "Identity",
+  "description": "Resolve WhatsApp @lid and phone-number identities to their canonical form, in batch or one at a time.",
+  "pages": [
+    "resolve-identities-batch",
+    "resolve-an-identity"
+  ]
+}
