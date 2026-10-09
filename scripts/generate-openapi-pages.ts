@@ -36,6 +36,10 @@ const TAG_ORDER = [
   'newsletters',
   // Inbound — receive messages & delivery events.
   'webhooks',
+  'realtime', //         stream inbound messages over a connection you open
+  // WhatsApp identity & Business labels.
+  'identity',
+  'wa-labels',
   // Account & connectivity utilities.
   'account', //           account metadata for the API key
   'ping', //              connectivity / key check
