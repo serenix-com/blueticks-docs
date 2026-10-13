@@ -73,10 +73,12 @@ function stripNonBodyParams(body: Record<string, unknown>, op: { path: string; v
   if (lang !== 'ts' && lang !== 'js' && lang !== 'python') return body;
   const pathParams = pathParamNames(op.path);
   const headerKwargs = headerParamKwargs(spec, op);
-  if (pathParams.size === 0 && headerKwargs.size === 0) return body;
   const stripped: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body)) {
-    if (!pathParams.has(k) && !headerKwargs.has(k)) stripped[k] = v;
+    if (pathParams.has(k) || headerKwargs.has(k)) continue;
+    // The Python SDK takes snake_case kwargs and sends the camelCase wire name.
+    const wire = lang === 'python' ? k.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase()) : k;
+    stripped[wire] = v;
   }
   return stripped;
 }

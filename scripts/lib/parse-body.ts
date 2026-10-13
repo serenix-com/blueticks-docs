@@ -91,6 +91,11 @@ function parsePython(code: string): ParseResult {
   if (!args) return { ok: false, reason: 'unbalanced call' };
   let inner = args.slice(1, -1); // strip ( )
   if (/\bf"|\bf'/.test(inner)) return { ok: false, reason: 'f-string' };
+  // Drop trailing `# comments` (never inside a quoted string on the same line).
+  inner = inner.replace(/\s+#[^"'\n]*$/gm, '');
+  // A leading positional argument is the path parameter (recipient / chat id /
+  // message key), not part of the request body: drop it.
+  inner = inner.replace(/^\s*(?!(?:[A-Za-z_]\w*)\s*=)(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*,?/, '');
   // kwargs k=v -> "k": v  (identifier at start of an argument)
   inner = inner.replace(/(^|,)\s*([A-Za-z_]\w*)\s*=/g, '$1 "$2": ');
   inner = inner.replace(/\bTrue\b/g, 'true').replace(/\bFalse\b/g, 'false').replace(/\bNone\b/g, 'null');
