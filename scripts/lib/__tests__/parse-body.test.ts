@@ -76,3 +76,13 @@ describe('parseBody', () => {
     }
   });
 });
+
+describe('parseBody python: positional path arg, comments, snake_case', () => {
+  it('drops a leading positional path argument and trailing comments', () => {
+    const r = parseBody('python', `bt.chats.react(
+    "false_972501234567@c.us_3EB0ABCDEF",  # the wire key
+    emoji="x",
+)`);
+    expect(r).toEqual({ ok: true, body: { emoji: 'x' } });
+  });
+});

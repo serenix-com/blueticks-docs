@@ -147,13 +147,13 @@ import (
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
 // Send to a group
-c.ScheduledMessages.Create(context.Background(), "120363427920657250@g.us", blueticks.CreateScheduledMessageParams{
+c.ScheduledMessages.Create(context.Background(), "120363427920657250@g.us", blueticks.SendMessageParams{
 	Type: "text",
 	Text: "Team standup in 10 minutes!",
 })
 
 // Send to a channel
-c.ScheduledMessages.Create(context.Background(), "12345@newsletter", blueticks.CreateScheduledMessageParams{
+c.ScheduledMessages.Create(context.Background(), "12345@newsletter", blueticks.SendMessageParams{
 	Type: "text",
 	Text: "New announcement for all subscribers.",
 })
@@ -207,12 +207,10 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 msg = bt.scheduled_messages.create(
     "+972501234567",
     type="media",
-    media={
-        "url": "https://cdn.example.com/receipt.pdf",
-        "kind": "document",
-        "filename": "receipt-A42.pdf",
-        "caption": "Order #A-42",
-    },
+    media_url="https://cdn.example.com/receipt.pdf",
+    media_kind="document",
+    media_filename="receipt-A42.pdf",
+    text="Order #A-42",  # caption
 )
 print(msg.id, msg.status)
 ```
@@ -241,20 +239,16 @@ use Blueticks\Blueticks;
 $bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 $msg = $bt->scheduled_messages->create('+972501234567', [
-    'type'  => 'media',
-    'media' => [
-        'url'      => 'https://cdn.example.com/receipt.pdf',
-        'kind'     => 'document',
-        'filename' => 'receipt-A42.pdf',
-        'caption'  => 'Order #A-42',
-    ],
+    'type'          => 'media',
+    'mediaUrl'      => 'https://cdn.example.com/receipt.pdf',
+    'mediaKind'     => 'document',
+    'mediaFilename' => 'receipt-A42.pdf',
+    'text'          => 'Order #A-42', // caption
 ]);
 ```
 
   </Tab>
   <Tab value="Ruby">
-
-The Python, PHP, Ruby, and Go SDKs nest the file details under a `media` object (`caption` lives there); only the Node SDK and the raw HTTP body use the flat `mediaUrl` / `mediaKind` / `text`-as-caption fields:
 
 ```ruby
 require "blueticks"
@@ -263,12 +257,10 @@ client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
 msg = client.scheduled_messages.create(
   "+972501234567",
   type: "media",
-  media: {
-    "url" => "https://cdn.example.com/receipt.pdf",
-    "kind" => "document",
-    "filename" => "receipt-A42.pdf",
-    "caption" => "Order #A-42",
-  },
+  media_url: "https://cdn.example.com/receipt.pdf",
+  media_kind: "document",
+  media_filename: "receipt-A42.pdf",
+  text: "Order #A-42", # caption
 )
 puts msg.id, msg.status
 ```
@@ -285,14 +277,12 @@ import (
 
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
-msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.CreateScheduledMessageParams{
-	Type: "media",
-	Media: &blueticks.SendMediaObject{
-		URL:      "https://cdn.example.com/receipt.pdf",
-		Kind:     "document",
-		Filename: "receipt-A42.pdf",
-		Caption:  "Order #A-42",
-	},
+msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.SendMessageParams{
+	Type:          "media",
+	MediaURL:      "https://cdn.example.com/receipt.pdf",
+	MediaKind:     "document",
+	MediaFilename: "receipt-A42.pdf",
+	Text:          "Order #A-42", // caption
 })
 ```
 
@@ -341,11 +331,9 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 msg = bt.scheduled_messages.create(
     "+972501234567",
     type="poll",
-    poll={
-        "question": "Pizza tonight?",
-        "options": ["Yes", "No", "Maybe"],
-        "allow_multiple": False,
-    },
+    poll_question="Pizza tonight?",
+    poll_options=["Yes", "No", "Maybe"],
+    poll_allow_multiple=False,
 )
 print(msg.id, msg.status)
 ```
@@ -373,12 +361,10 @@ use Blueticks\Blueticks;
 $bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 $msg = $bt->scheduled_messages->create('+972501234567', [
-    'type' => 'poll',
-    'poll' => [
-        'question'       => 'Pizza tonight?',
-        'options'        => ['Yes', 'No', 'Maybe'],
-        'allow_multiple' => false,
-    ],
+    'type'              => 'poll',
+    'pollQuestion'      => 'Pizza tonight?',
+    'pollOptions'       => ['Yes', 'No', 'Maybe'],
+    'pollAllowMultiple' => false,
 ]);
 ```
 
@@ -392,11 +378,9 @@ client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
 msg = client.scheduled_messages.create(
   "+972501234567",
   type: "poll",
-  poll: {
-    "question" => "Pizza tonight?",
-    "options" => ["Yes", "No", "Maybe"],
-    "allow_multiple" => false,
-  },
+  poll_question: "Pizza tonight?",
+  poll_options: ["Yes", "No", "Maybe"],
+  poll_allow_multiple: false,
 )
 puts msg.id, msg.status
 ```
@@ -413,13 +397,10 @@ import (
 
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
-msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.CreateScheduledMessageParams{
-	Type: "poll",
-	Poll: &blueticks.SendPollObject{
-		Question:      "Pizza tonight?",
-		Options:       []string{"Yes", "No", "Maybe"},
-		AllowMultiple: false,
-	},
+msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.SendMessageParams{
+	Type:         "poll",
+	PollQuestion: "Pizza tonight?",
+	PollOptions:  []string{"Yes", "No", "Maybe"},
 })
 ```
 
@@ -630,7 +611,7 @@ import (
 
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
-msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.CreateScheduledMessageParams{
+msg, _ := c.ScheduledMessages.Create(context.Background(), "+972501234567", blueticks.SendMessageParams{
 	Type:           "text",
 	Text:           "Your order is confirmed.",
 	IdempotencyKey: "order-42-reminder",
