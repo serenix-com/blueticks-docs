@@ -1,7 +1,7 @@
 # blueticks-docs
 
 Developer documentation for the [Blueticks](https://blueticks.co) API,
-published at [docs.blueticks.co](https://docs.blueticks.co).
+published at [dev.blueticks.co](https://dev.blueticks.co).
 
 Built with [Fumadocs](https://fumadocs.dev) on Next.js App Router. The
 API reference under `/docs/api/` is regenerated from the OpenAPI
