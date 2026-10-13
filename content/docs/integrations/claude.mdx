@@ -1,0 +1,72 @@
+---
+title: Claude
+description: Add Blueticks to Claude as a custom connector so Claude can read your WhatsApp chats, send and schedule messages, and run campaigns.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Blueticks runs a hosted [MCP](https://modelcontextprotocol.io) server at:
+
+```
+https://api.blueticks.co/mcp
+```
+
+Add it to Claude once and Claude can act on the WhatsApp account connected to
+your Blueticks account — no API key to copy, no server to run.
+
+## Add the connector
+
+1. In Claude, open **Settings → Connectors** and choose **Add custom connector**.
+2. Give it a name (for example `Blueticks`) and paste the URL
+   `https://api.blueticks.co/mcp`.
+3. Click **Connect**. Claude opens the Blueticks consent screen — sign in to
+   Blueticks if asked, check that the request is for the app you expect, and
+   click **Authorize**. (**Deny** cancels and nothing is shared.)
+4. Back in Claude, enable the connector in a conversation and ask for something,
+   for example *"What are my last 5 WhatsApp chats?"*.
+
+The connection uses OAuth 2.0 with PKCE: Claude never sees your Blueticks
+password or an API key, only an access token for your account. To disconnect,
+remove the connector in Claude.
+
+<Callout type="info">
+Make sure WhatsApp is connected in Blueticks first. Tools that talk to WhatsApp
+(reading chats, sending) fail with "No WhatsApp engine is connected" until it is.
+The `engine` tool's `status` action tells you the current state.
+</Callout>
+
+## What Claude can do
+
+Each tool groups related actions; Claude picks the action from your request.
+
+| Tool | Actions |
+| --- | --- |
+| `chats` | `list`, `get_latest`, `search`, `get`, `list_messages`, `get_media`, `get_participants`, `load_more_history`, `mark_read`, `archive`, `unarchive`, `send_message_text`, `send_message_media`, `send_message_poll` |
+| `scheduled_messages` | `send` (now, or later with `send_at`; text, media, or poll), `list`, `get`, `update`, `cancel`, `ack` (delivery / read status for up to 200 messages) |
+| `contacts` | `list`, `get_profile_picture` |
+| `groups` | `get`, `create`, `update`, `leave` |
+| `audiences` | `list`, `get`, `create`, `update`, `delete`, `append_contacts`, `update_contact`, `remove_contact` |
+| `campaigns` | `list`, `get`, `create`, `pause`, `resume`, `cancel` |
+| `webhooks` | `list`, `get`, `create`, `update`, `delete` |
+| `engine` | `status`, `logout`, `reload` |
+| `utils` | `validate_phone`, `link_preview`, `current_date_time` |
+
+If the connection was granted read-only access, write actions (sending,
+creating, changing, deleting) are not offered at all — Claude only sees the
+actions it is allowed to run.
+
+## Things to try
+
+- *"Summarize what the Design Team group talked about today."*
+- *"Send +1 555 010 0142 a reminder that the meeting moved to 3pm."*
+- *"Schedule a message to the Parents group for Friday 8am: no school on Monday."*
+- *"Were my last three messages to +1 555 010 0157 read?"*
+- *"Create a campaign to my Newsletter audience and pause it before it starts."*
+
+## Limits
+
+On the **free plan**, the MCP server and the REST API share one quota of
+**5 requests per 6-hour window** — every tool call Claude makes counts once.
+When it runs out, tool calls fail with a rate-limit error until the next window.
+Paid plans are unlimited. See [Troubleshooting on the Make page](/docs/integrations/make#troubleshooting)
+for the details of the window.

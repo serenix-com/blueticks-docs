@@ -1,0 +1,4 @@
+{
+  "title": "Integrations",
+  "pages": ["index", "claude", "chatgpt", "make", "n8n-zapier"]
+}

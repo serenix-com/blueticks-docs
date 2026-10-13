@@ -1,0 +1,43 @@
+---
+title: Integrations overview
+description: Connect Blueticks to Claude, ChatGPT, Make, n8n, and Zapier — through the hosted MCP server, the REST API, and webhooks.
+---
+
+Blueticks plugs into other tools in three ways. Every integration on this
+section is built from one (or more) of them:
+
+| Building block | What it is | Auth | Used by |
+| --- | --- | --- | --- |
+| **Hosted MCP server** | `https://api.blueticks.co/mcp` — exposes your WhatsApp account as MCP tools an AI assistant can call. | OAuth (you approve the connection on a Blueticks consent screen) | [Claude](/docs/integrations/claude), [ChatGPT](/docs/integrations/chatgpt), Make's MCP Client |
+| **REST API** | `https://api.blueticks.co/v1/...` — send messages, manage campaigns, audiences, groups, webhooks. | `Authorization: Bearer bt_live_...` API key ([Authentication](/docs/authentication)) | [Make](/docs/integrations/make), [n8n &amp; Zapier](/docs/integrations/n8n-zapier), your own code |
+| **Webhooks** | Blueticks POSTs events (incoming messages, delivery status, poll votes, group changes, campaign progress, connection changes) to a URL you choose. | Signed with a per-webhook secret ([verification](/docs/webhooks#4-verify-requests-really-came-from-blueticks)) | Make, n8n, Zapier triggers |
+
+## Pick your integration
+
+- **[Claude](/docs/integrations/claude)** — add Blueticks as a custom connector
+  and ask Claude to read chats, send or schedule messages, and run campaigns.
+- **[ChatGPT](/docs/integrations/chatgpt)** — the same MCP server as a custom
+  connector in ChatGPT developer mode; reads and writes are separate tools, and
+  ChatGPT asks before anything is sent or changed.
+- **[Make](/docs/integrations/make)** — HTTP module + custom webhook today, or
+  Make's MCP Client; an official Blueticks app for Make is coming soon.
+- **[n8n &amp; Zapier](/docs/integrations/n8n-zapier)** — the generic HTTP
+  request and webhook building blocks.
+
+Prefer running MCP locally (Claude Code, Claude Desktop, Cursor) with an API
+key? See the [local MCP server](/docs/mcp).
+
+## Before you start
+
+1. **Connect WhatsApp.** Every integration acts through the WhatsApp
+   connection on your Blueticks account. `GET /v1/ping` returns
+   `whatsappConnections` — an empty array means nothing is connected yet.
+2. **Know the free-plan limit.** On the free plan, the API and the MCP server
+   share **one quota of 5 requests per 6-hour window** (each REST request or MCP
+   tool call counts once). Past it, calls return `429` until the next window.
+   Any paid plan is unlimited.
+3. **Use international phone numbers.** A recipient is either a phone number in
+   international format with a leading `+` (for example `+15550100123`) or a
+   WhatsApp chat id: `15550100123@c.us` for a person, `…@g.us` for a group.
+   Numbers without the `+` are rejected so a national number is never sent to
+   the wrong country.

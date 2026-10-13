@@ -1,0 +1,167 @@
+---
+title: Make
+description: Automate WhatsApp in Make (formerly Integromat) — send messages with the HTTP module, trigger scenarios from Blueticks webhooks, or call Blueticks through Make's MCP Client.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+There are two ways to use Blueticks in [Make](https://www.make.com) today, and
+an official app on the way:
+
+| | How | Best for |
+| --- | --- | --- |
+| **Option 1** (today) | Make's **HTTP** module + **Custom webhook** trigger, talking to the [REST API](/docs/api) | Any scenario — full control over every endpoint and event |
+| **Option 2** (today) | Make's **MCP Client** app pointed at the Blueticks MCP server | AI-agent style scenarios that pick tools at run time |
+| **Option 3** (coming soon) | The official **Blueticks app for Make** | Point-and-click modules, no JSON |
+
+## Option 1: HTTP module + Custom webhook
+
+You need a Blueticks API key (`bt_live_…`) — see
+[Authentication](/docs/authentication).
+
+### Send a WhatsApp message (action)
+
+Add an **HTTP → Make a request** module:
+
+| Field | Value |
+| --- | --- |
+| URL | `https://api.blueticks.co/v1/scheduled-messages/+15550100123` |
+| Method | `POST` |
+| Headers | `Authorization: Bearer bt_live_…` |
+| Body type | Raw, content type `JSON (application/json)` |
+| Request content | see below |
+
+```json
+{
+  "type": "text",
+  "text": "Hi Dana, your order has shipped."
+}
+```
+
+The last part of the URL is the recipient: a phone number in international
+format with a leading `+`, or a chat id — `15550100123@c.us` for a person,
+`…@g.us` for a group. Add `"sendAt": "2026-11-02T09:00:00Z"` to schedule it
+instead of sending now. A successful call returns `201`. Media and polls use the
+same endpoint with `"type": "media"` / `"type": "poll"` — see
+[Sending messages](/docs/messages).
+
+Any other endpoint in the [API reference](/docs/api) works the same way: same
+`Authorization` header, JSON body.
+
+### React to WhatsApp events (trigger)
+
+1. Start the scenario with **Webhooks → Custom webhook**, create a new webhook
+   and copy its URL.
+2. Subscribe that URL to the Blueticks events you want — once, with any HTTP
+   client (or an HTTP module run once in Make):
+
+```bash
+curl -X POST https://api.blueticks.co/v1/webhooks \
+  -H "Authorization: Bearer bt_live_…" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://hook.eu1.make.com/your-webhook-id",
+    "events": ["new_message_received_webhook"],
+    "description": "Make: incoming WhatsApp"
+  }'
+```
+
+3. Trigger the event once (for example, message your WhatsApp number from
+   another phone) so Make learns the data structure. Every event arrives as
+   `{ "id", "type", "created_at", "data" }` — the event's fields are under
+   `data`.
+
+The response includes a `signingSecret` for
+[verifying deliveries](/docs/webhooks#4-verify-requests-really-came-from-blueticks).
+Make's webhook URL is already unguessable, so verification is optional here.
+
+Events you can subscribe to (full list in [Receiving webhooks](/docs/webhooks#3-events-you-can-subscribe-to)):
+
+| You want to react to… | Subscribe to |
+| --- | --- |
+| Incoming messages | `new_message_received_webhook`, `reply_to_my_message_webhook` |
+| Status of messages you sent | `message.queued`, `message.sending`, `message.delivered`, `message.read`, `message.failed` |
+| Poll votes | `poll_vote_webhook` |
+| Group membership | `participant_joined_via_link_webhook`, `participant_added_by_admin_webhook`, `participant_left_group_webhook`, `participant_kicked_from_group_webhook` |
+| Campaign progress | `campaign.started`, `campaign.paused`, `campaign.resumed`, `campaign.completed`, `campaign.aborted` |
+| WhatsApp connection changes | `session.connected`, `session.disconnected` |
+
+## Option 2: Make's MCP Client
+
+Make's **MCP Client** app can call any MCP server. Point it at:
+
+```
+https://api.blueticks.co/mcp
+```
+
+and authenticate with **OAuth** — you'll see the Blueticks consent screen and
+click **Authorize**. The MCP server only accepts OAuth tokens; a `bt_live_` API
+key does not work here (use it with Option 1 instead). The available tools and
+actions are listed on the [Claude page](/docs/integrations/claude#what-claude-can-do).
+
+## Option 3: the official Blueticks app for Make (coming soon)
+
+<Callout type="info">
+Not available yet — use Option 1 or 2 in the meantime.
+</Callout>
+
+The app will wrap the same API and webhooks as ready-made modules:
+
+- **Triggers** — incoming messages, message status, poll votes, group
+  membership, campaign events, and WhatsApp connection changes.
+- **Actions** — send and schedule messages, and manage campaigns, audiences,
+  and groups.
+- **Searches** — look up chats, contacts, and messages.
+
+## Example scenarios
+
+### Google Sheets row → send a WhatsApp message
+
+1. **Google Sheets → Watch New Rows** on a sheet with `Phone` and `Message`
+   columns. Store phones in international format, e.g. `+15550100123`.
+2. **HTTP → Make a request**: URL
+   `https://api.blueticks.co/v1/scheduled-messages/{{Phone}}`, method `POST`,
+   header `Authorization: Bearer bt_live_…`, JSON body
+   `{"type": "text", "text": "{{Message}}"}` (map the two columns from the
+   trigger).
+
+### Incoming WhatsApp → Slack
+
+1. **Webhooks → Custom webhook**, subscribed to `new_message_received_webhook`
+   as shown above.
+2. **Slack → Create a Message** in your support channel, mapping the sender and
+   message text from the webhook's `data`.
+
+### Campaign completed → CRM
+
+1. **Webhooks → Custom webhook**, subscribed to `campaign.completed`.
+2. Your CRM's **update record** module. The event's `data` carries the
+   campaign's `cmpId`, `name`, `audienceId`, `status`, the counters
+   `totalCount`, `sentCount`, `deliveredCount`, `readCount`, `failedCount`,
+   and `completedAt` — map them onto the CRM record.
+
+## Troubleshooting
+
+**`429 Too Many Requests` on the free plan.** The free plan allows **5 requests
+per 6-hour window, shared across the REST API and the MCP server** — each HTTP
+module run and each MCP tool call counts once. Windows are fixed in UTC:
+00:00–06:00, 06:00–12:00, 12:00–18:00, 18:00–24:00. Wait for the next window,
+or upgrade: any paid plan is unlimited. Watch out for scenarios that run on a
+short schedule — they burn the free quota quickly.
+
+**"No WhatsApp engine is connected".** Blueticks sends through the WhatsApp
+connection on your account; while it's down, calls that need a live WhatsApp
+connection fail with `503`.
+Check it with `GET /v1/ping` — an empty `whatsappConnections` array means
+nothing is connected — and reconnect in the Blueticks app. Subscribe a scenario
+to `session.disconnected` to get alerted when it drops.
+
+**Phone number rejected (`400`).** The recipient must start with `+` and the
+country code (`+15550100123`); bare digits, or numbers starting with `0` / `00`,
+are rejected. Spaces, dashes, dots, and parentheses are stripped. If a tool
+mangles the `+` in a URL, use the chat-id form `15550100123@c.us` instead.
+
+**Webhook stopped firing.** After 8 consecutive failed deliveries (for example,
+the Make scenario was off) the webhook auto-disables. Turn the scenario back
+on, then re-enable the webhook with `PATCH /v1/webhooks/{id}` and
+`{"status": "enabled"}`.

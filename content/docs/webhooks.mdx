@@ -4,6 +4,7 @@ description: Get Blueticks events — message delivery, incoming WhatsApp messag
 ---
 
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
 
 Webhooks push Blueticks events to your server over HTTPS, in near real time — so
 you can react to message delivery, incoming WhatsApp messages, group activity,
@@ -152,15 +153,111 @@ accepted enum.
 
 ## 4. Verify requests really came from Blueticks
 
-Blueticks does **not** sign webhook payloads. To confirm a request is genuinely
-from us, register a URL containing a secret only you know — a hard-to-guess path
-segment or query string — and reject any POST that doesn't carry it:
+Every webhook gets its own **signing secret** (`whsec_…`). It is returned as
+`signingSecret` in the webhook object when you create it, and on every
+list / get afterwards — store it on your server like any other credential.
+
+Each delivery from a signed webhook carries three extra headers:
 
 ```
-https://api.your-server.com/bt-webhooks?token=ek3f9q2...
+Blueticks-Webhook-Timestamp: 1776962520
+Blueticks-Webhook-Signature: v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8bd
+X-Blueticks-Signature: sha256=0b4fa9c2e1d7...
 ```
 
-Always serve the endpoint over HTTPS so that secret stays private in transit.
+- **`Blueticks-Webhook-Timestamp`** — when the delivery was signed, in Unix
+  **seconds**.
+- **`Blueticks-Webhook-Signature`** — `v1=` followed by the hex
+  HMAC-SHA256 of the string `{timestamp}.{raw body}`, keyed with your signing
+  secret (the whole string, including the `whsec_` prefix). Because the
+  timestamp is signed too, this is the one to use: check the signature *and*
+  reject timestamps that are too old to stop replays.
+- **`X-Blueticks-Signature`** — `sha256=` followed by the hex HMAC-SHA256 of
+  the raw body alone, same key. Simpler, but gives no replay protection.
+
+<Callout type="warn">
+Compute the HMAC over the **raw request bytes**, exactly as received — before
+any JSON parsing. Re-serializing a parsed object changes key order or
+whitespace and the signature will never match.
+</Callout>
+
+<Tabs groupId="sdk" persist items={['Python', 'Node.js']}>
+  <Tab value="Python">
+
+```python
+import hashlib, hmac, os, time
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+SECRET = os.environ["BLUETICKS_WEBHOOK_SECRET"]  # whsec_...
+TOLERANCE_SECONDS = 300
+
+@app.post("/bt-webhooks")
+def bt_webhook():
+    raw = request.get_data()  # raw bytes, before any JSON parsing
+    ts = request.headers.get("Blueticks-Webhook-Timestamp", "")
+    sig = request.headers.get("Blueticks-Webhook-Signature", "")
+    if not ts.isdigit() or abs(time.time() - int(ts)) > TOLERANCE_SECONDS:
+        abort(400)
+    expected = "v1=" + hmac.new(
+        SECRET.encode(), ts.encode() + b"." + raw, hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected, sig):
+        abort(401)
+    event = request.get_json()
+    # ... handle event["type"] / event["data"], then respond fast
+    return "", 204
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+import crypto from 'node:crypto';
+import express from 'express';
+
+const app = express();
+const SECRET = process.env.BLUETICKS_WEBHOOK_SECRET!; // whsec_...
+const TOLERANCE_SECONDS = 300;
+
+// express.raw keeps the body as a Buffer — do NOT use express.json() here.
+app.post('/bt-webhooks', express.raw({ type: 'application/json' }), (req, res) => {
+  const raw: Buffer = req.body;
+  const ts = req.header('Blueticks-Webhook-Timestamp') ?? '';
+  const sig = req.header('Blueticks-Webhook-Signature') ?? '';
+  if (!/^\d+$/.test(ts) || Math.abs(Date.now() / 1000 - Number(ts)) > TOLERANCE_SECONDS) {
+    return res.sendStatus(400);
+  }
+  const expected =
+    'v1=' +
+    crypto
+      .createHmac('sha256', SECRET)
+      .update(Buffer.concat([Buffer.from(`${ts}.`, 'utf8'), raw]))
+      .digest('hex');
+  const a = Buffer.from(expected);
+  const b = Buffer.from(sig);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.sendStatus(401);
+  }
+  const event = JSON.parse(raw.toString('utf8'));
+  // ... handle event.type / event.data, then respond fast
+  res.sendStatus(204);
+});
+```
+
+  </Tab>
+</Tabs>
+
+To use `X-Blueticks-Signature` instead, drop the timestamp: compare
+`sha256=` + HMAC-SHA256(secret, raw body) against the header.
+
+**Webhooks created before signing shipped stay unsigned** — they have no
+`signingSecret` and their deliveries carry none of the headers above. Delete and
+recreate such a webhook to get a secret. Until then (or if your platform can't
+compute an HMAC), you can still protect an endpoint by registering a URL that
+contains a hard-to-guess token, e.g.
+`https://api.your-server.com/bt-webhooks?token=ek3f9q2...`, and rejecting any
+POST without it. Always serve the endpoint over HTTPS.
 
 ## 5. Reliability: retries &amp; auto-disable
 
