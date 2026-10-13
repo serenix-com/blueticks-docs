@@ -1,0 +1,9 @@
+{
+  "title": "W A Labels",
+  "description": "Read and assign the WhatsApp Business app's own NATIVE labels on chats. WhatsApp Business accounts only — distinct from Blueticks-internal chat labels. On a non-Business account, list/read return an empty set and assignment returns 409 wa_business_required.",
+  "pages": [
+    "list-native-whatsapp-business-labels",
+    "get-a-chat-s-native-labels",
+    "set-a-chat-s-native-labels"
+  ]
+}
