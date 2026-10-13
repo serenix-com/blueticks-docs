@@ -5,16 +5,25 @@ description: Automate WhatsApp in Make (formerly Integromat) — send messages w
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-There are two ways to use Blueticks in [Make](https://www.make.com) today, and
-an official app on the way:
+There are three ways to use Blueticks in [Make](https://www.make.com):
 
 | | How | Best for |
 | --- | --- | --- |
-| **Option 1** (today) | Make's **HTTP** module + **Custom webhook** trigger, talking to the [REST API](/docs/api) | Any scenario — full control over every endpoint and event |
-| **Option 2** (today) | Make's **MCP Client** app pointed at the Blueticks MCP server | AI-agent style scenarios that pick tools at run time |
-| **Option 3** (coming soon) | The official **Blueticks app for Make** | Point-and-click modules, no JSON |
+| **Option 1** (recommended) | The official **Blueticks app for Make** | Point-and-click modules and instant triggers, no JSON |
+| **Option 2** | Make's **HTTP** module + **Custom webhook** trigger, talking to the [REST API](/docs/api) | Full control over every endpoint and event |
+| **Option 3** | Make's **MCP Client** app pointed at the Blueticks MCP server | AI-agent style scenarios that pick tools at run time |
 
-## Option 1: HTTP module + Custom webhook
+## Option 1: the Blueticks app for Make
+
+1. Open the [Blueticks app invite link](https://www.make.com/en/hq/app-invitation/7ac9b7eeb84d80ad8b9502c2d84c75ed) while logged in to Make and install the app in your organization.
+2. Create a Blueticks API key (`bt_live_…`) at app.blueticks.co → **Blueticks API** — see [Authentication](/docs/authentication).
+3. Add any Blueticks module to a scenario and create the connection with your key.
+
+The app covers messages (send, schedule, get, update, cancel, download media), chats and contacts, groups, audiences and campaigns, plus six instant triggers: incoming messages, message status updates, poll votes, group membership changes, campaign events and connection changes. Triggers register a Blueticks webhook when the scenario is turned on and remove it when it is turned off.
+
+<Callout>The app is published and installable today; its listing in Make's public app catalog follows Make's review.</Callout>
+
+## Option 2: HTTP module + Custom webhook
 
 You need a Blueticks API key (`bt_live_…`) — see
 [Authentication](/docs/authentication).
@@ -86,7 +95,7 @@ Events you can subscribe to (full list in [Receiving webhooks](/docs/webhooks#3-
 | Campaign progress | `campaign.started`, `campaign.paused`, `campaign.resumed`, `campaign.completed`, `campaign.aborted` |
 | WhatsApp connection changes | `session.connected`, `session.disconnected` |
 
-## Option 2: Make's MCP Client
+## Option 3: Make's MCP Client
 
 Make's **MCP Client** app can call any MCP server. Point it at:
 
@@ -96,22 +105,8 @@ https://api.blueticks.co/mcp
 
 and authenticate with **OAuth** — you'll see the Blueticks consent screen and
 click **Authorize**. The MCP server only accepts OAuth tokens; a `bt_live_` API
-key does not work here (use it with Option 1 instead). The available tools and
+key does not work here (use it with Option 1 or 2 instead). The available tools and
 actions are listed on the [Claude page](/docs/integrations/claude#what-claude-can-do).
-
-## Option 3: the official Blueticks app for Make (coming soon)
-
-<Callout type="info">
-Not available yet — use Option 1 or 2 in the meantime.
-</Callout>
-
-The app will wrap the same API and webhooks as ready-made modules:
-
-- **Triggers** — incoming messages, message status, poll votes, group
-  membership, campaign events, and WhatsApp connection changes.
-- **Actions** — send and schedule messages, and manage campaigns, audiences,
-  and groups.
-- **Searches** — look up chats, contacts, and messages.
 
 ## Example scenarios
 
