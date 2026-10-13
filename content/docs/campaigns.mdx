@@ -102,7 +102,7 @@ curl -X POST https://api.blueticks.co/v1/audiences \
 </Tabs>
 
 Each contact's `to` accepts a phone number in international format OR a WhatsApp JID (`@g.us` for groups,
-`@newsletter` for channels) — same rules as direct `POST /v1/scheduled-messages`.
+`@newsletter` for channels) — same rules as the recipient in `POST /v1/scheduled-messages/{chatId}`.
 
 Append more contacts to an existing audience later via
 `POST /v1/audiences/{id}/contacts` — up to 1000 per request, duplicates

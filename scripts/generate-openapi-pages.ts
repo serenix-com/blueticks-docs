@@ -12,7 +12,9 @@
 import { generateFiles } from 'fumadocs-openapi';
 import { createOpenAPI } from 'fumadocs-openapi/server';
 import { promises as fs } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { escapeMdxBraces } from './lib/escape-mdx-braces';
 
 const OUTPUT_DIR = 'content/docs/api';
 const SPEC_PATH = './openapi.json';
@@ -36,6 +38,10 @@ const TAG_ORDER = [
   'newsletters',
   // Inbound — receive messages & delivery events.
   'webhooks',
+  'realtime', //         stream inbound messages over a connection you open
+  // WhatsApp identity & Business labels.
+  'identity',
+  'wa-labels',
   // Account & connectivity utilities.
   'account', //           account metadata for the API key
   'ping', //              connectivity / key check
@@ -68,10 +74,33 @@ async function main(): Promise<void> {
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
   const raw = await fs.readFile(SPEC_PATH, 'utf8');
-  const spec = JSON.parse(raw) as { paths?: Record<string, Record<string, unknown>> };
+  const spec = JSON.parse(raw) as {
+    tags?: Array<{ name: string; description?: string }>;
+    paths?: Record<string, Record<string, unknown>>;
+  };
+
+  // fumadocs-openapi throws ("Cannot destructure property 'displayName' of
+  // 'builder.fromTagName(...)' as it is undefined") when an operation uses a
+  // tag that is missing from the spec's top-level `tags`. The backend spec has
+  // shipped with such a tag (Identity), so generate from a copy that declares
+  // any used-but-undeclared tag. openapi.json itself stays verbatim.
+  const declared = new Set((spec.tags ?? []).map((t) => t.name));
+  const undeclared = new Set<string>();
+  for (const item of Object.values(spec.paths ?? {})) {
+    for (const op of Object.values(item) as Array<{ tags?: string[] } | undefined>) {
+      for (const tag of op?.tags ?? []) if (!declared.has(tag)) undeclared.add(tag);
+    }
+  }
+  let generationInput = SPEC_PATH;
+  if (undeclared.size > 0) {
+    console.warn(`[openapi] tags used but not declared in openapi.json: ${[...undeclared].join(', ')}`);
+    const patched = { ...spec, tags: [...(spec.tags ?? []), ...[...undeclared].map((name) => ({ name }))] };
+    generationInput = join(tmpdir(), `blueticks-openapi-${process.pid}.json`);
+    await fs.writeFile(generationInput, JSON.stringify(patched));
+  }
 
   const server = createOpenAPI({
-    input: [SPEC_PATH],
+    input: [generationInput],
   });
 
   // Flatten file paths under each tag folder.
@@ -126,6 +155,8 @@ async function main(): Promise<void> {
   const opDescriptions = collectOperationDescriptions(spec);
   for (const file of mdxFiles) {
     let content = await fs.readFile(file, 'utf8');
+    // Pages must reference the committed spec, not the temp copy used above.
+    if (generationInput !== SPEC_PATH) content = content.split(generationInput).join(SPEC_PATH);
     const op = matchOperation(content, opDescriptions);
     if (op && op.body) {
       content = injectDescriptionBody(content, op.body);
@@ -157,6 +188,7 @@ async function main(): Promise<void> {
   await fs.mkdir('public', { recursive: true });
   await fs.copyFile(SPEC_PATH, join('public', 'openapi.json'));
 
+  if (generationInput !== SPEC_PATH) await fs.rm(generationInput, { force: true });
   console.log(`[openapi] regenerated ${OUTPUT_DIR} from ${SPEC_PATH}`);
 }
 
@@ -231,7 +263,7 @@ function injectDescriptionBody(mdxContent: string, body: string): string {
   if (apiPageMatch === -1) return mdxContent;
   const before = mdxContent.slice(0, apiPageMatch);
   const after = mdxContent.slice(apiPageMatch);
-  return `${before}${body}\n\n${after}`;
+  return `${before}${escapeMdxBraces(body)}\n\n${after}`;
 }
 
 /**
