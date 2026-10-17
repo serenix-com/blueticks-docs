@@ -13,7 +13,8 @@ store doesn't reach far enough.
 
 [`GET /v1/messages`](/docs/api/messages/list-messages-all-chats) reads from the
 message store that is already loaded. A plain read **does not pull history from
-the phone**. Scrolling or opening a chat never triggers a phone fetch either,
+the phone**, with two exceptions described below (`since` on a single chat, and
+the opt-in `loadFromPhoneIfNeeded` flag). Scrolling or opening a chat never triggers a phone fetch either,
 the same way WhatsApp Web only asks the phone for older messages when you
 click "load older messages".
 
@@ -45,16 +46,24 @@ Don't treat an empty or short result as "no messages" until you've checked
 ### The one exception: `since` on a single chat
 
 A read with **both `chatId` and `since`** and an empty window does load older
-history for you before answering. It pages back up to 5 pages, within a time
-budget, and reports what it did:
+history for you before answering. It pages back up to 5 pages, within a 25 second
+time budget. If the store already reaches `since`, nothing is loaded and
+`sinceReached` is `true`. It reports what it did:
 
 | Field | Meaning |
 | --- | --- |
-| `autoLoadedPages` | Pages pulled from the phone for this read. `0` means the store already covered the window. |
-| `sinceReached` | `true` when the loaded history reaches back to `since`. `false` means the page limit or time budget was hit first, so older messages may exist. |
+| `autoLoadedPages` | Pages pulled from the phone for this read. On its own, `0` is ambiguous: check `sinceReached`. |
+| `sinceReached` | `true` when the loaded history reaches back to `since` (an empty result is then a genuine "nothing since then"). `false` means the page limit or time budget was hit first, so older messages may exist. This is the field to trust. |
 | `coverage` | How far back the store now reaches. |
 
-Account-wide reads (no `chatId`) never load from the phone.
+Account-wide reads (no `chatId`) do not do this read-through.
+
+### Opt-in: `loadFromPhoneIfNeeded`
+
+Passing `loadFromPhoneIfNeeded=true` on a single-chat read asks the engine to
+fetch older messages from the phone once the local store is exhausted. It is
+honoured by the Chrome extension engine only, and only for chat-scoped reads.
+For other engines, use `load_older` below.
 
 ## Load older messages
 
@@ -66,7 +75,7 @@ Requires the `chats:read` scope.
 | Body field | Type | Notes |
 | --- | --- | --- |
 | `pages` | integer, 1-10 | How many pages to load. Default `1`. Pages are about 2.5 seconds apart, so a large value takes time. |
-| `until_date` | ISO 8601 string | Keep loading until history reaches this date (or `pages` runs out). Optional. |
+| `until_date` | ISO 8601 string, or epoch seconds / milliseconds | Keep loading until history reaches this date (or `pages` runs out). Optional. |
 
 ```bash
 curl -X POST "https://api.blueticks.co/v1/messages/load_older/15551234567%40c.us" \
