@@ -1,0 +1,105 @@
+---
+title: Reading messages
+description: How GET /v1/messages reads history, and how to load older messages from the phone with POST /v1/messages/load_older/{chatId}.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+This guide assumes you have an API key ([Authentication](/docs/authentication)).
+It covers how to read message history and how to go further back when the local
+store doesn't reach far enough.
+
+## Reads are local; loading from the phone is explicit
+
+[`GET /v1/messages`](/docs/api/messages/list-messages-all-chats) reads from the
+message store that is already loaded. A plain read **does not pull history from
+the phone**. Scrolling or opening a chat never triggers a phone fetch either,
+the same way WhatsApp Web only asks the phone for older messages when you
+click "load older messages".
+
+So a read returns what is loaded, and the `coverage` object tells you how far
+back that is:
+
+```json
+{
+  "success": true,
+  "data": [],
+  "hasMore": false,
+  "coverage": {
+    "oldestLoadedTimestamp": 1760000000000,
+    "oldestLoadedIso": "2025-10-09T08:53:20.000Z"
+  }
+}
+```
+
+`oldestLoadedTimestamp` is in epoch **milliseconds**. If it is at or before the
+start of the range you asked for, that range is fully loaded and an empty
+result is a genuine "nothing there". If it is later than your range start,
+older messages may exist on the phone and have not been loaded.
+
+<Callout type="info">
+Don't treat an empty or short result as "no messages" until you've checked
+`coverage`. When the history doesn't reach back far enough, load more (below).
+</Callout>
+
+### The one exception: `since` on a single chat
+
+A read with **both `chatId` and `since`** and an empty window does load older
+history for you before answering. It pages back up to 5 pages, within a time
+budget, and reports what it did:
+
+| Field | Meaning |
+| --- | --- |
+| `autoLoadedPages` | Pages pulled from the phone for this read. `0` means the store already covered the window. |
+| `sinceReached` | `true` when the loaded history reaches back to `since`. `false` means the page limit or time budget was hit first, so older messages may exist. |
+| `coverage` | How far back the store now reaches. |
+
+Account-wide reads (no `chatId`) never load from the phone.
+
+## Load older messages
+
+When `coverage` shows the store stops short of where you need, call
+[`POST /v1/messages/load_older/{chatId}`](/docs/api/messages/load-older-messages).
+It asks the phone for older messages in that chat and adds them to the store.
+Requires the `chats:read` scope.
+
+| Body field | Type | Notes |
+| --- | --- | --- |
+| `pages` | integer, 1-10 | How many pages to load. Default `1`. Pages are about 2.5 seconds apart, so a large value takes time. |
+| `until_date` | ISO 8601 string | Keep loading until history reaches this date (or `pages` runs out). Optional. |
+
+```bash
+curl -X POST "https://api.blueticks.co/v1/messages/load_older/15551234567%40c.us" \
+  -H "Authorization: Bearer $BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"pages": 3, "until_date": "2025-09-01T00:00:00Z"}'
+```
+
+The response reports what happened:
+
+| Field | Meaning |
+| --- | --- |
+| `added` | Messages newly added to the store by this call. |
+| `totalMessages` | Messages now loaded for the chat. |
+| `pagesExecuted` | Pages actually requested. |
+| `canLoadMore` | `true` if the phone may have still older messages. |
+| `historyUnavailable` | `true` when the phone has no older history to give. |
+| `coverage` | Same shape as on reads: `oldestLoadedTimestamp` (ms) and `oldestLoadedIso`. |
+| `error` | Set when the load didn't complete. See below. |
+
+Once it returns, read the chat again with `GET /v1/messages?chatId=...` to
+get the newly loaded messages.
+
+### Cooling down
+
+If recent phone requests keep failing or going unanswered, the service pauses
+phone history requests for a while. During that pause the call returns an
+`error` starting with `cooling_down:` and `canLoadMore: true`. Nothing is
+wrong with your request: wait, then retry. Don't loop on it.
+
+## A typical flow
+
+1. `GET /v1/messages?chatId=...&since=...`
+2. Check `coverage.oldestLoadedIso` (and `sinceReached` if present).
+3. If the history stops short, `POST /v1/messages/load_older/{chatId}` with the `pages` or `until_date` you need.
+4. Read again.

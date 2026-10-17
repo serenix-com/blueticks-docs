@@ -1,0 +1,91 @@
+---
+title: Utilities
+description: Small helper endpoints under /v1/utils - validate a phone number, fetch a link preview, and get the server's current date and time.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Helper endpoints under `/v1/utils`. All three require the `contacts:read`
+scope and are rate-limited to 120 requests per minute.
+
+## Validate a phone number
+
+`POST /v1/utils/validate_phone` asks your connected WhatsApp engine whether a
+phone number (or chat ID) resolves to a valid WhatsApp chat, and returns the
+canonical chat ID. Use it before sending to a number you don't already have a
+chat for. It needs a connected engine, like any call that reads from WhatsApp.
+
+The body takes one field, `phoneOrChatId`. Unknown fields are rejected.
+
+{/* validate:ignore dead-endpoint — /v1/utils routes are custom Express routes, not in the OpenAPI export */}
+
+```bash
+curl -X POST "https://api.blueticks.co/v1/utils/validate_phone" \
+  -H "Authorization: Bearer $BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"phoneOrChatId": "15551234567"}'
+```
+
+```json
+{ "valid": true, "chatId": "15551234567@c.us" }
+```
+
+A number that doesn't resolve returns `{ "valid": false, "chatId": null }`.
+
+## Link preview
+
+`GET /v1/utils/link_preview?url=<url>` fetches the preview for a link through
+your connected engine. `url` must be a valid URL, up to 2048 characters.
+
+{/* validate:ignore dead-endpoint — /v1/utils routes are custom Express routes, not in the OpenAPI export */}
+
+```bash
+curl "https://api.blueticks.co/v1/utils/link_preview?url=https%3A%2F%2Fexample.com" \
+  -H "Authorization: Bearer $BLUETICKS_API_KEY"
+```
+
+```json
+{
+  "title": "Example Domain",
+  "description": null,
+  "thumbnail": null,
+  "canonicalUrl": "https://example.com/"
+}
+```
+
+Any field can be `null`. `thumbnail`, when present, is a `data:image/jpeg;base64,...` URL.
+
+## Current date and time
+
+`GET /v1/utils/current_date_time` returns the current time in UTC and in the
+timezone reported by your connected engine. Use it before building a `sendAt`,
+`since` or `until` value, so "today" and weekdays are worked out in the right
+timezone.
+
+{/* validate:ignore dead-endpoint — /v1/utils routes are custom Express routes, not in the OpenAPI export */}
+
+```bash
+curl "https://api.blueticks.co/v1/utils/current_date_time" \
+  -H "Authorization: Bearer $BLUETICKS_API_KEY"
+```
+
+| Field | Meaning |
+| --- | --- |
+| `nowUtc`, `isoUtc` | Current time in UTC. |
+| `nowLocal`, `isoLocal` | Current time in `timezone`. |
+| `epochMs` | Epoch milliseconds. |
+| `timezone`, `offsetMinutes` | The timezone name and its current UTC offset in minutes. |
+| `isDstNow` | Whether daylight saving time is in effect. |
+| `source` | `extension`, `gateway` or `server-fallback`: which engine supplied the timezone. |
+| `warning` | Present when the timezone may not be yours (see below). |
+
+Check `source` before trusting `timezone`:
+
+- `extension`: the browser extension's timezone, which is the user's own.
+- `gateway`: the timezone of the gateway server, usually UTC and not the user's. A `warning` is returned. Pass an explicit timezone wherever you build times.
+- `server-fallback`: no engine answered, so the server's clock was used. A `warning` is returned.
+
+<Callout type="info">
+These routes are not part of the generated API reference, so this page is the
+reference for them.
+</Callout>
