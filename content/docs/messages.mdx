@@ -670,6 +670,13 @@ field is required; once the message has dispatched, the edit returns `400`:
 
 <ApiExample op="PATCH /v1/scheduled-messages/{id}" kind="request" />
 
+To stop a message that is still `pending` without deleting it, cancel it with
+`POST /v1/scheduled-messages/{id}/cancel`. It returns the message as it now
+stands (`status: "failed"`, `failureReason: "cancelled by user"`). `DELETE
+/v1/scheduled-messages/{id}` instead removes the message permanently:
+
+<ApiExample op="POST /v1/scheduled-messages/{id}/cancel" kind="request" />
+
 ## Immediate send into an open chat
 
 The second send path from the top of this guide. `POST /v1/messages/{chatId}`
