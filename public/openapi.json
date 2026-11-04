@@ -1682,7 +1682,7 @@
           "Scheduled Messages"
         ],
         "summary": "Delete scheduled message",
-        "description": "Delete a scheduled or queued message so it will not be sent. Soft-deletes the message (and records a cancellation in its delivery log). Returns 404 if no pending/queued message with this id is owned by the caller.",
+        "description": "Permanently delete a scheduled or queued message so it will not be sent. The message is removed from the queue (a hard delete, not recoverable) in any status except while it is being sent; a cancellation record, which includes a copy of the message, is kept in its delivery log. Returns 404 if no message with this id is owned by the caller, and 409 while the message is being sent.",
         "security": [
           {
             "BearerAuth": [
