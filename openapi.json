@@ -10910,7 +10910,7 @@
             "name": "waMessageKey",
             "in": "path",
             "required": true,
-            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363000000000000@g.us_3EB0000000000000000000_100000000000000@lid`.",
             "schema": {
               "type": "string"
             }
@@ -15834,7 +15834,7 @@
             "name": "waMessageKey",
             "in": "path",
             "required": true,
-            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363000000000000@g.us_3EB0000000000000000000_100000000000000@lid`.",
             "schema": {
               "type": "string"
             }
@@ -15977,7 +15977,7 @@
             "name": "waMessageKey",
             "in": "path",
             "required": true,
-            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363000000000000@g.us_3EB0000000000000000000_100000000000000@lid`.",
             "schema": {
               "type": "string"
             }
@@ -16505,7 +16505,7 @@
             "name": "waMessageKey",
             "in": "path",
             "required": true,
-            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363000000000000@g.us_3EB0000000000000000000_100000000000000@lid`.",
             "schema": {
               "type": "string"
             }
@@ -16828,7 +16828,7 @@
             "name": "waMessageKey",
             "in": "path",
             "required": true,
-            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363000000000000@g.us_3EB0000000000000000000_100000000000000@lid`.",
             "schema": {
               "type": "string"
             }
@@ -16994,7 +16994,7 @@
             "name": "waMessageKey",
             "in": "path",
             "required": true,
-            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363426216988013@g.us_3EB0659D13650092D677AD_188450464616609@lid`.",
+            "description": "The complete WhatsApp message key (`<fromMe>_<chatJid>_<id>[_<participant>]`), e.g. `false_120363000000000000@g.us_3EB0000000000000000000_100000000000000@lid`.",
             "schema": {
               "type": "string"
             }
