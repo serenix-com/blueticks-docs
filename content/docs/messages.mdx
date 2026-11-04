@@ -45,7 +45,7 @@ Omit `sendAt` to send it right now:
 The recipient is the `{chatId}` path segment — a phone number in international format OR a WhatsApp JID. JIDs come in three flavors:
 
 - `<digits>@c.us` — individual chat (digits-only equivalent of an international-format phone number with `+` stripped).
-- `<id>@g.us` — group chat (e.g. `120363427920657250@g.us`). Find a group's id with `GET /v1/groups` or by inspecting the URL in WhatsApp Web.
+- `<id>@g.us` — group chat (e.g. `120363000000000000@g.us`). Find a group's id with `GET /v1/groups` or by inspecting the URL in WhatsApp Web.
 - `<id>@newsletter` — channel (e.g. `12345@newsletter`).
 
 The send call is identical — just swap the recipient:
@@ -59,7 +59,7 @@ bt = blueticks.Blueticks(api_key="BLUETICKS_API_KEY")
 
 # Send to a group
 msg = bt.scheduled_messages.create(
-    "120363427920657250@g.us",
+    "120363000000000000@g.us",
     type="text",
     text="Team standup in 10 minutes!",
 )
@@ -80,7 +80,7 @@ import { Blueticks } from 'blueticks';
 const bt = new Blueticks({ apiKey: 'BLUETICKS_API_KEY' });
 
 // Send to a group
-const groupMsg = await bt.scheduledMessages.create('120363427920657250@g.us', {
+const groupMsg = await bt.scheduledMessages.create('120363000000000000@g.us', {
   type: 'text',
   text: 'Team standup in 10 minutes!',
 });
@@ -100,7 +100,7 @@ use Blueticks\Blueticks;
 $bt = new Blueticks(['apiKey' => 'BLUETICKS_API_KEY']);
 
 // Send to a group
-$groupMsg = $bt->scheduled_messages->create('120363427920657250@g.us', [
+$groupMsg = $bt->scheduled_messages->create('120363000000000000@g.us', [
     'type' => 'text',
     'text' => 'Team standup in 10 minutes!',
 ]);
@@ -121,7 +121,7 @@ client = Blueticks::Client.new(api_key: "BLUETICKS_API_KEY")
 
 # Send to a group
 client.scheduled_messages.create(
-  "120363427920657250@g.us",
+  "120363000000000000@g.us",
   type: "text",
   text: "Team standup in 10 minutes!",
 )
@@ -147,7 +147,7 @@ import (
 c, _ := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 
 // Send to a group
-c.ScheduledMessages.Create(context.Background(), "120363427920657250@g.us", blueticks.SendMessageParams{
+c.ScheduledMessages.Create(context.Background(), "120363000000000000@g.us", blueticks.SendMessageParams{
 	Type: "text",
 	Text: "Team standup in 10 minutes!",
 })
@@ -164,7 +164,7 @@ c.ScheduledMessages.Create(context.Background(), "12345@newsletter", blueticks.S
 
 ```bash
 # Send to a group
-curl -X POST "https://api.blueticks.co/v1/scheduled-messages/120363427920657250@g.us" \
+curl -X POST "https://api.blueticks.co/v1/scheduled-messages/120363000000000000@g.us" \
   -H "Authorization: Bearer BLUETICKS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

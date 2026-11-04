@@ -21,8 +21,6 @@ pnpm dev
 - `content/docs/api/*.mdx` — regenerated from `openapi.json` by
   `scripts/generate-openapi-pages.ts`. Do not edit by hand.
 
-See `CLAUDE.md` for regeneration conventions.
-
 ## Deployment
 
 Automatic via Vercel on push to `main`.
