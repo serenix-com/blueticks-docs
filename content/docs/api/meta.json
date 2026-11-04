@@ -15,7 +15,6 @@
     "account",
     "ping",
     "engines",
-    "boards",
-    "suno"
+    "boards"
   ]
 }

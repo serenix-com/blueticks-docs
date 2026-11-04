@@ -6,6 +6,7 @@
     "get-scheduled-message",
     "update-scheduled-message",
     "delete-scheduled-message",
-    "schedule-message"
+    "schedule-message",
+    "cancel-scheduled-message"
   ]
 }
