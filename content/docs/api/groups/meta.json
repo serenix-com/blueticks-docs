@@ -11,6 +11,8 @@
     "remove-member-from-group",
     "promote-member-to-admin",
     "demote-admin-to-member",
+    "get-group-picture",
+    "remove-group-picture",
     "set-group-picture"
   ]
 }
