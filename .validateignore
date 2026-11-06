@@ -57,3 +57,6 @@ POST /v1/messages/pin/{waMessageKey}           # chats/messages: covered by the 
 POST /v1/messages/unpin/{waMessageKey}         # chats/messages: covered by the API reference page; guide examples still to be written
 POST /v1/identity/resolve                      # identity: covered by the API reference page; no guide yet
 GET /v1/identity/{id}                          # identity: covered by the API reference page; no guide yet
+GET /v1/groups/{id}/picture                    # groups: covered by the API reference page; guide example still to be written
+PUT /v1/groups/{id}/picture                    # groups: covered by the API reference page; guide example still to be written
+DELETE /v1/groups/{id}/picture                 # groups: covered by the API reference page; guide example still to be written

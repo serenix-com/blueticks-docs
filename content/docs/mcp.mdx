@@ -93,7 +93,10 @@ Once wired, the LLM can act on your WhatsApp account:
   `update` / `cancel` for queue management.
 - **Read chats**: `chats` action `list` / `search` / `list_messages`
   (with `load_more_history` to pull older messages from the phone).
-- **Manage groups**: `groups` action `create` / `update` / `get`.
+- **Manage groups**: `groups` action `create` / `update` / `get`, and
+  `get_picture` / `set_picture` / `remove_picture` for the group picture
+  (changing it needs group admin rights when the group is admins-only-edit;
+  removing it is not available on Chrome-extension-only accounts).
 - **Run campaigns**: `campaigns` action `create` / `pause` /
   `resume` / `cancel`. Campaign templates support the built-in
   `{whatsappname}` / `{displayname}` / `{phone}` tokens plus any custom
