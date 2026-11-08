@@ -29,19 +29,28 @@ or status code. `success` is always `false`, and the details live under `error`:
 | `404` | Not found — resource doesn't exist or isn't visible | No |
 | `409` | Conflict — e.g. an `Idempotency-Key` reused with a different body | No |
 | `422` | Unprocessable entity — semantically invalid | No |
-| `429` | Rate limited — honor `Retry-After` header | Yes |
+| `413` | Payload too large | No |
+| `429` | Rate limited — honor `Retry-After` header. On the free plan this is the plan quota, see [Free plan limit](#free-plan-limit) | Yes, after the wait |
 | `5xx` | Server error | Yes, with exponential backoff |
 
 ## Error codes
 
-Current error codes (locked as of v1.0.0):
+Current error codes:
 
 - `authentication_required`
 - `permission_denied`
 - `not_found`
 - `invalid_request`
 - `rate_limited`
+- `payload_too_large` (`413`)
 - `internal_error`
+
+A few conflicts and outages carry their own code:
+
+- `no_engine_connected` (`503`): none of your WhatsApp numbers is connected. The response sets `Retry-After: 30`.
+- `idempotency_in_flight` (`409`): an earlier attempt of this send, with the same `Idempotency-Key`, is still in flight and nothing was sent. Retry the same request after `Retry-After`.
+- `send_in_flight` (`409`): the same, for an identical message to the same chat sent without a key.
+- `AMBIGUOUS_NUMBER` (`409`): several of your WhatsApp numbers have this chat or object. `error.candidates` lists them as `{ numberId, phoneNumber }`; repeat the request naming one with `numberId` or `phone`.
 
 The SDK maps each code to a typed exception class so you can
 `catch (RateLimitError)` vs `catch (AuthenticationError)` without
@@ -83,6 +92,34 @@ network errors. Defaults:
 On `429`, the server returns a `Retry-After` header (seconds or
 HTTP-date). The SDK waits that long before the next attempt. On other
 retryable statuses, the SDK uses its own exponential backoff.
+
+## Free plan limit
+
+On the free plan the REST API and the MCP server share one quota of **5
+requests per 6-hour window**, and any paid plan is unlimited. Past the quota the
+API answers `429 rate_limited` with `Retry-After` set to the seconds left in the
+window, and an `error.upgrade` object:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "rate_limited",
+    "message": "...",
+    "upgrade": {
+      "url": "...",
+      "text": "...",
+      "reset_time": "...",
+      "seconds_remaining": 12345,
+      "plan": "..."
+    }
+  }
+}
+```
+
+Retrying before the window resets fails the same way, so wait `Retry-After`
+rather than backing off. The `upgrade.url` field is where to send a person to
+lift the limit.
 
 ## Request IDs
 
