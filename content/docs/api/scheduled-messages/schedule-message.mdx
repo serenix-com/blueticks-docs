@@ -53,6 +53,15 @@ _openapi:
           `messages:write`.
 
 
+          When `sendAt` is set and the account has no connected WhatsApp engine
+          at that moment, the message is still accepted (never rejected or
+          delayed) and the response carries an additive `warning` object (`{
+          code: "no_engine_connected", message }`). The message then stays
+          pending until an engine connects; if none connects in time it fails.
+          The field is absent whenever an engine is connected or presence cannot
+          be determined.
+
+
           See [Sending messages](/docs/messages) for runnable Python / Node /
           PHP / cURL examples per variant.
 ---
@@ -76,6 +85,8 @@ The body is a FLAT object — set the `type` field to one of `text`, `media`, or
 - `type: "poll"` — required `pollQuestion` and `pollOptions` (2–12 items). Optional `pollAllowMultiple` (default false).
 
 All variants accept optional `sendAt` (defer) and `replyTo` (wire `key` of a prior message to quote). Pass an `Idempotency-Key` header to make retries safe (at most one send per key). Requires `messages:write`.
+
+When `sendAt` is set and the account has no connected WhatsApp engine at that moment, the message is still accepted (never rejected or delayed) and the response carries an additive `warning` object (`{ code: "no_engine_connected", message }`). The message then stays pending until an engine connects; if none connects in time it fails. The field is absent whenever an engine is connected or presence cannot be determined.
 
 See [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.
 

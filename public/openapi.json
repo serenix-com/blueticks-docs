@@ -64,6 +64,10 @@
       "description": "Send or schedule WhatsApp messages via the user-messages queue. Each request creates a queued send — set `sendAt` (RFC 3339) to defer delivery, omit it to send immediately. List, retrieve, edit, and cancel queued sends."
     },
     {
+      "name": "Uploads",
+      "description": "Temporary upload links for sending files without putting the bytes in the request body."
+    },
+    {
       "name": "WA Labels",
       "description": "Read and assign the WhatsApp Business app's own NATIVE labels on chats. WhatsApp Business accounts only — distinct from Blueticks-internal chat labels. On a non-Business account, list/read return an empty set and assignment returns 409 wa_business_required."
     },
@@ -727,6 +731,27 @@
                               "applied"
                             ],
                             "additionalProperties": false
+                          },
+                          "warning": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": [
+                                  "no_engine_connected"
+                                ],
+                                "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+                              },
+                              "message": {
+                                "type": "string",
+                                "description": "Human-readable explanation of the warning."
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "message"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -737,6 +762,28 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
                     },
                     "limit": {
                       "type": "integer",
@@ -1082,6 +1129,27 @@
                             "applied"
                           ],
                           "additionalProperties": false
+                        },
+                        "warning": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "no_engine_connected"
+                              ],
+                              "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+                            },
+                            "message": {
+                              "type": "string",
+                              "description": "Human-readable explanation of the warning."
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "message"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1226,6 +1294,11 @@
                     "type": "string",
                     "maxLength": 15728640,
                     "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
+                  },
+                  "mediaFileId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9]{8,64}$",
+                    "description": "fileId from POST /v1/uploads (after you PUT the file to its uploadUrl). Takes precedence over mediaUrl / mediaBase64. The file is deleted 1 hour after the send."
                   },
                   "mediaKind": {
                     "type": "string",
@@ -1568,6 +1641,27 @@
                           "required": [
                             "requested",
                             "applied"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "warning": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "no_engine_connected"
+                              ],
+                              "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+                            },
+                            "message": {
+                              "type": "string",
+                              "description": "Human-readable explanation of the warning."
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "message"
                           ],
                           "additionalProperties": false
                         }
@@ -1928,6 +2022,28 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
                     },
                     "limit": {
                       "type": "integer",
@@ -2885,6 +3001,28 @@
                         "additionalProperties": false
                       }
                     },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
+                    },
                     "limit": {
                       "type": "integer",
                       "description": "Page size echoed back from the request."
@@ -3756,6 +3894,28 @@
                         "additionalProperties": false
                       }
                     },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
+                    },
                     "limit": {
                       "type": "integer",
                       "description": "Page size echoed back from the request."
@@ -4466,6 +4626,28 @@
                         "additionalProperties": false
                       }
                     },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
+                    },
                     "limit": {
                       "type": "integer",
                       "description": "Page size echoed back from the request."
@@ -5040,6 +5222,39 @@
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
           },
           {
+            "name": "numberId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          {
+            "name": "fanoutLimit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "minimum": 0
+            },
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -5208,6 +5423,28 @@
                         "additionalProperties": false,
                         "description": "A WhatsApp chat (conversation) — a 1:1 contact, a group, or a channel — as seen by the connected engine."
                       }
+                    },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
                     },
                     "limit": {
                       "type": "integer",
@@ -5663,6 +5900,63 @@
             "description": "Search token; when set, only items whose name matches are returned."
           },
           {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gateway",
+                "regular"
+              ]
+            },
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          {
+            "name": "engineId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          {
+            "name": "numberId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          {
+            "name": "fanoutLimit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "minimum": 0
+            },
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
+          },
+          {
             "name": "includeArchive",
             "in": "query",
             "required": false,
@@ -5748,6 +6042,28 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
                     },
                     "limit": {
                       "type": "integer",
@@ -6592,6 +6908,28 @@
                         "additionalProperties": false
                       }
                     },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
+                    },
                     "limit": {
                       "type": "integer",
                       "description": "Page size echoed back from the request."
@@ -7111,6 +7449,28 @@
                         "description": "A WhatsApp contact from the connected account's address book."
                       }
                     },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
+                    },
                     "limit": {
                       "type": "integer",
                       "description": "Page size echoed back from the request."
@@ -7348,6 +7708,204 @@
           }
         },
         "operationId": "engines.list"
+      }
+    },
+    "/v1/uploads": {
+      "post": {
+        "tags": [
+          "Uploads"
+        ],
+        "summary": "Create upload link",
+        "description": "Returns a signed URL to upload one file directly, plus a `fileId`. 1) `PUT` the raw bytes to `uploadUrl` with the returned `headers`. 2) Send it with `type: \"media\"` and `mediaFileId: <fileId>`. The URL accepts the PUT for ~15 minutes. The file is deleted 1 hour after it is sent, or ~24 hours after this call if it is never sent.",
+        "security": [
+          {
+            "BearerAuth": [
+              "messages:write"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contentType": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 255,
+                    "description": "MIME type of the file you will upload, e.g. `application/pdf`, `image/jpeg`, `video/mp4`. The PUT must send exactly this `Content-Type`."
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "description": "Size of the file in bytes. Optional; when given it is checked against `maxBytes` up front."
+                  },
+                  "filename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "description": "Filename shown on the attachment when the upload is sent. Optional; `mediaFilename` on the send wins."
+                  }
+                },
+                "required": [
+                  "contentType"
+                ],
+                "additionalProperties": false
+              },
+              "examples": {
+                "pdf": {
+                  "summary": "Upload a PDF",
+                  "value": {
+                    "contentType": "application/pdf",
+                    "sizeBytes": 482113,
+                    "filename": "invoice.pdf"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Upload link created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fileId": {
+                          "type": "string",
+                          "description": "Reference to the upload. Pass it as `mediaFileId` on a media send."
+                        },
+                        "uploadUrl": {
+                          "type": "string",
+                          "description": "Signed URL. PUT the raw file bytes to it with the headers in `headers`."
+                        },
+                        "method": {
+                          "type": "string",
+                          "enum": [
+                            "PUT"
+                          ]
+                        },
+                        "headers": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "description": "Headers the PUT must carry exactly (`Content-Type` and `x-goog-content-length-range`); the URL is signed over them."
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "description": "ISO timestamp after which `uploadUrl` no longer accepts the PUT (~15 minutes)."
+                        },
+                        "deleteAt": {
+                          "type": "string",
+                          "description": "ISO timestamp when the file is deleted if no message uses it (~24 hours). Once sent, the file is deleted 1 hour after the send."
+                        },
+                        "maxBytes": {
+                          "type": "number",
+                          "description": "Largest file the URL accepts, in bytes."
+                        },
+                        "contentType": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fileId",
+                        "uploadUrl",
+                        "method",
+                        "headers",
+                        "expiresAt",
+                        "deleteAt",
+                        "maxBytes",
+                        "contentType"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "uploads.create"
       }
     },
     "/v1/audiences/{id}/contacts": {
@@ -8508,6 +9066,17 @@
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
           },
           {
+            "name": "numberId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          {
             "name": "order",
             "in": "query",
             "required": false,
@@ -9038,6 +9607,28 @@
                         "additionalProperties": false
                       }
                     },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
+                    },
                     "limit": {
                       "type": "integer",
                       "description": "Page size echoed back from the request."
@@ -9278,6 +9869,11 @@
                     "maxLength": 15728640,
                     "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
                   },
+                  "mediaFileId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9]{8,64}$",
+                    "description": "fileId from POST /v1/uploads (after you PUT the file to its uploadUrl). Takes precedence over mediaUrl / mediaBase64. The file is deleted 1 hour after the send."
+                  },
                   "mediaKind": {
                     "type": "string",
                     "enum": [
@@ -9336,6 +9932,32 @@
                     "minLength": 1,
                     "maxLength": 256,
                     "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+                  },
+                  "from": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "WhatsApp number to send from (e.g. \"+15550001234\"). Must be the number of a connected engine: a match is honoured, a mismatch is rejected with 409 SENDER_MISMATCH naming the valid number(s) and nothing is sent. Omit for the default connection. Immediate sends only: not allowed together with `sendAt`."
+                  },
+                  "engine": {
+                    "type": "string",
+                    "enum": [
+                      "gateway",
+                      "regular"
+                    ],
+                    "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+                  },
+                  "engineId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+                  },
+                  "numberId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
                   },
                   "withTyping": {
                     "type": "boolean",
@@ -9600,6 +10222,27 @@
                             "applied"
                           ],
                           "additionalProperties": false
+                        },
+                        "warning": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "no_engine_connected"
+                              ],
+                              "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+                            },
+                            "message": {
+                              "type": "string",
+                              "description": "Human-readable explanation of the warning."
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "message"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -9700,7 +10343,7 @@
           "Scheduled Messages"
         ],
         "summary": "Schedule message",
-        "description": "Send or schedule a WhatsApp message to the chat named in the URL path (`{chatId}` — a phone number in E.164 format, e.g. `+15551234567`, or a WhatsApp chat id like `12345@c.us` / `1234567890@g.us` / `12345@newsletter`). Omit `sendAt` to send immediately; set it (RFC 3339, ≥10s and ≤365d in the future) to defer delivery.\n\nThe body is a FLAT object — set the `type` field to one of `text`, `media`, or `poll`; `type` selects which top-level fields are relevant.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). A rich link-preview card is attached automatically when the text contains a URL. Example:\n  ```bash\n  curl -X POST \"https://api.blueticks.co/v1/scheduled-messages/+15551234567\" \\\n    -H \"Authorization: Bearer $BLUETICKS_API_KEY\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"type\":\"text\",\"text\":\"hello\"}'\n  ```\n- `type: \"media\"` — provide the media as `mediaUrl` (HTTPS) **or** `mediaBase64` (base64 / data: URL); `mediaUrl` wins if both are sent. The bytes are uploaded server-side and only a URL is sent on to the engine. Optional `mediaKind` (`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`; auto-detected when omitted), `text` (caption), `mediaFilename`. You can also upload a file as `multipart/form-data` with the bytes in a `mediaFile` part.\n- `type: \"poll\"` — required `pollQuestion` and `pollOptions` (2–12 items). Optional `pollAllowMultiple` (default false).\n\nAll variants accept optional `sendAt` (defer) and `replyTo` (wire `key` of a prior message to quote). Pass an `Idempotency-Key` header to make retries safe (at most one send per key). Requires `messages:write`.\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
+        "description": "Send or schedule a WhatsApp message to the chat named in the URL path (`{chatId}` — a phone number in E.164 format, e.g. `+15551234567`, or a WhatsApp chat id like `12345@c.us` / `1234567890@g.us` / `12345@newsletter`). Omit `sendAt` to send immediately; set it (RFC 3339, ≥10s and ≤365d in the future) to defer delivery.\n\nThe body is a FLAT object — set the `type` field to one of `text`, `media`, or `poll`; `type` selects which top-level fields are relevant.\n\n**Variants:**\n\n- `type: \"text\"` — required `text` (1–4096 chars). A rich link-preview card is attached automatically when the text contains a URL. Example:\n  ```bash\n  curl -X POST \"https://api.blueticks.co/v1/scheduled-messages/+15551234567\" \\\n    -H \"Authorization: Bearer $BLUETICKS_API_KEY\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"type\":\"text\",\"text\":\"hello\"}'\n  ```\n- `type: \"media\"` — provide the media as `mediaUrl` (HTTPS) **or** `mediaBase64` (base64 / data: URL); `mediaUrl` wins if both are sent. The bytes are uploaded server-side and only a URL is sent on to the engine. Optional `mediaKind` (`image` · `video` · `audio` · `document` · `sticker` · `voice` · `gif`; auto-detected when omitted), `text` (caption), `mediaFilename`. You can also upload a file as `multipart/form-data` with the bytes in a `mediaFile` part.\n- `type: \"poll\"` — required `pollQuestion` and `pollOptions` (2–12 items). Optional `pollAllowMultiple` (default false).\n\nAll variants accept optional `sendAt` (defer) and `replyTo` (wire `key` of a prior message to quote). Pass an `Idempotency-Key` header to make retries safe (at most one send per key). Requires `messages:write`.\n\nWhen `sendAt` is set and the account has no connected WhatsApp engine at that moment, the message is still accepted (never rejected or delayed) and the response carries an additive `warning` object (`{ code: \"no_engine_connected\", message }`). The message then stays pending until an engine connects; if none connects in time it fails. The field is absent whenever an engine is connected or presence cannot be determined.\n\nSee [Sending messages](/docs/messages) for runnable Python / Node / PHP / cURL examples per variant.",
         "security": [
           {
             "BearerAuth": [
@@ -9797,6 +10440,11 @@
                     "maxLength": 15728640,
                     "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
                   },
+                  "mediaFileId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9]{8,64}$",
+                    "description": "fileId from POST /v1/uploads (after you PUT the file to its uploadUrl). Takes precedence over mediaUrl / mediaBase64. The file is deleted 1 hour after the send."
+                  },
                   "mediaKind": {
                     "type": "string",
                     "enum": [
@@ -9855,6 +10503,12 @@
                     "minLength": 1,
                     "maxLength": 256,
                     "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+                  },
+                  "from": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "WhatsApp number to send from (e.g. \"+15550001234\"). Must be the number of a connected engine: a match is honoured, a mismatch is rejected with 409 SENDER_MISMATCH naming the valid number(s) and nothing is sent. Omit for the default connection. Immediate sends only: not allowed together with `sendAt`."
                   },
                   "sendAt": {
                     "type": "string",
@@ -10241,6 +10895,27 @@
                             "applied"
                           ],
                           "additionalProperties": false
+                        },
+                        "warning": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "no_engine_connected"
+                              ],
+                              "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+                            },
+                            "message": {
+                              "type": "string",
+                              "description": "Human-readable explanation of the warning."
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "message"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -10495,6 +11170,27 @@
                           "required": [
                             "requested",
                             "applied"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "warning": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "no_engine_connected"
+                              ],
+                              "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+                            },
+                            "message": {
+                              "type": "string",
+                              "description": "Human-readable explanation of the warning."
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "message"
                           ],
                           "additionalProperties": false
                         }
@@ -10850,6 +11546,27 @@
                           "required": [
                             "requested",
                             "applied"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "warning": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "no_engine_connected"
+                              ],
+                              "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+                            },
+                            "message": {
+                              "type": "string",
+                              "description": "Human-readable explanation of the warning."
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "message"
                           ],
                           "additionalProperties": false
                         }
@@ -12434,6 +13151,138 @@
         },
         "operationId": "groups.picture.get"
       },
+      "delete": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Remove group picture",
+        "description": "Remove the group picture. Gateway (Baileys) engine only: a Chrome-extension-only account gets `501 unsupported_command`. Only group admins can when the group is admins-only-edit (`403 not_authorized`). Requires `groups:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "groups:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "picture removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "ok"
+                      ],
+                      "properties": {
+                        "ok": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "groups.picture.delete"
+      },
       "put": {
         "tags": [
           "Groups"
@@ -12650,138 +13499,6 @@
           }
         },
         "operationId": "groups.picture.update"
-      },
-      "delete": {
-        "tags": [
-          "Groups"
-        ],
-        "summary": "Remove group picture",
-        "description": "Remove the group picture. Gateway (Baileys) engine only: a Chrome-extension-only account gets `501 unsupported_command`. Only group admins can when the group is admins-only-edit (`403 not_authorized`). Requires `groups:write`.",
-        "security": [
-          {
-            "BearerAuth": [
-              "groups:write"
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "picture removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ],
-                      "description": "Always `true` on success responses."
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "ok"
-                      ],
-                      "properties": {
-                        "ok": {
-                          "type": "boolean"
-                        }
-                      }
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request — invalid params or body.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid API key.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "API key lacks the required scope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed — see `error.details` for per-field issues.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Rate limit exceeded — back off and retry.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "groups.picture.delete"
       }
     },
     "/v1/contacts/{id}/common_groups": {
@@ -12884,6 +13601,28 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
                     },
                     "limit": {
                       "type": "integer",
@@ -13207,6 +13946,28 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
                     },
                     "limit": {
                       "type": "integer",
@@ -14713,6 +15474,39 @@
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
           },
           {
+            "name": "numberId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          {
+            "name": "fanoutLimit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "minimum": 0
+            },
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
+          },
+          {
             "name": "numberOfChats",
             "in": "query",
             "required": false,
@@ -15293,6 +16087,39 @@
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
           },
           {
+            "name": "numberId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          {
+            "name": "fanoutLimit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "minimum": 0
+            },
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
+          },
+          {
             "name": "skip",
             "in": "query",
             "required": false,
@@ -15360,6 +16187,28 @@
                         "additionalProperties": false,
                         "description": "One member of a WhatsApp group, with their admin standing."
                       }
+                    },
+                    "answeredBy": {
+                      "type": "object",
+                      "properties": {
+                        "engineId": {
+                          "type": "string",
+                          "description": "The engine (presence clientId) that answered this read."
+                        },
+                        "numberId": {
+                          "type": "string",
+                          "description": "The account WhatsApp number (Number id) that engine is bound to, when known."
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "That number, E.164 digits (no `+`), when known."
+                        }
+                      },
+                      "required": [
+                        "engineId"
+                      ],
+                      "additionalProperties": false,
+                      "description": "Which engine answered this read, and the account number it is on (#1155)."
                     },
                     "limit": {
                       "type": "integer",
@@ -19703,6 +20552,24 @@
             "maxLength": 200,
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
           },
+          "numberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          "fanoutLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
+          },
           "searchToken": {
             "type": "string",
             "maxLength": 200,
@@ -20134,6 +21001,24 @@
             "minLength": 1,
             "maxLength": 200,
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          "numberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          "fanoutLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
           },
           "numberOfChats": {
             "type": "integer",
@@ -20590,6 +21475,24 @@
             "maxLength": 200,
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
           },
+          "numberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          "fanoutLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
+          },
           "searchToken": {
             "type": "string",
             "maxLength": 200,
@@ -20842,6 +21745,12 @@
             "minLength": 1,
             "maxLength": 200,
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          "numberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
           },
           "order": {
             "type": "string",
@@ -21627,6 +22536,12 @@
             "maxLength": 200,
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
           },
+          "numberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
           "order": {
             "type": "string",
             "enum": [
@@ -21794,6 +22709,24 @@
             "minLength": 1,
             "maxLength": 200,
             "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          "numberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          "fanoutLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
           },
           "searchToken": {
             "type": "string",
@@ -22151,6 +23084,38 @@
       "ListGroupsQuery": {
         "type": "object",
         "properties": {
+          "engine": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          "engineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          "numberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "Target one of this account's WhatsApp numbers by its E.164 phone (digits, optional leading +). 404 NUMBER_NOT_FOUND if it is not this account's. Yields to `numberId` when both are given and name the same Number; 400 CONFLICTING_TARGET if they differ."
+          },
+          "fanoutLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "With no number target, read at most this many of the account's WhatsApp numbers (default 5). Numbers over the cap are listed in skippedNumbers."
+          },
           "limit": {
             "type": "integer",
             "minimum": 1,
@@ -22444,6 +23409,26 @@
                 },
                 "description": "Per-field validation issues. Present on 400/422 when the request body failed Zod parsing."
               },
+              "candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "numberId": {
+                      "type": "string"
+                    },
+                    "phoneNumber": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "numberId",
+                    "phoneNumber"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "Present only on a 409 `AMBIGUOUS_NUMBER`: the WhatsApp numbers that hold the object. Retry with `numberId` or `phone` set to one of them."
+              },
               "upgrade": {
                 "type": "object",
                 "properties": {
@@ -22552,6 +23537,26 @@
                   "additionalProperties": false
                 },
                 "description": "Per-field validation issues. Present on 400/422 when the request body failed Zod parsing."
+              },
+              "candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "numberId": {
+                      "type": "string"
+                    },
+                    "phoneNumber": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "numberId",
+                    "phoneNumber"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "Present only on a 409 `AMBIGUOUS_NUMBER`: the WhatsApp numbers that hold the object. Retry with `numberId` or `phone` set to one of them."
               },
               "upgrade": {
                 "type": "object",
@@ -23345,6 +24350,27 @@
               "error"
             ],
             "additionalProperties": false
+          },
+          "warning": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "no_engine_connected"
+                ],
+                "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable explanation of the warning."
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -23391,6 +24417,27 @@
           "expired"
         ]
       },
+      "MessageWarning": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "no_engine_connected"
+            ],
+            "description": "Machine-readable warning code. `no_engine_connected`: the account had no connected WhatsApp engine when the message was scheduled."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation of the warning."
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
       "PatchMessageRequest": {
         "type": "object",
         "properties": {
@@ -23416,6 +24463,11 @@
             "type": "string",
             "maxLength": 15728640,
             "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
+          },
+          "mediaFileId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{8,64}$",
+            "description": "fileId from POST /v1/uploads (after you PUT the file to its uploadUrl). Takes precedence over mediaUrl / mediaBase64. The file is deleted 1 hour after the send."
           },
           "mediaKind": {
             "type": "string",
@@ -23693,6 +24745,11 @@
             "maxLength": 15728640,
             "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
           },
+          "mediaFileId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{8,64}$",
+            "description": "fileId from POST /v1/uploads (after you PUT the file to its uploadUrl). Takes precedence over mediaUrl / mediaBase64. The file is deleted 1 hour after the send."
+          },
           "mediaKind": {
             "type": "string",
             "enum": [
@@ -23751,6 +24808,32 @@
             "minLength": 1,
             "maxLength": 256,
             "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "WhatsApp number to send from (e.g. \"+15550001234\"). Must be the number of a connected engine: a match is honoured, a mismatch is rejected with 409 SENDER_MISMATCH naming the valid number(s) and nothing is sent. Omit for the default connection. Immediate sends only: not allowed together with `sendAt`."
+          },
+          "engine": {
+            "type": "string",
+            "enum": [
+              "gateway",
+              "regular"
+            ],
+            "description": "Force the read to a specific engine TYPE: \"gateway\" (server-side pod, e.g. Baileys) or \"regular\" (browser extension). Overrides the default dual-engine read preference. 409 ENGINE_NOT_ONLINE if none of that type is online."
+          },
+          "engineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Exact engine clientId to target (from the engine status `id`); wins over `engine`. 409 ENGINE_NOT_ONLINE if not online."
+          },
+          "numberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Target the engine on one of this account's WhatsApp numbers (the Number id). 404 NUMBER_NOT_FOUND if the number is not this account's; 409 ENGINE_NOT_ONLINE if that number has no engine online. Yields to `engineId` when both are given."
           },
           "withTyping": {
             "type": "boolean",
@@ -23840,6 +24923,11 @@
             "maxLength": 15728640,
             "description": "Raw media bytes, base64-encoded (or a data: URL). Used when mediaUrl is absent. For a file upload, send multipart/form-data with a `mediaFile` part instead — it is converted to this."
           },
+          "mediaFileId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{8,64}$",
+            "description": "fileId from POST /v1/uploads (after you PUT the file to its uploadUrl). Takes precedence over mediaUrl / mediaBase64. The file is deleted 1 hour after the send."
+          },
           "mediaKind": {
             "type": "string",
             "enum": [
@@ -23898,6 +24986,12 @@
             "minLength": 1,
             "maxLength": 256,
             "description": "Opaque correlation token you choose to tag this message with. It is stored on the message and carried into WhatsApp's `messageSecret`, so you can match it back to your own records later. NOT a deduplication key: sending the same `secret` twice creates two separate messages. To make retries safe (at-most-once send), use the `Idempotency-Key` header instead. When omitted, the API encodes the internal message id here for delivery-status matching — only set this if you have your own correlation scheme."
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "WhatsApp number to send from (e.g. \"+15550001234\"). Must be the number of a connected engine: a match is honoured, a mismatch is rejected with 409 SENDER_MISMATCH naming the valid number(s) and nothing is sent. Omit for the default connection. Immediate sends only: not allowed together with `sendAt`."
           },
           "sendAt": {
             "type": "string",
@@ -23985,21 +25079,80 @@
       "CreateUploadRequest": {
         "type": "object",
         "properties": {
-          "audioUrl": {
+          "contentType": {
             "type": "string",
-            "format": "uri",
-            "description": "Public URL of the reference audio to fetch and upload. Provide this OR `audioBase64` (or send multipart file)."
+            "minLength": 3,
+            "maxLength": 255,
+            "description": "MIME type of the file you will upload, e.g. `application/pdf`, `image/jpeg`, `video/mp4`. The PUT must send exactly this `Content-Type`."
           },
-          "audioBase64": {
-            "type": "string",
-            "description": "Base64-encoded audio bytes. Provide this OR `audioUrl` (or send multipart file)."
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Size of the file in bytes. Optional; when given it is checked against `maxBytes` up front."
           },
-          "fileName": {
+          "filename": {
             "type": "string",
-            "maxLength": 200,
-            "description": "Original file name, used for the extension (defaults to \"audio.mp3\")."
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Filename shown on the attachment when the upload is sent. Optional; `mediaFilename` on the send wins."
           }
-        }
+        },
+        "required": [
+          "contentType"
+        ],
+        "additionalProperties": false
+      },
+      "CreateUploadResponse": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "Reference to the upload. Pass it as `mediaFileId` on a media send."
+          },
+          "uploadUrl": {
+            "type": "string",
+            "description": "Signed URL. PUT the raw file bytes to it with the headers in `headers`."
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "PUT"
+            ]
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Headers the PUT must carry exactly (`Content-Type` and `x-goog-content-length-range`); the URL is signed over them."
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "ISO timestamp after which `uploadUrl` no longer accepts the PUT (~15 minutes)."
+          },
+          "deleteAt": {
+            "type": "string",
+            "description": "ISO timestamp when the file is deleted if no message uses it (~24 hours). Once sent, the file is deleted 1 hour after the send."
+          },
+          "maxBytes": {
+            "type": "number",
+            "description": "Largest file the URL accepts, in bytes."
+          },
+          "contentType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fileId",
+          "uploadUrl",
+          "method",
+          "headers",
+          "expiresAt",
+          "deleteAt",
+          "maxBytes",
+          "contentType"
+        ]
       },
       "WaLabel": {
         "type": "object",
