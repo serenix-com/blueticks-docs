@@ -253,12 +253,11 @@ To use `X-Blueticks-Signature` instead, drop the timestamp: compare
 
 ### Verify with an official SDK
 
-The Python, Ruby, PHP and Go SDKs ship a verify helper that checks the signature
-and the timestamp (default tolerance 300 seconds) and returns the parsed event.
-Pass the raw request body, not re-serialized JSON. The Node.js SDK has no verify
-helper yet, so use the Node.js example above.
+The Python, Node.js, Ruby, PHP and Go SDKs ship a verify helper that checks the
+signature and the timestamp (default tolerance 300 seconds) and returns the
+parsed event. Pass the raw request body, not re-serialized JSON.
 
-<Tabs groupId="sdk-verify" items={['Python', 'Ruby', 'PHP', 'Go']}>
+<Tabs groupId="sdk-verify" items={['Python', 'Node.js', 'Ruby', 'PHP', 'Go']}>
   <Tab value="Python">
 
 ```python
@@ -268,6 +267,20 @@ try:
     event = verify(request.get_data(), request.headers, secret=SECRET)
 except WebhookVerificationError:
     abort(400)
+```
+
+  </Tab>
+  <Tab value="Node.js">
+
+```ts
+import { verifyWebhook, WebhookVerificationError } from "blueticks";
+
+try {
+  const event = verifyWebhook(rawBody, req.headers, process.env.BLUETICKS_WEBHOOK_SECRET!);
+} catch (err) {
+  if (err instanceof WebhookVerificationError) return res.sendStatus(400);
+  throw err;
+}
 ```
 
   </Tab>
