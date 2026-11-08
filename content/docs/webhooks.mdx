@@ -119,6 +119,11 @@ Blueticks-Webhook-Id: 6a380a8258bece30b485036e
 - **`id`** is unique per delivery — store it and ignore repeats, since a retry
   can re-deliver an event your server already handled (see
   [Reliability](#5-reliability-retries--auto-disable)).
+- **`idempotency_key`** (optional) identifies the underlying occurrence, not the
+  delivery. Today only `poll_vote_webhook` carries one: the same vote gets the
+  same key however many times or from however many engines it is delivered. The
+  key is also sent as the `Blueticks-Idempotency-Key` header. Events without one
+  have no such field and no header.
 - **`Blueticks-Webhook-Id`** is the id of *your* webhook that matched — handy
   when one server backs several endpoints.
 - **Respond `2xx` within 10 seconds.** Anything else (or a timeout) is treated
@@ -266,7 +271,9 @@ POST without it. Always serve the endpoint over HTTPS.
   first delivery plus 7 retries) over roughly **21 hours**, with growing backoff
   between attempts: `1m → 5m → 15m → 1h → 2h → 6h → 12h`.
 - Because of retries, the **same event can arrive more than once** — dedupe on
-  the delivery `id`.
+  the delivery `id`. For poll votes, dedupe on `idempotency_key` instead: an
+  account connected through more than one engine can send you the same vote as two
+  deliveries with different `id`s.
 - After **8 consecutive failures**, the endpoint **auto-disables**. Once your
   server is healthy, re-enable it by patching `status: "enabled"` (next section).
 
