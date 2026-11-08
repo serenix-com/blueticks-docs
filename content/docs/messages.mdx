@@ -314,7 +314,9 @@ path segment (e.g. `POST /v1/scheduled-messages/+972...`), so the body carries n
 
 `mediaUrl` must be `https://` and resolve to a non-private host — we fetch
 and forward it on your behalf. If the file has no public URL, send the bytes
-inline as `mediaBase64` instead.
+inline as `mediaBase64` instead. Inline media is capped at 5 MB decoded; a larger
+one returns `413`. For bigger files, use a `mediaUrl` or the multipart `mediaFile`
+upload on `POST /v1/messages/{chatId}`.
 
 ## Send a poll
 
