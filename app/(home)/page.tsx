@@ -1,5 +1,9 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { buildHomeMetadata } from '@/lib/seo';
 import { HeroDemo } from '@/components/hero-demo';
+
+export const metadata: Metadata = buildHomeMetadata();
 
 export default function HomePage() {
   return (

@@ -23,3 +23,19 @@ export function buildDocsMetadata(input: DocsMetadataInput): Metadata {
     openGraph: { images: input.imageUrl },
   };
 }
+
+export const SITE_DESCRIPTION =
+  'The Blueticks API lets you send WhatsApp messages, manage gateways, and automate customer conversations from your own code.';
+
+/** Site-wide defaults: metadataBase, a branded title template, and a description. */
+export function buildRootMetadata(): Metadata {
+  return {
+    metadataBase: rootMetadataBase(),
+    title: { default: 'Blueticks API docs', template: '%s | Blueticks API' },
+    description: SITE_DESCRIPTION,
+  };
+}
+
+export function buildHomeMetadata(): Metadata {
+  return { alternates: { canonical: '/' } };
+}
