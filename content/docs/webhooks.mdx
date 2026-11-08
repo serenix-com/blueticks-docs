@@ -122,8 +122,9 @@ Blueticks-Webhook-Id: 6a380a8258bece30b485036e
 - **`idempotency_key`** (optional) identifies the underlying occurrence, not the
   delivery. Today only `poll_vote_webhook` carries one: the same vote gets the
   same key however many times or from however many engines it is delivered. The
-  key is also sent as the `Blueticks-Idempotency-Key` header. Events without one
-  have no such field and no header.
+  key is also sent as the `Blueticks-Idempotency-Key` header. Events without one,
+  and a poll vote missing its poll id, voter or timestamp, have no such field and
+  no header.
 - **`Blueticks-Webhook-Id`** is the id of *your* webhook that matched — handy
   when one server backs several endpoints.
 - **Respond `2xx` within 10 seconds.** Anything else (or a timeout) is treated
