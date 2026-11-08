@@ -156,7 +156,8 @@ country code (`+15550100123`); bare digits, or numbers starting with `0` / `00`,
 are rejected. Spaces, dashes, dots, and parentheses are stripped. If a tool
 mangles the `+` in a URL, use the chat-id form `15550100123@c.us` instead.
 
-**Webhook stopped firing.** After 8 consecutive failed deliveries (for example,
-the Make scenario was off) the webhook auto-disables. Turn the scenario back
+**Webhook stopped firing.** After it has failed continuously for 3 days, with at
+least 10 failed attempts (for example, the Make scenario was off), the webhook
+auto-disables. Turn the scenario back
 on, then re-enable the webhook with `PATCH /v1/webhooks/{id}` and
 `{"status": "enabled"}`.
