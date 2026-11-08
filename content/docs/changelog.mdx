@@ -7,6 +7,25 @@ The API and each official SDK track versions independently.
 
 ## API specification
 
+### November 2026 (additive, no breaking changes)
+
+- **File uploads for media sends.** `POST /v1/uploads` returns a signed URL and a
+  `fileId`. `PUT` the bytes to the URL, then send with `type: "media"` and
+  `mediaFileId`. See [Uploads](/docs/api/uploads). Media sends and scheduled
+  messages also accept `mediaMimeType`.
+- **WhatsApp labels.** `GET /v1/wa-labels` lists labels, and
+  `GET` / `PATCH /v1/chats/{chatId}/wa-labels` read and set a chat's labels.
+  Sends can carry `waLabelIds`.
+- **Cancel a scheduled message.** `POST /v1/scheduled-messages/{id}/cancel`.
+- **Pick the number or engine.** List calls for chats, groups, latest chats and
+  participants take `engine`, `engineId`, `numberId`, `phone` and `fanoutLimit`;
+  messages take `engine`, `engineId` and `numberId`. List responses report
+  which number answered in `answeredBy`.
+- **Richer messages and schedules.** Messages carry `call`, `groupEvent`,
+  `interactive`, `reactions`, `subtype` and `waType`. Scheduled messages carry
+  `recurrence`, `waLabels`, `warning` and `recipientName`, and send accepts
+  `buttonReply`.
+
 ### v2.0.0 — 2026-06-06 (breaking)
 
 - **Pagination switched from cursor to offset.** Every list endpoint now takes
