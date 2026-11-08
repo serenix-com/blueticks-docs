@@ -15,6 +15,7 @@
     "account",
     "ping",
     "engines",
-    "boards"
+    "boards",
+    "uploads"
   ]
 }

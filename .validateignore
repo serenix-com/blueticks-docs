@@ -60,3 +60,4 @@ GET /v1/identity/{id}                          # identity: covered by the API re
 GET /v1/groups/{id}/picture                    # groups: covered by the API reference page; guide example still to be written
 PUT /v1/groups/{id}/picture                    # groups: covered by the API reference page; guide example still to be written
 DELETE /v1/groups/{id}/picture                 # groups: covered by the API reference page; guide example still to be written
+POST /v1/uploads                               # uploads: covered by the API reference page; no guide yet
