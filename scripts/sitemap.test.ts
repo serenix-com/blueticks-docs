@@ -10,7 +10,7 @@ describe('buildSitemapEntries', () => {
       { url: '/docs/api/uploads', slugs: ['api', 'uploads'] },
     ]);
     expect(out.map((e) => e.url)).toEqual([
-      `${SITE_URL}/`,
+      SITE_URL,
       `${SITE_URL}/docs`,
       `${SITE_URL}/docs/api/uploads`,
       `${SITE_URL}/docs/webhooks`,
@@ -23,7 +23,7 @@ describe('buildSitemapEntries', () => {
       { url: '/docs/api/messages/send-message', slugs: ['api', 'messages', 'send-message'] },
     ]);
     expect(out.map((e) => e.url)).toEqual([
-      `${SITE_URL}/`,
+      SITE_URL,
       `${SITE_URL}/docs/api/messages/send-message`,
     ]);
   });

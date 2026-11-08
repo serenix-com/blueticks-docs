@@ -26,7 +26,7 @@ export function buildSitemapEntries(pages: readonly SitemapPage[]): SitemapEntry
     if (isHidden(page)) continue;
     urls.add(`${SITE_URL}${page.url}`);
   }
-  const home = `${SITE_URL}/`;
+  const home = SITE_URL;
   const rest = [...urls].filter((u) => u !== home).sort();
   return [home, ...rest].map((url) => ({ url }));
 }
