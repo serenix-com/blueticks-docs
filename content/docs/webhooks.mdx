@@ -276,8 +276,10 @@ POST without it. Always serve the endpoint over HTTPS.
   the delivery `id`. For poll votes, dedupe on `idempotency_key` instead: an
   account connected through more than one engine can send you the same vote as two
   deliveries with different `id`s.
-- After **8 consecutive failures**, the endpoint **auto-disables**. Once your
-  server is healthy, re-enable it by patching `status: "enabled"` (next section).
+- An endpoint that keeps failing is backed off, not hit with every event. It
+  **auto-disables** once it has failed continuously for **3 days** with at
+  least **10** failed attempts. Once your server is healthy, re-enable it by
+  patching `status: "enabled"` (next section).
 
 ## 6. Manage your webhooks
 
