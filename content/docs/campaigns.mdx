@@ -409,5 +409,8 @@ The resume and cancel transitions map to dedicated endpoints:
   larger lists client-side.
 - Variables: max 32 per contact, each ≤ 1024 chars, keys match
   `^[A-Za-z_][A-Za-z0-9_]{0,31}$`.
+- Campaign: `name` up to 120 characters, `text` up to 4096, `mediaCaption`
+  up to 1024 (and it needs `mediaUrl`). `mediaUrl` must be an `https://` URL.
+  A campaign needs `text`, `mediaUrl`, or both.
 - Pacing is server-controlled — the internal send engine rate-limits
   per linked WhatsApp number. No customer-facing throttle knob.
