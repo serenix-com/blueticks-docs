@@ -44,9 +44,9 @@ creates, changes, sends, or deletes something.
 
 | Read tool → actions | Write tool → actions |
 | --- | --- |
-| `chats` → `list`, `get_latest`, `search`, `get`, `list_messages`, `get_media`, `get_participants` | `chats_write` → `send_message_text`, `send_message_media`, `send_message_poll`, `mark_read`, `archive`, `unarchive`, `load_more_history` |
+| `chats` → `list`, `get_latest`, `search`, `get`, `list_messages`, `get_media`, `get_participants`, `get_poll_results` | `chats_write` → `send_message_text`, `send_message_media`, `send_message_poll`, `send_button_reply`, `mark_read`, `react`, `archive`, `unarchive`, `load_more_history` |
 | `scheduled_messages` → `list`, `get`, `ack` | `scheduled_messages_write` → `send`, `update`, `cancel` |
-| `groups` → `get` | `groups_write` → `create`, `update`, `leave` |
+| `groups` → `get`, `get_picture` | `groups_write` → `create`, `update`, `leave`, `set_picture`, `remove_picture` |
 | `audiences` → `list`, `get` | `audiences_write` → `create`, `update`, `delete`, `append_contacts`, `update_contact`, `remove_contact` |
 | `campaigns` → `list`, `get` | `campaigns_write` → `create`, `pause`, `resume`, `cancel` |
 | `webhooks` → `list`, `get` | `webhooks_write` → `create`, `update`, `delete` |
