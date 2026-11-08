@@ -25076,354 +25076,82 @@
         },
         "additionalProperties": false
       },
-      "AccountUsageResponse": {
-        "type": "object",
-        "properties": {
-          "creditsLeft": {
-            "type": "number",
-            "description": "Remaining generation credits on the connected Suno account."
-          },
-          "monthlyLimit": {
-            "type": "number",
-            "nullable": true,
-            "description": "Monthly credit allowance, if known."
-          },
-          "monthlyUsage": {
-            "type": "number",
-            "nullable": true,
-            "description": "Credits used this month, if known."
-          },
-          "plan": {
-            "type": "string",
-            "nullable": true,
-            "description": "Suno plan name (e.g. \"Pro Plan\")."
-          }
-        },
-        "required": [
-          "creditsLeft",
-          "monthlyLimit",
-          "monthlyUsage",
-          "plan"
-        ]
-      },
       "CreateUploadRequest": {
         "type": "object",
         "properties": {
-          "audioUrl": {
+          "contentType": {
             "type": "string",
-            "format": "uri",
-            "description": "Public URL of the reference audio to fetch and upload. Provide this OR `audioBase64` (or send multipart file)."
+            "minLength": 3,
+            "maxLength": 255,
+            "description": "MIME type of the file you will upload, e.g. `application/pdf`, `image/jpeg`, `video/mp4`. The PUT must send exactly this `Content-Type`."
           },
-          "audioBase64": {
-            "type": "string",
-            "description": "Base64-encoded audio bytes. Provide this OR `audioUrl` (or send multipart file)."
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Size of the file in bytes. Optional; when given it is checked against `maxBytes` up front."
           },
-          "fileName": {
+          "filename": {
             "type": "string",
-            "maxLength": 200,
-            "description": "Original file name, used for the extension (defaults to \"audio.mp3\")."
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Filename shown on the attachment when the upload is sent. Optional; `mediaFilename` on the send wins."
           }
-        }
+        },
+        "required": [
+          "contentType"
+        ],
+        "additionalProperties": false
       },
       "CreateUploadResponse": {
         "type": "object",
         "properties": {
-          "uploadId": {
+          "fileId": {
             "type": "string",
-            "description": "Pass as `uploadId` to POST /v1/suno/songs to cover/transform this audio."
+            "description": "Reference to the upload. Pass it as `mediaFileId` on a media send."
           },
-          "status": {
+          "uploadUrl": {
             "type": "string",
-            "description": "Upload processing status (e.g. \"complete\")."
-          }
-        },
-        "required": [
-          "uploadId",
-          "status"
-        ]
-      },
-      "GenerateSongRequest": {
-        "type": "object",
-        "properties": {
-          "lyrics": {
-            "type": "string",
-            "maxLength": 5000,
-            "default": "",
-            "description": "The song lyrics. Maps to Suno `prompt`. Required unless `instrumental` is true, in which case it is ignored and may be omitted."
+            "description": "Signed URL. PUT the raw file bytes to it with the headers in `headers`."
           },
-          "style": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1000,
-            "description": "Style / genre text, e.g. \"pop ballad, acoustic guitar\". Maps to Suno `tags`."
-          },
-          "negativeStyle": {
-            "type": "string",
-            "maxLength": 1000,
-            "description": "Styles to steer away from. Maps to Suno `negative_tags`."
-          },
-          "vocalGender": {
+          "method": {
             "type": "string",
             "enum": [
-              "m",
-              "f"
-            ],
-            "description": "Preferred vocal gender: \"m\" (male) or \"f\" (female). Omit to let Suno decide."
+              "PUT"
+            ]
           },
-          "weirdness": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Creative deviation 0–1 (Suno \"Weirdness\"). Maps to `control_sliders.weirdness_constraint`."
-          },
-          "styleInfluence": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "How strongly the style is applied, 0–1 (Suno \"Style Influence\"). Maps to `control_sliders.style_weight`."
-          },
-          "audioInfluence": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "How closely a cover follows the reference recording, 0–1 (Suno \"Audio Influence\"). Only meaningful when `uploadId` is set. Maps to `control_sliders.audio_weight`."
-          },
-          "instrumental": {
-            "type": "boolean",
-            "description": "Generate without vocals. Maps to Suno `make_instrumental`."
-          },
-          "model": {
-            "type": "string",
-            "description": "Model version, e.g. \"v5.5\" or \"v4\". Defaults to v5.5. Mapped to Suno `mv`."
-          },
-          "title": {
-            "type": "string",
-            "maxLength": 200,
-            "description": "Optional song title."
-          },
-          "uploadId": {
-            "type": "string",
-            "description": "Reference-audio id from POST /v1/suno/uploads, to cover/transform your own recording."
-          },
-          "captchaToken": {
-            "type": "string",
-            "description": "Cloudflare Turnstile token for cover generations (when `uploadId` is set) — Suno gates upload/voice-clone generations behind a captcha. Not needed for plain text→song. Optional here: if omitted and the server has a solver configured (SUNO_CAPTCHA_PROVIDER + key), the token is minted automatically. Supply your own (minted by a real browser) to skip the solver."
-          }
-        },
-        "required": [
-          "style"
-        ]
-      },
-      "GenerateSongResponse": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "string",
-            "description": "Batch id for this generation request."
-          },
-          "clips": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "description": "Clip id — poll GET /v1/suno/songs/{id} for progress."
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "submitted",
-                    "queued",
-                    "running",
-                    "streaming",
-                    "complete",
-                    "error"
-                  ],
-                  "description": "Generation status. Terminal states: \"complete\" or \"error\"."
-                },
-                "audioUrl": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "MP3 URL once complete, else null."
-                },
-                "imageUrl": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Cover-art URL once available, else null."
-                },
-                "title": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Resolved song title, if any."
-                },
-                "durationSec": {
-                  "type": "number",
-                  "nullable": true,
-                  "description": "Audio duration in seconds once complete, else null."
-                },
-                "model": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Model version that produced the clip (e.g. \"v5.5\")."
-                },
-                "errorType": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Failure class when status is \"error\" (e.g. \"moderation_failure\"). Omitted otherwise."
-                },
-                "errorMessage": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Human-readable reason a clip failed (e.g. \"Your lyrics contain copyrighted material\"). Only set when status is \"error\"."
-                }
-              },
-              "required": [
-                "id",
-                "status",
-                "audioUrl",
-                "imageUrl",
-                "title",
-                "durationSec",
-                "model"
-              ]
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
             },
-            "description": "The generated song variants (typically two). Poll each by id."
-          }
-        },
-        "required": [
-          "jobId",
-          "clips"
-        ]
-      },
-      "GetSongResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Clip id — poll GET /v1/suno/songs/{id} for progress."
+            "description": "Headers the PUT must carry exactly (`Content-Type` and `x-goog-content-length-range`); the URL is signed over them."
           },
-          "status": {
+          "expiresAt": {
             "type": "string",
-            "enum": [
-              "submitted",
-              "queued",
-              "running",
-              "streaming",
-              "complete",
-              "error"
-            ],
-            "description": "Generation status. Terminal states: \"complete\" or \"error\"."
+            "description": "ISO timestamp after which `uploadUrl` no longer accepts the PUT (~15 minutes)."
           },
-          "audioUrl": {
+          "deleteAt": {
             "type": "string",
-            "nullable": true,
-            "description": "MP3 URL once complete, else null."
+            "description": "ISO timestamp when the file is deleted if no message uses it (~24 hours). Once sent, the file is deleted 1 hour after the send."
           },
-          "imageUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "Cover-art URL once available, else null."
-          },
-          "title": {
-            "type": "string",
-            "nullable": true,
-            "description": "Resolved song title, if any."
-          },
-          "durationSec": {
+          "maxBytes": {
             "type": "number",
-            "nullable": true,
-            "description": "Audio duration in seconds once complete, else null."
+            "description": "Largest file the URL accepts, in bytes."
           },
-          "model": {
-            "type": "string",
-            "nullable": true,
-            "description": "Model version that produced the clip (e.g. \"v5.5\")."
-          },
-          "errorType": {
-            "type": "string",
-            "nullable": true,
-            "description": "Failure class when status is \"error\" (e.g. \"moderation_failure\"). Omitted otherwise."
-          },
-          "errorMessage": {
-            "type": "string",
-            "nullable": true,
-            "description": "Human-readable reason a clip failed (e.g. \"Your lyrics contain copyrighted material\"). Only set when status is \"error\"."
+          "contentType": {
+            "type": "string"
           }
         },
         "required": [
-          "id",
-          "status",
-          "audioUrl",
-          "imageUrl",
-          "title",
-          "durationSec",
-          "model"
-        ]
-      },
-      "SongClip": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Clip id — poll GET /v1/suno/songs/{id} for progress."
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "submitted",
-              "queued",
-              "running",
-              "streaming",
-              "complete",
-              "error"
-            ],
-            "description": "Generation status. Terminal states: \"complete\" or \"error\"."
-          },
-          "audioUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "MP3 URL once complete, else null."
-          },
-          "imageUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "Cover-art URL once available, else null."
-          },
-          "title": {
-            "type": "string",
-            "nullable": true,
-            "description": "Resolved song title, if any."
-          },
-          "durationSec": {
-            "type": "number",
-            "nullable": true,
-            "description": "Audio duration in seconds once complete, else null."
-          },
-          "model": {
-            "type": "string",
-            "nullable": true,
-            "description": "Model version that produced the clip (e.g. \"v5.5\")."
-          },
-          "errorType": {
-            "type": "string",
-            "nullable": true,
-            "description": "Failure class when status is \"error\" (e.g. \"moderation_failure\"). Omitted otherwise."
-          },
-          "errorMessage": {
-            "type": "string",
-            "nullable": true,
-            "description": "Human-readable reason a clip failed (e.g. \"Your lyrics contain copyrighted material\"). Only set when status is \"error\"."
-          }
-        },
-        "required": [
-          "id",
-          "status",
-          "audioUrl",
-          "imageUrl",
-          "title",
-          "durationSec",
-          "model"
+          "fileId",
+          "uploadUrl",
+          "method",
+          "headers",
+          "expiresAt",
+          "deleteAt",
+          "maxBytes",
+          "contentType"
         ]
       },
       "WaLabel": {
