@@ -7,6 +7,44 @@ The API and each official SDK track versions independently.
 
 ## API specification
 
+### September to November 2026 (roll-up, additive)
+
+Everything below is additive. Comparing the published spec of 2026-11-04 with
+the current one shows no removed or changed endpoints or fields. Dates are when
+each item shipped; items without a date landed in the same period.
+
+**November**
+
+- **File uploads for media sends.** `POST /v1/uploads` returns a signed URL and a
+  `fileId`. `PUT` the bytes to the URL, then send with `type: "media"` and
+  `mediaFileId`. See [Uploads](/docs/api/uploads). Media sends and scheduled
+  messages also accept `mediaMimeType`.
+- **Cancel a scheduled message.** `POST /v1/scheduled-messages/{id}/cancel`.
+- **Fan-out limit.** List calls for chats, groups, latest chats and participants
+  take `fanoutLimit`.
+
+**October**
+
+- **Button replies (2026-10-06).** Send accepts `buttonReply`.
+- **Which number answered (2026-10-25).** List responses report it in
+  `answeredBy`.
+- **No-engine warning (2026-10-26).** Scheduled messages carry `warning`.
+
+**September**
+
+- **WhatsApp labels (2026-09-23).** `GET /v1/wa-labels` lists labels, and
+  `GET` / `PATCH /v1/chats/{chatId}/wa-labels` read and set a chat's labels.
+  Sends can carry `waLabelIds`.
+
+**Also in this period** (no single ship date recorded)
+
+- **Pick the number or engine.** List calls for chats, groups, latest chats and
+  participants take `engine`, `engineId`, `numberId` and `phone`; messages take
+  `engine`, `engineId` and `numberId`.
+- **Richer messages and schedules.** Messages carry `call`, `groupEvent`,
+  `interactive`, `reactions`, `subtype` and `waType`. Scheduled messages carry
+  `recurrence`, `waLabels` and `recipientName`.
+
 ### v2.0.0 — 2026-06-06 (breaking)
 
 - **Pagination switched from cursor to offset.** Every list endpoint now takes
