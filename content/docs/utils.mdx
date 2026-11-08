@@ -15,7 +15,7 @@ phone number (or chat ID) resolves to a valid WhatsApp chat, and returns the
 canonical chat ID. Use it before sending to a number you don't already have a
 chat for. It needs a connected engine, like any call that reads from WhatsApp.
 
-The body takes one field, `phoneOrChatId`. Unknown fields are rejected.
+The body takes one field, `phoneOrChatId`, a string of 1 to 128 characters. Unknown fields are rejected.
 
 {/* validate:ignore dead-endpoint — /v1/utils routes are custom Express routes, not in the OpenAPI export */}
 
