@@ -140,6 +140,7 @@ one or more endpoints.
 
 **Incoming WhatsApp activity:**
 - `new_message_received_webhook` — someone messaged you
+- `new_message_received_from_me_webhook` — a message sent from your own account. Opt-in: `new_message_received_webhook` stays inbound-only, so subscribe to this one explicitly if you want your own messages too. Same payload shape.
 - `reply_to_my_message_webhook` — a reply to one of your messages
 - `message_edited_webhook` · `message_deleted_revoked_webhook` — a message was edited / deleted
 - `message_reaction_webhook` — an emoji reaction
