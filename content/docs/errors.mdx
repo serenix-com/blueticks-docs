@@ -121,6 +121,16 @@ Retrying before the window resets fails the same way, so wait `Retry-After`
 rather than backing off. The `upgrade.url` field is where to send a person to
 lift the limit.
 
+## Per-key rate limits
+
+Separate from the free plan quota, every API key also has short per-minute
+limits that apply on **every plan**, paid included. For example,
+`POST /v1/scheduled-messages/{chatId}` allows 60 requests per minute per key,
+and `GET /v1/scheduled-messages/{id}` allows 600. Past a limit the API answers
+`429` with `Retry-After` (seconds until the minute window resets) plus
+`X-RateLimit-Limit` and `X-RateLimit-Remaining` headers. Wait `Retry-After`,
+then retry.
+
 ## Request IDs
 
 Every response (success or error) includes a `X-Request-Id` header.
