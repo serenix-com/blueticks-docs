@@ -392,7 +392,10 @@ curl -X POST https://api.blueticks.co/v1/campaigns/cmp_01h7.../cancel \
   </Tab>
 </Tabs>
 
-All three return `409` when the campaign isn't in a compatible state.
+Pause works only on a `running` campaign and resume only on a `paused` one.
+Cancel works on a `pending`, `running` or `paused` campaign, so you can also
+cancel one that was created with a later `sendAt` before it starts. Any other
+state returns `409`.
 
 The resume and cancel transitions map to dedicated endpoints:
 
