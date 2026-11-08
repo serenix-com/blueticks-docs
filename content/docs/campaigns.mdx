@@ -148,6 +148,11 @@ image/video/document to every message. (The wire body is camelCase; the
 Python, Ruby, PHP, and Go SDKs accept the snake_case forms shown in their tabs
 and map them for you.)
 
+To start the campaign later instead of immediately, set `sendAt` in the
+request body: an ISO 8601 timestamp with a UTC offset, such as
+`2026-12-01T09:00:00+02:00`. It must be at least 10 seconds in the future and
+no more than 365 days ahead. Leave it out to launch now.
+
 <Tabs groupId="sdk" persist items={['Python', 'Node.js', 'PHP', 'Ruby', 'Go', 'cURL']}>
   <Tab value="Python">
 
