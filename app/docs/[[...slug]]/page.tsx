@@ -10,6 +10,7 @@ import {
 import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/components/mdx';
 import type { Metadata } from 'next';
+import { buildDocsMetadata } from '@/lib/seo';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
 import { gitConfig } from '@/lib/shared';
 
@@ -76,11 +77,10 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>): P
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
-  return {
+  return buildDocsMetadata({
     title: page.data.title,
     description: page.data.description,
-    openGraph: {
-      images: getPageImage(page).url,
-    },
-  };
+    url: page.url,
+    imageUrl: getPageImage(page).url,
+  });
 }

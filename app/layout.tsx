@@ -1,6 +1,8 @@
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import Script from 'next/script';
 import './global.css';
+import type { Metadata } from 'next';
+import { rootMetadataBase } from '@/lib/seo';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 // Shared blueticks.co GA4 measurement ID. cookie_domain '.blueticks.co'
@@ -18,6 +20,8 @@ const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   weight: ['400', '500', '600'],
 });
+
+export const metadata: Metadata = { metadataBase: rootMetadataBase() };
 
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
