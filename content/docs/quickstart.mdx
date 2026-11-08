@@ -203,6 +203,8 @@ fmt.Println(account.Name)
   </Tab>
 </Tabs>
 
+A free plan allows 5 requests per 6-hour window, shared with the Claude connector. `GET /v1/account` and the other resource calls count; the ping does not. When you pass the limit you get a `429` with a `Retry-After` header and an upgrade link in `error.upgrade.url`. See [Free plan limit](/docs/errors#free-plan-limit). Any active subscription removes the limit.
+
 ## Next steps
 
 - [Sending messages](/docs/messages) — send your first message now or schedule it.
