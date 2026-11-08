@@ -85,7 +85,9 @@ client, err := blueticks.NewClient(blueticks.WithAPIKey("BLUETICKS_API_KEY"))
 3. Revoke the old key from the dashboard once you've confirmed traffic
    has moved.
 
-Revoked keys return **401 authentication_required** on every request.
+Revoked keys return **401 authentication_required** on every request. So do
+expired keys: a key created with an expiry date stops working at that time and
+the error message reads `API key expired`.
 
 ## Key format
 
