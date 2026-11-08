@@ -315,8 +315,12 @@ path segment (e.g. `POST /v1/scheduled-messages/+972...`), so the body carries n
 `mediaUrl` must be `https://` and resolve to a non-private host — we fetch
 and forward it on your behalf. If the file has no public URL, send the bytes
 inline as `mediaBase64` instead. Inline media is capped at 5 MB decoded; a larger
-one returns `413`. For bigger files, use a `mediaUrl` or the multipart `mediaFile`
-upload on `POST /v1/messages/{chatId}`.
+one returns `413`. For bigger files, use a `mediaUrl`, the multipart `mediaFile`
+upload on `POST /v1/messages/{chatId}`, or a signed upload: `POST /v1/uploads`
+returns a `fileId` and an `uploadUrl` (valid about 15 minutes); `PUT` the bytes
+there, then send with `mediaFileId`. It takes precedence over `mediaUrl` and
+`mediaBase64`, the response reports the size limit as `maxBytes`, and the file
+is deleted 1 hour after the send. See [Uploads](/docs/api/uploads).
 
 ## Send a poll
 
