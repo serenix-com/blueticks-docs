@@ -3,23 +3,14 @@ import Script from 'next/script';
 import './global.css';
 import type { Metadata } from 'next';
 import { buildRootMetadata } from '@/lib/seo';
-import { Geist, Geist_Mono } from 'next/font/google';
+// Self-hosted (bundled in the `geist` package) so builds never fetch fonts
+// from Google and can't flake on the network (#1579).
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 
 // Shared blueticks.co GA4 measurement ID. cookie_domain '.blueticks.co'
 // so traffic on this subdomain ties together with the apex domain.
 const GA4_ID = 'G-RCEGPEQEZ5';
-
-const geistSans = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans',
-  weight: ['400', '500', '600', '700'],
-});
-
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-geist-mono',
-  weight: ['400', '500', '600'],
-});
 
 export const metadata: Metadata = buildRootMetadata();
 
@@ -27,7 +18,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
       <body className="flex flex-col min-h-screen font-sans" suppressHydrationWarning>
