@@ -253,7 +253,7 @@ export function HeroDemo() {
                     background: '#F59E0B',
                   }}
                 />
-                POST /v1/scheduled-messages
+                POST /v1/scheduled-messages/:chatId
               </span>
             )}
             {phase >= 3 && (
