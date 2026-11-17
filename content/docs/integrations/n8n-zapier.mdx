@@ -63,6 +63,191 @@ the algorithm and snippets are in
 The full event list, retry schedule, and auto-disable rules are in
 [Receiving webhooks](/docs/webhooks).
 
+## Example: follow up when a message fails (n8n)
+
+A ready-made n8n workflow: it receives a Blueticks webhook, checks the
+signature, and when the event is `message.failed` schedules a follow-up to the
+same recipient for the next day. Other events are ignored.
+
+1. Run n8n with `NODE_FUNCTION_ALLOW_BUILTIN=crypto` and
+   `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`, and set `BLUETICKS_API=https://api.blueticks.co`,
+   `BLUETICKS_API_KEY` and `BLUETICKS_WEBHOOK_SECRET`.
+2. Import the JSON below (**Workflows → Import from file**), activate it, and
+   copy the production URL of the **Blueticks webhook** node.
+3. Register that URL for `message.failed` (`POST /v1/webhooks`, as above) and
+   save the returned `signingSecret` as `BLUETICKS_WEBHOOK_SECRET`.
+4. Send a message through the API. If it fails, n8n receives the event.
+5. Check **Executions**: the follow-up appears in your scheduled messages.
+
+Notes:
+
+- The **Webhook** node's *Raw Body* option must stay on: the signature covers the
+  exact bytes.
+- `message.*` events fire for messages sent through the API, not for messages sent
+  from the dashboard.
+- Edit the follow-up text in the **Schedule follow-up** node. A follow-up that
+  itself fails would trigger another one, so add a condition (for example on the
+  text) before using this live.
+- Dedupe on the event `id`: delivery is at-least-once.
+
+<details>
+<summary>Workflow JSON</summary>
+
+```json
+[
+  {
+    "name": "Blueticks: follow up on a failed message",
+    "nodes": [
+      {
+        "id": "1",
+        "name": "Blueticks webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "blueticks-failed",
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "blueticks",
+          "options": {
+            "rawBody": true
+          }
+        }
+      },
+      {
+        "id": "2",
+        "name": "Verify signature",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          240,
+          0
+        ],
+        "parameters": {
+          "jsCode": "\nconst crypto = require('crypto');\nconst item = $input.first();\nconst headers = item.json.headers || {};\nconst ts = headers['blueticks-webhook-timestamp'];\nconst sig = headers['blueticks-webhook-signature'] || '';\nconst raw = Buffer.from(item.binary.data.data, 'base64').toString('utf8');\nif (!ts || !sig) throw new Error('unsigned delivery rejected');\nif (Math.abs(Date.now() / 1000 - Number(ts)) > 300) throw new Error('timestamp outside 5 min window');\nconst expected = 'v1=' + crypto.createHmac('sha256', $env.BLUETICKS_WEBHOOK_SECRET).update(ts + '.' + raw).digest('hex');\nconst a = Buffer.from(sig), b = Buffer.from(expected);\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('bad signature');\nconst event = JSON.parse(raw);\nreturn [{ json: { eventId: event.id, type: event.type, data: event.data } }];\n"
+        }
+      },
+      {
+        "id": "3",
+        "name": "Message failed?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          480,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.type }}",
+                "rightValue": "message.failed",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "4",
+        "name": "Schedule follow-up",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          720,
+          -80
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $env.BLUETICKS_API + \"/v1/scheduled-messages/\" + $json.data.to }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "={{ \"Bearer \" + $env.BLUETICKS_API_KEY }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ type: \"text\", text: \"Hi, following up on my earlier message. Can we pick this up?\", sendAt: new Date(Date.now() + 24*3600*1000).toISOString() }) }}"
+        }
+      },
+      {
+        "id": "5",
+        "name": "Ignore other events",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          720,
+          100
+        ],
+        "parameters": {}
+      }
+    ],
+    "connections": {
+      "Blueticks webhook": {
+        "main": [
+          [
+            {
+              "node": "Verify signature",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Verify signature": {
+        "main": [
+          [
+            {
+              "node": "Message failed?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Message failed?": {
+        "main": [
+          [
+            {
+              "node": "Schedule follow-up",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Ignore other events",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {},
+    "active": false
+  }
+]
+```
+
+</details>
+
 ## Limits & troubleshooting
 
 - **Free plan:** 5 requests per 6-hour window, shared across the REST API and
