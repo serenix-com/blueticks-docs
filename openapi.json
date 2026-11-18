@@ -2242,7 +2242,7 @@
                     "additionalProperties": {
                       "type": "string"
                     },
-                    "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*` or `X-Forwarded-*`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash."
+                    "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*`, `X-Forwarded-*` or `X-Real-IP`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash."
                   }
                 },
                 "required": [
@@ -2748,7 +2748,7 @@
                       "type": "string"
                     },
                     "nullable": true,
-                    "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*` or `X-Forwarded-*`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash. On PATCH the object replaces all existing custom headers; `null` removes them."
+                    "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*`, `X-Forwarded-*` or `X-Real-IP`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash. On PATCH the object replaces all existing custom headers; `null` removes them."
                   }
                 },
                 "additionalProperties": false
@@ -25597,7 +25597,7 @@
             "additionalProperties": {
               "type": "string"
             },
-            "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*` or `X-Forwarded-*`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash."
+            "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*`, `X-Forwarded-*` or `X-Real-IP`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash."
           }
         },
         "required": [
@@ -25683,7 +25683,7 @@
               "type": "string"
             },
             "nullable": true,
-            "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*` or `X-Forwarded-*`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash. On PATCH the object replaces all existing custom headers; `null` removes them."
+            "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*`, `X-Forwarded-*` or `X-Real-IP`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash. On PATCH the object replaces all existing custom headers; `null` removes them."
           }
         },
         "additionalProperties": false

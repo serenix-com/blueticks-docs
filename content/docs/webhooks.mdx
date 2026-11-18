@@ -408,8 +408,9 @@ that have no value, such as `status` after a timeout, are omitted:
 
 What the endpoint receives is the normal envelope with two differences: the
 `id` starts with `evt_test_`, and the body carries `"test": true`. For an
-incoming-message event the `data` is a sample message; for `message.*`,
-`session.*` and `campaign.*` events it is a short note, not real data. Your
+event whose name ends in `_webhook` (such as `new_message_received_webhook`)
+the `data` is a sample message; for every other event, such as `message.*`,
+`session.*` and `campaign.*`, it is a short note, not real data. Your
 [custom headers](#9-send-custom-headers) and the signature headers are sent
 exactly as on a real delivery, so signature verification can be tested too.
 
@@ -433,8 +434,8 @@ curl -X PATCH https://api.blueticks.co/v1/webhooks/6a380a8258bece30b485036e \
   -d '{"headers": {"Authorization": "Bearer 7f3c9a1e5b2d4c68", "X-Source": "blueticks"}}'
 ```
 
-- Allowed names: `Authorization`, or a name that starts with `X-`. `X-Blueticks-*`
-  and `X-Forwarded-*` are rejected, as is any other name. Names are
+- Allowed names: `Authorization`, or a name that starts with `X-`. `X-Blueticks-*`,
+  `X-Forwarded-*` and `X-Real-IP` are rejected, as is any other name. Names are
   case-insensitive and may not repeat.
 - Up to 10 headers. Each value is 1 to 1024 printable ASCII characters, with no
   line breaks. A bad header returns `400` and names the offending header.
