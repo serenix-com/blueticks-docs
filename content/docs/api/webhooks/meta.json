@@ -6,6 +6,7 @@
     "create-webhook",
     "get-webhook",
     "update-webhook",
-    "delete-webhook"
+    "delete-webhook",
+    "test-webhook"
   ]
 }
