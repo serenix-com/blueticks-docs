@@ -1,0 +1,288 @@
+---
+title: Webhook event reference
+description: Every incoming-WhatsApp webhook event (the *_webhook events) and the fields in its payload.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+This page lists the payload of every event whose name ends in `_webhook`.
+How to register an endpoint, verify signatures and handle retries is in
+[Receiving webhooks](/docs/webhooks).
+
+The structured `message.*`, `session.*` and `campaign.*` events are not covered
+here.
+
+## How to read a payload
+
+Every delivery is the same envelope. The fields below are the contents of `data`:
+
+```json
+{
+  "id": "evt_...",
+  "type": "ack_changed_webhook",
+  "created_at": "2026-04-23T16:42:00.000Z",
+  "data": { "webhookType": "ack_changed_webhook", "...": "..." }
+}
+```
+
+- The envelope keys (`created_at`, `idempotency_key`) are snake_case. The keys
+  inside `data` are camelCase, exactly as sent.
+- Each event below (except the two message events) repeats its own name in
+  `data.webhookType`.
+- Chat, sender and group ids are WhatsApp ids as strings, for example
+  `120363...@g.us` for a group.
+- Fields marked *optional* are left out when Blueticks does not know the value.
+  Blueticks does not fill them with a placeholder.
+- A field typed `string | null` is always present and can be `null`.
+
+### Shared building blocks
+
+**Contact details** (every `*Details` object, and each item in the
+`participants`-style arrays):
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | string, optional | WhatsApp id of the person. |
+| `name` | string, optional | Display text. It can fall back to a phone label, so don't use it as an identity. |
+| `mobile` | string, optional | The person's phone as `+<digits>`, whenever it is known. For a `@c.us` id it can be derived from the id. |
+
+**Timestamps** (on every event except the two message events):
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `timestamp` | number | When the event was emitted, in milliseconds. |
+| `whatsappTimestamp` | number, optional, may be `null` | WhatsApp's own time of the event, in **seconds**. Left out when the engine doesn't have one. |
+
+**Group fields** (on every event that says "group fields" below):
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `chatId` | string, optional | The group's chat id. |
+| `groupId` | string, optional | The group's id. |
+| `groupName` | string, optional | The group's subject. Absent when unknown. It is never replaced by the group id. |
+| `group` | object, optional | `{ id?, name? }`. |
+
+## Incoming messages
+
+### `new_message_received_webhook`
+
+Someone sent a message to your account. This event is inbound-only.
+
+### `new_message_received_from_me_webhook`
+
+A message sent from your own account. It's opt-in: subscribe to this event
+explicitly. `new_message_received_webhook` never carries your own messages. The
+payload is the same shape as the one below.
+
+In both events `data` is the message itself, not a wrapper around it. There is
+no `webhookType` field in it.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | object | The message key: `fromMe` (boolean), `remote` (the chat, as `{ _serialized }`), `id` (the bare message id), `_serialized` (the full key string), `participant` (the sender inside a group, as `{ _serialized }`). Only `fromMe` is always present. |
+| `waMessageKey` | object, optional | The same key with plain strings: `fromMe`, `remote`, `id`, `_serialized`, `participant`. |
+| `body` | string | The text. An empty string for media messages. For a poll it is the question. |
+| `caption` | string \| null | Caption on media. |
+| `filename` | string \| null | File name, for documents. |
+| `from` | object, optional | Where the message came from. For a direct chat it is the sender, for a group it is the group. `{ _serialized, id? }`. Blueticks adds `mobile` (`+<digits>`) when `from.id` is a `@c.us` id and no `mobile` is present. |
+| `to` | object, optional | The other side, `{ _serialized, user?, server? }`. For an incoming message it is your own number. |
+| `author` | object, optional | The sender inside a group (`{ _serialized, ... }`). Absent for an incoming direct message. |
+| `fromMe` | boolean | `true` for messages sent by the connected account. |
+| `t` | number | WhatsApp time of the message, in Unix seconds. |
+| `type` | string | The message kind, for example `chat`, `image`, `video`, `audio`, `ptt`, `document`, `sticker`, `poll_creation`, `vcard`, `location`, `gp2`, `revoked`, `call_log`. Deprecated: prefer `waType`. |
+| `waType` | string, optional | WhatsApp Web's own name for the type. Absent when the engine can't classify the message. |
+| `subtype` | string \| null, optional | For example `url` for text with a link preview. |
+| `isGif` | boolean, optional | A GIF (`type: "video"`). |
+| `notifyName` | string \| null, optional | The sender's own WhatsApp display name. |
+| `senderName` | string \| null, optional | The sender's name from the contact store. Group messages only, best effort. |
+| `isForwarded`, `isViewOnce` | boolean, optional | |
+| `mimetype` | string \| null, optional | Media MIME type. |
+| `duration` | integer, optional | Seconds, for voice notes and audio. |
+| `size` | number, optional | Media size. |
+| `hasAttachedMedia` | boolean, optional | `true` when the message has media to download. |
+| `quotedMessage` | object, optional | Present on replies: `waMessageKey` (the quoted message's key), `text`, `type`, `author` (all but the key are optional). |
+| `quotedStanzaID` | string, optional | The quoted message's bare id, on replies. |
+| `poll` | object, optional | `{ question?, options?: [{ text? }] }`, on poll messages. |
+| `contacts` | array, optional | On contact cards: `{ name, phones: string[], waId? }` per card. |
+| `vcardFormattedName`, `vcardList` | optional | On contact cards: the display name and the raw cards (`{ displayName?, vcard? }`). |
+| `linkPreview` | object \| null, optional | `{ title?, description?, matchedText?, canonicalUrl?, thumbnail? }`. |
+| `interactive` | object, optional | Menu or button replies: `kind`, plus `options` (`{ id, title, description?, section? }`) for a menu, or `selectedId`, `selectedTitle` and `quotedId` for a click. |
+| `call` | object, optional | On `call_log`: `direction` (`in`/`out`), `media` (`voice`/`video`), `outcome` (`answered`/`missed`/`rejected`/`unknown`), `durationSec?`, `isGroup`. |
+| `reactions` | array, optional | `{ text, from?, fromMe?, t? }` per live reaction. |
+| `recipients`, `templateParams` | optional | On `gp2` group-notice messages: the participants it names and its template parameters. |
+| `ack` | integer \| null, optional | Delivery state. See the scale under `ack_changed_webhook`. |
+| `mediaUrl` | string \| null, optional | Usually `null`. Set only when a download URL is attached inline. |
+| `isGroup` | `true`, optional | Present, and always `true`, when the chat is a group. |
+| `mediaKey`, `directPath`, `filehash`, `encFilehash`, `mediaKeyTimestamp` | optional | Media download handles. |
+| `isLive` | `true`, optional | A live location or live media. |
+| `protocolMessageKey` | object, optional | On protocol messages (revoke, edit): the key of the message they target. |
+| `secret` | string, optional | The `secret` correlation token you set when you sent the message through the API. Only present when the message carries one. |
+| `receivedOn` | object, optional | Which of your numbers received it: `phoneNumber` (digits, no `+`), `numberId?`, `engineId?`. |
+| `sentByApi` | object, optional | For an inbound message that your account sent through the API from another of its numbers: `idempotencyKey` (string or `null`) and `messageId`. Only for accounts with more than one number. |
+
+Some fields are marked deprecated in the schema and are still sent for older
+consumers: `hasMedia`, `links`, `quotedMsg`, and the flat link-preview fields
+`title`, `description`, `matchedText`, `canonicalUrl`, `thumbnail` and
+`richPreviewType` (use `linkPreview` instead). Don't build on them.
+
+## Message activity
+
+### `reply_to_my_message_webhook`
+
+Someone replied to a message you sent.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `webhookType` | string | `reply_to_my_message_webhook`. |
+| `replyMessageId` | string, optional | Key of the reply. |
+| `replyMessageBody` | string \| null, optional | |
+| `replyMessageType` | string \| null, optional | |
+| `repliedBy` | string, optional | Who replied. |
+| `repliedByDetails` | contact details, optional | |
+| `quotedStanzaID` | string \| null, optional | |
+| `originalMessage` | object | Your message: `id?`, `body?`, `caption?`, `type?`, `from?`, `fromDetails?`, and `fromMe`, which is always `true`. |
+| group fields | | |
+| `timestamp`, `whatsappTimestamp` | | |
+
+### `message_edited_webhook`
+
+A message was edited.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `webhookType` | string | `message_edited_webhook`. |
+| `messageId` | string, optional | |
+| group fields | | |
+| `from`, `fromDetails`, `author`, `authorDetails` | optional | The sender. |
+| `fromMe` | boolean | |
+| `editedField` | string | `body`, `caption` or `unknown`. |
+| `previousValue`, `newValue` | string, optional | |
+| `body`, `caption`, `mimetype`, `filename` | string \| null, optional | The message content. |
+| `hasMedia` | boolean | |
+| `messageType` | string \| null, optional | |
+| `timestamp`, `whatsappTimestamp` | | |
+
+### `message_deleted_revoked_webhook`
+
+A message was deleted.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `webhookType` | string | `message_deleted_revoked_webhook`. |
+| `messageId` | string, optional | |
+| group fields | | |
+| `from`, `fromDetails`, `author`, `authorDetails` | optional | The sender of the deleted message. |
+| `fromMe` | boolean | |
+| `deletionReason` | string | `removed` or `revoked`. |
+| `deletionScope` | string | `delete_for_me` or `delete_for_everyone`. |
+| `subtype` | string \| null, optional | |
+| `deletedBy`, `deletedByDetails`, `deletedByName` | optional | Who deleted it. |
+| `message` | object | `type?`, `body?`, `caption?`, `hasMedia`, `mimetype?`, `filename?`. |
+| `timestamp`, `whatsappTimestamp` | | |
+
+### `message_reaction_webhook`
+
+An emoji reaction was added to a message.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `webhookType` | string | `message_reaction_webhook`. |
+| `messageId` | string, optional | The reacted-to message. |
+| `messageBody` | string \| null, optional | |
+| group fields | | |
+| `messageFrom`, `messageFromDetails` | optional | The author of the reacted-to message. |
+| `reactionCount` | number | |
+| `reactorNames` | string[] | |
+| `reaction` | object | The latest reaction: `text?`, `from?`, `fromDetails?`, `fromName?`, `timestamp?`. |
+| `reactions` | array | All reactions, same item shape. |
+| `timestamp`, `whatsappTimestamp` | | |
+
+### `poll_vote_webhook`
+
+Someone voted on a poll. This is the only event that carries `idempotency_key`
+(see [Receiving webhooks](/docs/webhooks#2-what-you-receive)).
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `webhookType` | string | `poll_vote_webhook`. |
+| `messageId` | string, optional | The poll message. |
+| group fields | | |
+| `pollName` | string \| null, optional | The poll question. |
+| `pollOptions` | array | `{ localId, name? }` per option. `localId` is a number or a string. |
+| `voteCount` | number | |
+| `votes` | array | One item per vote, shape below. |
+| `latestVote` | object, optional | The vote that triggered the event, same shape as an item in `votes`. |
+| `timestamp`, `whatsappTimestamp` | | |
+
+A vote has `voter?`, `voterDetails?`, `voterName?`, `selectedOptions` (an alias of
+`selectedOptionLocalIds`), `selectedOptionLocalIds`, `selectedOptionDetails`
+(`{ localId, name? }` items), `selectedOptionNames` and `whatsappTimestamp?`
+(seconds).
+
+### `ack_changed_webhook`
+
+A message's delivery status changed.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `webhookType` | string | `ack_changed_webhook`. |
+| `messageId`, `chatId` | string, optional | |
+| `isGroup` | boolean | |
+| `groupId` | string, optional | |
+| `from`, `author`, `to` | string, optional | |
+| `body`, `caption`, `mimetype`, `filename` | string \| null, optional | The message content. |
+| `hasMedia` | boolean | |
+| `text` | string, optional | |
+| `messageType` | string \| null, optional | |
+| `ack` | number | The new state. |
+| `ackLabel` | string | The state's name. |
+| `fromMe` | boolean | |
+| `chatName`, `groupName`, `group` | optional | |
+| `fromDetails`, `authorDetails`, `toDetails` | contact details, optional | |
+| `triggeredBy` | object, optional | The recipient whose receipt changed the state, shape below. |
+| `triggeredByName` | string, optional | |
+| `recipientsDelivered`, `recipientsRead`, `recipientsPlayed` | array | Recipients, shape below. |
+| `timestamp`, `whatsappTimestamp` | | |
+
+The ack scale is `-1` error, `0` pending, `1` server, `2` device, `3` read,
+`4` played. `ackLabel` is `error`, `pending`, `sent`, `delivered`, `read` or
+`played` respectively, or `unknown_<n>` for any other value.
+
+A recipient has `id?`, `name?`, `details?` (contact details), `t?` (the receipt
+time in seconds, when known) and `status?` (`delivered`, `read`, `played` or
+`unknown`).
+
+## Group activity
+
+All group events share these fields, in addition to `webhookType`:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| group fields | | |
+| `author` | string, optional | Who made the change. |
+| `authorDetails` | contact details | |
+| `participants` | contact details[] | The people the event names. |
+| `participantNames` | string[] | |
+| `subtype` | string \| null, optional | |
+| `timestamp`, `whatsappTimestamp` | | |
+
+On top of that, each event adds the following. Every participant event has a
+list (`…Participants`, contact details), a parallel list of names
+(`…ParticipantNames`), and the first entry on its own (`…Participant` and
+`…ParticipantName`, both optional).
+
+| Event | Added fields |
+| --- | --- |
+| `participant_joined_via_link_webhook` | `joinedParticipants`, `joinedParticipantNames`, `joinedParticipant?`, `joinedParticipantName?` |
+| `participant_added_by_admin_webhook` | `addedParticipants`, `addedParticipantNames`, `addedParticipant?`, `addedParticipantName?` |
+| `participant_left_group_webhook` | `leftParticipants`, `leftParticipantNames`, `leftParticipant?`, `leftParticipantName?` |
+| `participant_kicked_from_group_webhook` | `kickedParticipants`, `kickedParticipantNames`, `kickedParticipant?`, `kickedParticipantName?` |
+| `group_admin_changed_webhook` | `adminAction` (`promoted_to_admin` or `demoted_from_admin`), `changedParticipants`, `changedParticipantNames`, `changedParticipant?`, `changedParticipantName?`, `promotedParticipants`, `demotedParticipants` |
+| `group_name_changed_webhook` | `body` (string \| null, optional) |
+| `group_description_changed_webhook` | `body` (string \| null, optional) |
+| `group_message_pinned_webhook` | `body` (string \| null, optional), `pinnedMessageId` (optional), `pinType` (number \| null, optional) |
+
+<Callout type="info">
+The same payload that `new_message_received_webhook` delivers is also what you
+get on the [MQTT stream](/docs/realtime), if you use it.
+</Callout>

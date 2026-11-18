@@ -14,7 +14,6 @@ POST /v1/boards                                # boards: covered by the API refe
 GET /v1/boards/{id}                            # boards: covered by the API reference page; no guide yet
 GET /v1/chats                                  # chats/messages: covered by the API reference page; guide examples still to be written
 GET /v1/chats/{id}                             # chats/messages: covered by the API reference page; guide examples still to be written
-POST /v1/realtime/token                        # realtime: covered by the API reference page; no guide yet
 GET /v1/groups                                 # groups: covered by the API reference page; no guide yet
 POST /v1/groups                                # groups: covered by the API reference page; no guide yet
 GET /v1/groups/{id}                            # groups: covered by the API reference page; no guide yet
