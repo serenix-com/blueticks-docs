@@ -15,6 +15,12 @@ each item shipped; items without a date landed in the same period.
 
 **November**
 
+- **Webhook test, chat filter and custom headers (2026-11-18).**
+  `POST /v1/webhooks/{id}/test` sends one signed sample event and reports
+  status, latency and a fix hint. Webhooks take `chat_ids` and
+  `include_status_and_channels` to limit which chats are delivered, and
+  `headers` for sealed `Authorization` / `X-*` headers; reads return
+  `header_names` only. See [Receiving webhooks](/docs/webhooks#7-filter-by-chat).
 - **File uploads for media sends.** `POST /v1/uploads` returns a signed URL and a
   `fileId`. `PUT` the bytes to the URL, then send with `type: "media"` and
   `mediaFileId`. See [Uploads](/docs/api/uploads). Media sends and scheduled

@@ -2005,6 +2005,24 @@
                               "disabled"
                             ]
                           },
+                          "chat_ids": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass."
+                          },
+                          "include_status_and_channels": {
+                            "type": "boolean",
+                            "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+                          },
+                          "header_names": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Names of the custom headers configured on this webhook. Values are never returned."
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -2018,6 +2036,9 @@
                           "url",
                           "events",
                           "status",
+                          "chat_ids",
+                          "include_status_and_channels",
+                          "header_names",
                           "createdAt"
                         ],
                         "additionalProperties": false
@@ -2201,6 +2222,27 @@
                   "description": {
                     "type": "string",
                     "maxLength": 120
+                  },
+                  "chat_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 128
+                    },
+                    "maxItems": 100,
+                    "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass."
+                  },
+                  "include_status_and_channels": {
+                    "type": "boolean",
+                    "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+                  },
+                  "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*` or `X-Forwarded-*`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash."
                   }
                 },
                 "required": [
@@ -2232,6 +2274,33 @@
                       "new_message_received_webhook"
                     ],
                     "description": "Inbound message stream"
+                  }
+                },
+                "one_chat_only": {
+                  "summary": "Only events from one chat",
+                  "value": {
+                    "url": "https://example.com/webhooks/support",
+                    "events": [
+                      "new_message_received_webhook"
+                    ],
+                    "description": "Support group only",
+                    "chat_ids": [
+                      "120363025246125486@g.us"
+                    ]
+                  }
+                },
+                "authorization_header": {
+                  "summary": "Send an Authorization header with every delivery",
+                  "value": {
+                    "url": "https://example.com/webhooks/inbound",
+                    "events": [
+                      "new_message_received_webhook"
+                    ],
+                    "include_status_and_channels": false,
+                    "headers": {
+                      "Authorization": "Bearer 7f3c9a1e5b2d4c68",
+                      "X-Source": "blueticks"
+                    }
                   }
                 }
               }
@@ -2278,6 +2347,24 @@
                             "disabled"
                           ]
                         },
+                        "chat_ids": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass."
+                        },
+                        "include_status_and_channels": {
+                          "type": "boolean",
+                          "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+                        },
+                        "header_names": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Names of the custom headers configured on this webhook. Values are never returned."
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -2291,6 +2378,9 @@
                         "url",
                         "events",
                         "status",
+                        "chat_ids",
+                        "include_status_and_channels",
+                        "header_names",
                         "createdAt"
                       ],
                       "additionalProperties": false
@@ -2423,6 +2513,24 @@
                             "disabled"
                           ]
                         },
+                        "chat_ids": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass."
+                        },
+                        "include_status_and_channels": {
+                          "type": "boolean",
+                          "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+                        },
+                        "header_names": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Names of the custom headers configured on this webhook. Values are never returned."
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -2436,6 +2544,9 @@
                         "url",
                         "events",
                         "status",
+                        "chat_ids",
+                        "include_status_and_channels",
+                        "header_names",
                         "createdAt"
                       ],
                       "additionalProperties": false
@@ -2616,6 +2727,28 @@
                       "enabled",
                       "disabled"
                     ]
+                  },
+                  "chat_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 128
+                    },
+                    "maxItems": 100,
+                    "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass. On PATCH, `[]` clears the filter."
+                  },
+                  "include_status_and_channels": {
+                    "type": "boolean",
+                    "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+                  },
+                  "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*` or `X-Forwarded-*`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash. On PATCH the object replaces all existing custom headers; `null` removes them."
                   }
                 },
                 "additionalProperties": false
@@ -2663,6 +2796,24 @@
                             "disabled"
                           ]
                         },
+                        "chat_ids": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass."
+                        },
+                        "include_status_and_channels": {
+                          "type": "boolean",
+                          "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+                        },
+                        "header_names": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Names of the custom headers configured on this webhook. Values are never returned."
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -2676,6 +2827,9 @@
                         "url",
                         "events",
                         "status",
+                        "chat_ids",
+                        "include_status_and_channels",
+                        "header_names",
                         "createdAt"
                       ],
                       "additionalProperties": false
@@ -18838,6 +18992,186 @@
         },
         "operationId": "identity.get"
       }
+    },
+    "/v1/webhooks/{id}/test": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Test webhook",
+        "description": "Send one signed sample event to the webhook url and report status, latency and a fix hint. Bypasses the delivery queue and never counts toward auto-disable. The response body of your endpoint is not returned. Limited to 1 test per 5s per webhook and 20 per hour. Requires `webhooks:write`.",
+        "security": [
+          {
+            "BearerAuth": [
+              "webhooks:write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "event": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              "examples": {
+                "default_event": {
+                  "summary": "Use the first subscribed event",
+                  "value": {}
+                },
+                "named_event": {
+                  "summary": "Pick a subscribed event",
+                  "value": {
+                    "event": "new_message_received_webhook"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "test result (ok:false with a hint when the endpoint failed)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ],
+                      "description": "Always `true` on success responses."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean"
+                        },
+                        "status": {
+                          "type": "integer"
+                        },
+                        "latency_ms": {
+                          "type": "number"
+                        },
+                        "event": {
+                          "type": "string"
+                        },
+                        "content_type": {
+                          "type": "string"
+                        },
+                        "hint": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "ok",
+                        "latency_ms",
+                        "event"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request — invalid params or body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key lacks the required scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details` for per-field issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded — back off and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "webhooks.test"
+      }
     }
   },
   "components": {
@@ -25200,8 +25534,8 @@
         "properties": {
           "url": {
             "type": "string",
-            "maxLength": 2048,
-            "format": "uri"
+            "format": "uri",
+            "maxLength": 2048
           },
           "events": {
             "type": "array",
@@ -25243,6 +25577,27 @@
           "description": {
             "type": "string",
             "maxLength": 120
+          },
+          "chat_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128
+            },
+            "maxItems": 100,
+            "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass."
+          },
+          "include_status_and_channels": {
+            "type": "boolean",
+            "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*` or `X-Forwarded-*`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash."
           }
         },
         "required": [
@@ -25256,8 +25611,8 @@
         "properties": {
           "url": {
             "type": "string",
-            "maxLength": 2048,
-            "format": "uri"
+            "format": "uri",
+            "maxLength": 2048
           },
           "events": {
             "type": "array",
@@ -25298,8 +25653,8 @@
           },
           "description": {
             "type": "string",
-            "nullable": true,
-            "maxLength": 120
+            "maxLength": 120,
+            "nullable": true
           },
           "status": {
             "type": "string",
@@ -25307,6 +25662,28 @@
               "enabled",
               "disabled"
             ]
+          },
+          "chat_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128
+            },
+            "maxItems": 100,
+            "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass. On PATCH, `[]` clears the filter."
+          },
+          "include_status_and_channels": {
+            "type": "boolean",
+            "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "nullable": true,
+            "description": "Extra headers sent with every delivery, up to 10. Allowed names: `Authorization` or `X-*` (not `X-Blueticks-*` or `X-Forwarded-*`). Values are sealed at rest and never returned; reads show only `header_names`. System headers (signing, `Content-Type`, `Blueticks-*`) always win on a name clash. On PATCH the object replaces all existing custom headers; `null` removes them."
           }
         },
         "additionalProperties": false
@@ -25327,8 +25704,7 @@
             }
           },
           "description": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "status": {
             "type": "string",
@@ -25336,6 +25712,24 @@
               "enabled",
               "disabled"
             ]
+          },
+          "chat_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Only deliver events from these chats. Omit or send `[]` for all chats. Up to 100 ids. `@c.us` and `@s.whatsapp.net` match each other, but a phone `@c.us` id does not match a chat that arrives as `@lid`; list both forms. Events that are not tied to a chat (`session.*`, `campaign.*`) always pass."
+          },
+          "include_status_and_channels": {
+            "type": "boolean",
+            "description": "Set `false` to skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events. Default `true`."
+          },
+          "header_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of the custom headers configured on this webhook. Values are never returned."
           },
           "createdAt": {
             "type": "string",
@@ -25349,8 +25743,10 @@
           "id",
           "url",
           "events",
-          "description",
           "status",
+          "chat_ids",
+          "include_status_and_channels",
+          "header_names",
           "createdAt"
         ],
         "additionalProperties": false

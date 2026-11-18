@@ -95,6 +95,12 @@ curl -X POST https://api.blueticks.co/v1/webhooks \
 Prefer no code? You can also add and toggle webhooks from the dashboard under
 **Settings → API → Webhooks**.
 
+Three optional settings narrow and secure a webhook. Each has its own section
+below: [`chat_ids`](#7-filter-by-chat) and `include_status_and_channels` pick
+which chats you hear about, [`POST /v1/webhooks/{id}/test`](#8-send-a-test-event)
+checks the endpoint before real traffic, and [`headers`](#9-send-custom-headers)
+adds your own `Authorization` or `X-*` headers to every delivery.
+
 ## 2. What you receive
 
 Each event is a single HTTPS `POST`. The body is always the same envelope —
@@ -266,7 +272,9 @@ recreate such a webhook to get a secret. Until then (or if your platform can't
 compute an HMAC), you can still protect an endpoint by registering a URL that
 contains a hard-to-guess token, e.g.
 `https://api.your-server.com/bt-webhooks?token=ek3f9q2...`, and rejecting any
-POST without it. Always serve the endpoint over HTTPS.
+POST without it. Always serve the endpoint over HTTPS. You can also have Blueticks send your own
+`Authorization` header with every delivery, see
+[Send custom headers](#9-send-custom-headers).
 
 ## 5. Reliability: retries &amp; auto-disable
 
@@ -298,3 +306,153 @@ delete it:
 
 To re-enable an auto-disabled endpoint, `PATCH` it with `status: "enabled"` once
 your server is healthy again.
+
+## 7. Filter by chat
+
+By default a webhook receives every matching event from every chat. To hear
+about only some chats, set `chat_ids` when you create the webhook or `PATCH` it
+later:
+
+```bash
+curl -X POST https://api.blueticks.co/v1/webhooks \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://api.your-server.com/bt-webhooks",
+    "events": ["new_message_received_webhook"],
+    "description": "Support group only",
+    "chat_ids": ["120363025246125486@g.us"],
+    "include_status_and_channels": false
+  }'
+```
+
+- **`chat_ids`** is up to 100 chat ids, each 3 to 128 characters. Omit it, or
+  send `[]`, to receive every chat. On `PATCH`, `[]` clears an existing filter.
+  Repeated ids are collapsed.
+- An event is delivered when its chat is in the list. Events that are not tied
+  to a chat (`session.*`, `campaign.*`) always pass the filter.
+- `@c.us` and `@s.whatsapp.net` are treated as the same person. A phone id
+  (`@c.us`) does **not** match a chat that WhatsApp delivers as `@lid`. If a
+  contact can arrive in either form, list both ids.
+- **`include_status_and_channels`** defaults to `true`. Set it to `false` to
+  skip WhatsApp Status (`status@broadcast`) and Channel (`@newsletter`) events.
+  It combines with `chat_ids`: an event must pass both.
+
+The webhook object returns both settings on every read:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "6a380a8258bece30b485036e",
+    "url": "https://api.your-server.com/bt-webhooks",
+    "events": ["new_message_received_webhook"],
+    "description": "Support group only",
+    "status": "enabled",
+    "chat_ids": ["120363025246125486@g.us"],
+    "include_status_and_channels": false,
+    "header_names": [],
+    "createdAt": "2026-11-18T19:04:00.000Z",
+    "signingSecret": "whsec_..."
+  }
+}
+```
+
+Webhooks created before these settings existed return `chat_ids: []` and
+`include_status_and_channels: true`, so they keep receiving everything.
+
+## 8. Send a test event
+
+`POST /v1/webhooks/{id}/test` sends one signed sample event to the webhook's
+URL and tells you what happened, so you can check your endpoint and signature
+code before real traffic arrives. It needs the `webhooks:write` scope.
+
+```bash
+curl -X POST https://api.blueticks.co/v1/webhooks/6a380a8258bece30b485036e/test \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"event": "new_message_received_webhook"}'
+```
+
+The body is optional. `event` must be one the webhook is subscribed to, and
+defaults to the first one. Otherwise the call returns `400`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "ok": true,
+    "status": 204,
+    "latency_ms": 142,
+    "event": "new_message_received_webhook"
+  }
+}
+```
+
+The call returns `200` even when your endpoint fails; check `data.ok`. When it
+fails, `data.hint` says what to fix (a 4xx or 5xx status, a timeout, a DNS or
+TLS error, a redirect, or a URL that resolves to a private address). Fields
+that have no value, such as `status` after a timeout, are omitted:
+
+```json
+{
+  "success": true,
+  "data": {
+    "ok": false,
+    "latency_ms": 10003,
+    "event": "new_message_received_webhook",
+    "hint": "Timed out after 10s. The endpoint must answer within 10 seconds; acknowledge first, process later."
+  }
+}
+```
+
+What the endpoint receives is the normal envelope with two differences: the
+`id` starts with `evt_test_`, and the body carries `"test": true`. For an
+incoming-message event the `data` is a sample message; for `message.*`,
+`session.*` and `campaign.*` events it is a short note, not real data. Your
+[custom headers](#9-send-custom-headers) and the signature headers are sent
+exactly as on a real delivery, so signature verification can be tested too.
+
+A test goes straight to your endpoint. It is not queued or retried, it is not
+recorded as a delivery, and it never counts toward
+[auto-disable](#5-reliability-retries--auto-disable). The response body of your
+endpoint is not returned, and redirects are not followed. Limits: one test per
+webhook every 5 seconds, and 20 tests per hour per account (`429` beyond that).
+
+## 9. Send custom headers
+
+Set `headers` to add your own headers to every delivery, typically an
+`Authorization` token so your receiver can reject anything else:
+
+{/* validate:ignore unknown-field — headers is a free-form name/value map (additionalProperties), so its keys are not in the schema */}
+
+```bash
+curl -X PATCH https://api.blueticks.co/v1/webhooks/6a380a8258bece30b485036e \
+  -H "Authorization: Bearer BLUETICKS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"headers": {"Authorization": "Bearer 7f3c9a1e5b2d4c68", "X-Source": "blueticks"}}'
+```
+
+- Allowed names: `Authorization`, or a name that starts with `X-`. `X-Blueticks-*`
+  and `X-Forwarded-*` are rejected, as is any other name. Names are
+  case-insensitive and may not repeat.
+- Up to 10 headers. Each value is 1 to 1024 printable ASCII characters, with no
+  line breaks. A bad header returns `400` and names the offending header.
+- **Values are sealed.** They are stored encrypted and never returned. A read
+  shows only the names:
+
+  ```json
+  "header_names": ["Authorization", "X-Source"]
+  ```
+
+- **System headers win.** `Content-Type`, `Blueticks-Webhook-Id`, the signature
+  headers and `Blueticks-Idempotency-Key` are always set by Blueticks. A custom
+  header with the same name, in any letter case, is dropped.
+- `PATCH` **replaces the whole set**: send every header you want to keep. Send
+  `"headers": null` (or `{}`) to remove them all. Omit `headers` to leave them
+  untouched.
+
+Custom headers are not a substitute for [signature
+verification](#4-verify-requests-really-came-from-blueticks). The signature
+proves a request came from Blueticks and was not altered; a header only proves
+the sender knew your token.
