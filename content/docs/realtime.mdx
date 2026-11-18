@@ -1,0 +1,94 @@
+---
+title: Realtime messages (MQTT)
+description: Receive incoming WhatsApp messages over an outbound MQTT connection, when you have no public URL for a webhook.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Webhooks need a URL that the internet can reach. If you don't have one, you can
+dial out instead: trade your API key for an MQTT credential, connect to the
+broker, and subscribe. Nothing on your side has to be exposed.
+
+The stream carries the same incoming-message payload as
+[`new_message_received_webhook`](/docs/webhook-events#new_message_received_webhook).
+
+## 1. Get a credential
+
+Call `POST /v1/realtime/token` with your API key. The key needs the
+`chats:read` scope. A successful call returns `201`.
+
+<ApiExample op="POST /v1/realtime/token" kind="request" />
+
+<ApiExample op="POST /v1/realtime/token" kind="response" status="201" />
+
+| Field | Meaning |
+| --- | --- |
+| `brokerUrl` | MQTT over WebSocket, for example `wss://mqtt.blueticks.co:443/mqtt`. |
+| `username` | Your user id. Send it exactly as given. |
+| `password` | A JWT. Send it as the MQTT password. |
+| `expiresAt`, `expiresInSeconds` | When the credential stops being accepted. It is set far in the future, so fetching it once at start-up is enough. |
+| `topics.messages` | The one topic you can subscribe to. |
+
+<Callout type="warn">
+Treat `password` like a secret. Revoking the API key does **not** invalidate a
+credential that was already issued from it, so don't log it or ship it to
+browsers.
+</Callout>
+
+## 2. Connect and subscribe
+
+Connect with any MQTT client that speaks MQTT over WebSocket, using the three
+values from the response. This example uses the `mqtt` package for Node.js:
+
+```js
+import mqtt from 'mqtt';
+
+const { data } = await (
+  await fetch('https://api.blueticks.co/v1/realtime/token', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.BLUETICKS_API_KEY}` },
+  })
+).json();
+
+const client = mqtt.connect(data.brokerUrl, {
+  username: data.username,
+  password: data.password,
+});
+
+client.on('connect', () => client.subscribe(data.topics.messages, { qos: 1 }));
+
+client.on('message', (_topic, payload) => {
+  const { eventType, data: message, _timestamp } = JSON.parse(payload.toString());
+  console.log(eventType, message.waMessageKey?._serialized);
+});
+```
+
+## 3. What arrives
+
+The topic is `users/{userId}/downstream/messages`. Use the value of
+`topics.messages` rather than building it yourself.
+
+Each MQTT message is a JSON object:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `eventType` | string | `messages`. |
+| `data` | object | The message. Same fields as in [`new_message_received_webhook`](/docs/webhook-events#new_message_received_webhook). |
+| `_timestamp` | number | When Blueticks published it, in milliseconds. |
+
+This is **not** the webhook envelope. There is no `id`, `type`, `created_at` or
+`idempotency_key`; the message is under `data`.
+
+Blueticks publishes with QoS 1, so a message can be delivered more than once.
+De-duplicate on `data.waMessageKey._serialized`.
+
+### Which messages are on the stream
+
+- Incoming messages: always.
+- Messages sent from your own account: only when the account's
+  include-my-own-messages preference is on. It is off by default, and there is
+  no switch for it in the dashboard yet. When it is on, these arrive in the
+  shape of
+  [`new_message_received_from_me_webhook`](/docs/webhook-events#new_message_received_from_me_webhook).
+- Nothing else. Delivery status, reactions, group activity and the other events
+  are webhook-only. Use [webhooks](/docs/webhooks) for those.

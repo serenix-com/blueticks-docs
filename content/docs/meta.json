@@ -10,6 +10,8 @@
     "reading-messages",
     "utils",
     "webhooks",
+    "webhook-events",
+    "realtime",
     "campaigns",
     "mcp",
     "---Integrations---",
